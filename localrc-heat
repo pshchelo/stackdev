@@ -6,10 +6,17 @@ SERVICE_TOKEN=tokentoken
 # disable Nova-network
 disable_service n-net
 # enable Neutron
+# enabling q-lbaas to circumvent bug/1260224
+enable_service q-lbaas
 enable_service q-svc q-agt q-dhcp q-l3 q-meta q-metering neutron
 # enable Heat
 enable_service heat h-api h-api-cfn h-api-cw h-eng
 # Download some images for use with Heat
-IMAGE_URLS+=",http://fedorapeople.org/groups/heat/prebuilt-jeos-images/F17-x86_64-cfntools.qcow2,http://fedorapeople.org/groups/heat/prebuilt-jeos-images/F17-i386-cfntools.qcow2"
+# CirrOS - minimal cloud-oriented testing Linux distro
+IMAGE_URLS+=",https://launchpad.net/cirros/trunk/0.3.0/+download/cirros-0.3.0-x86_64-disk.img"
+# Fedora 19 x86 with cfntools
+#IMAGE_URLS+=",http://fedorapeople.org/groups/heat/prebuilt-jeos-images/F19-i386-cfntools.qcow2"
+# Fedora 19 x86_64 with cfntools
+#IMAGE_URLS+=",http://fedorapeople.org/groups/heat/prebuilt-jeos-images/F19-x86_64-cfntools.qcow2"
 # enable this to run already-installed devstack in offline mode
 #OFFLINE=True
