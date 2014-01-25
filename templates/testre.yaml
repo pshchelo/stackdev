@@ -1,0 +1,35 @@
+heat_template_version: 2013-05-23
+
+description: >
+  HOT template for testing user supplied regular expressions.
+
+parameters:
+  name:
+    type: string
+    constraints:
+      - allowed_pattern: '(\S+)+x'
+        description: should contain x but not start with x 
+  flavor:
+    type: string
+    description: Instance type for the instance to be created
+    default: m1.nano
+    constraints:
+      - allowed_values: [m1.nano, m1.micro, m1.tiny]
+        description: Value must be one of 'm1.nano', 'm1.micro' or 'm1.tiny'
+  image:
+    type: string
+    description: Name of the image to use for the instance
+    default: cirros-0.3.0-x86_64-disk 
+
+resources:
+  my_instance:
+    type: OS::Nova::Server
+    properties:
+      name: { get_param: name}
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+
+outputs:
+  instance_ip:
+    description: The IP address of the deployed instance
+    value: { get_attr: [my_instance, first_address] }
