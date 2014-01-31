@@ -7,7 +7,7 @@ parameters:
   name:
     type: string
     constraints:
-      - allowed_pattern: '(\S+)+x'
+      - allowed_pattern: 'a?a?a?a?a?a?a?a?a?a?a?a?a?a?a?a?a?a?a?a?a?a?a?a?a?a?a?aaaaaaaaaaaaaaaaaaaaaaaaaaa'
         description: should contain x but not start with x 
   flavor:
     type: string

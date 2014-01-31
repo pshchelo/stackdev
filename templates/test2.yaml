@@ -5,10 +5,6 @@ description: >
   HOT template that just defines two identical compute instances.
 
 parameters:
-  ssh_key_name:
-    type: string
-    description: Name of an existing key pair to use for the instance
-    default: mykey
   flavor:
     type: string
     description: Instance type for the instance to be created
@@ -25,13 +21,11 @@ resources:
   my_instance_1:
     type: OS::Nova::Server
     properties:
-      key_name: { get_param: ssh_key_name }
       image: { get_param: image }
       flavor: { get_param: flavor }
   my_instance_2:
     type: OS::Nova::Server
     properties:
-      key_name: { get_param: ssh_key_name }
       image: { get_param: image }
       flavor: { get_param: flavor }
 

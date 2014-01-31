@@ -2,13 +2,14 @@
 heat_template_version: 2013-05-23
 
 description: >
-  HOT template that just defines two identical compute instances.
+  HOT template that creates one instance, one conder volume and attaches
+  that volume to the instance.
 
 parameters:
-  ssh-key-name:
+  ssh_key_name:
     type: string
     description: Name of an existing key pair to use for the instance
-    default: mykey
+    default: 'mykey'
   flavor:
     type: string
     description: Instance type for the instance to be created
@@ -20,25 +21,39 @@ parameters:
     type: string
     description: name of the image to use for the instance
     default: cirros-0.3.0-x86_64-disk 
+  availability_zone:
+    type: string
+    description: The Availability Zone to launch the instance.
+    default: nova
+  volume_size:
+    type: number
+    description: Size of the volume to be created.
+    default: 1
+    constraints:
+      - range: { min: 1, max: 1024 }
+        description: must be between 1 and 1024 Gb.
 
 resources:
-  my_instance_1:
+  nova_instance:
     type: OS::Nova::Server
     properties:
+      availability_zone: { get_param: availability_zone }
       key_name: { get_param: ssh_key_name }
-      mage: { get_param: image }
+      image: { get_param: image }
       flavor: { get_param: flavor }
-  my_instance_2:
-    type: OS::Nova::Server
+  cinder_volume:
+    type: OS::Cinder::Volume
     properties:
-      key_name: { get_param: ssh_key_name }
-      mage: { get_param: image }
-      flavor: { get_param: flavor }
+      size: { get_param: volume_size }
+      availability_zone: { get_param: availability_zone }
+  volume_attachment:
+    type: OS::Cinder::VolumeAttachment
+    properties:
+      volume_id: { get_resource: cinder_volume }
+      instance_uuid: { get_resource: nova_instance }
+      mountpoint: /dev/vdc
 
 outputs:
-  instance_1_ip:
-    description: The IP address of the first deployed instance
-    value: { get_attr: [my_instance_1, PublicIp] }
-  instance_2_ip:
-    description: The IP address of the second deployed instance
-    value: { get_attr: [my_instance_2, PublicIp] }
+  instance_ip:
+    description: The IP address of the deployed instance
+    value: { get_attr: [nova_instance, first_address] }
