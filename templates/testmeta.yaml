@@ -1,0 +1,31 @@
+# This is a hello world HOT template just defining a single compute instance
+heat_template_version: 2013-05-23
+
+description: >
+  HOT template that just defines two identical compute instances.
+
+parameters:
+  flavor:
+    type: string
+    description: Instance type for the instance to be created
+    default: m1.nano
+    constraints:
+      - allowed_values: [m1.nano, m1.micro, m1.tiny, m1.small, m1.large]
+        description: Value must be one of 'm1.nano', 'm1.micro', 'm1.tiny', 'm1.small' or 'm1.large'
+  image:
+    type: string
+    description: name of the image to use for the instance
+    default: cirros-0.3.0-x86_64-disk 
+
+resources:
+  my_instance:
+    type: OS::Nova::Server
+    properties:
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      metadata: {'some_key': 'some_value', 'other_key': 'other_value'}
+
+outputs:
+  instance_ip:
+    description: The IP address of the deployed instance
+    value: { get_attr: [my_instance, first_address] }
