@@ -25,14 +25,14 @@ parameters:
     type: string
     description: The Availability Zone to launch the instance.
     default: nova
-  volume_size:
-    type: number
-    description: Size of the volume to be created.
-    default: 1
-    constraints:
-      - range: { min: 1, max: 1024 }
-        description: must be between 1 and 1024 Gb.
-
+  volume_id:
+    type: string
+    description: ID of the volume to attach
+  mountpoint:
+    type: string
+    description: Mountpoint of the volume
+    default: '/dev/vdc'
+    
 resources:
   nova_instance:
     type: OS::Nova::Server
@@ -41,6 +41,12 @@ resources:
       key_name: { get_param: ssh_key_name }
       image: { get_param: image }
       flavor: { get_param: flavor }
+  volume_attachment:
+    type: OS::Cinder::VolumeAttachment
+    properties:
+      instance_uuid: { get_resource: nova_instance }
+      volume_id: { get_param: volume_id }
+      mountpoint: {get_param: mountpoint }
 
 outputs:
   instance_ip:
