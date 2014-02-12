@@ -1,4 +1,5 @@
 #!/bin/sh
+#source ~/devstack-settings/creds/userrc
 nova keypair-add --pub-key ~/.ssh/pshchelo.rsa.pub mykey
 cinder create --display-name vol1 1
 cinder create --display-name vol2 2

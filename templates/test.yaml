@@ -2,7 +2,7 @@
 heat_template_version: 2013-05-23
 
 description: >
-  HOT template that just defines two identical compute instances.
+  HOT template that just defines single compute instance.
 
 parameters:
   flavor:
