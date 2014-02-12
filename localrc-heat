@@ -6,8 +6,6 @@ SERVICE_TOKEN=tokentoken
 # disable Nova-network
 disable_service n-net
 # enable Neutron
-# enabling q-lbaas to circumvent bug/1260224
-enable_service q-lbaas
 enable_service q-svc q-agt q-dhcp q-l3 q-meta q-metering neutron
 # enable Heat
 enable_service heat h-api h-api-cfn h-api-cw h-eng
