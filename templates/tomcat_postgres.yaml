@@ -1,0 +1,34 @@
+heat_template_version: 2013-05-23
+Description: >
+  Heat Tomcat + PostgreSQL template
+
+resources:
+  databaseServer:
+    type: OS::Nova::Server
+    properties:
+      image: cloud-fedora
+      flavor: m1.small
+      key_name: test-key
+      user_data: |
+        #!/bin/bash -v
+        yum -y install postgresql-server postgresql-contrib
+        postgresql-setup initdb
+        systemctl enable postgresql.service  
+        systemctl start postgresql.service  
+    
+  applicationServer:
+    type: OS::Nova::Server
+    properties:
+      image: cloud-fedora
+      flavor: m1.small
+      key_name: test-key
+      user_data: |
+        #!/bin/bash -v
+        yum -y install tomcat tomcat-webapps tomcat-admin-webapps
+        systemctl enable tomcat.service  
+        systemctl start tomcat.service
+
+outputs:
+  applicationServerIp:
+    description: URL for application server
+    value: { get_attr: [applicationServer, first_address] }

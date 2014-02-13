@@ -3,45 +3,68 @@ Description: >
   Heat Tomcat + PostgreSQL template
 
 resources:
+  appwaitHandle: 
+    type: AWS::CloudFormation::WaitConditionHandle
+  
+  appwaitCondition:
+    type: AWS::CloudFormation::WaitCondition
+    depends_on: applicationServer
+    properties:
+      Handle: { get_resource: appwaitHandle }
+      Count: 1
+      Timeout: 600
+  
+  dbwaitHandle: 
+    type: AWS::CloudFormation::WaitConditionHandle
+  
+  dbwaitCondition:
+    type: AWS::CloudFormation::WaitCondition
+    depends_on: databaseServer
+    properties:
+      Handle: { get_resource: dbwaitHandle }
+      Count: 1
+      Timeout: 600
+
   databaseServer:
     type: OS::Nova::Server
     properties:
-      image: F18-x86_64-cfntools
-        flavor: m1.medium
-        key_name: mykey
-        user_data: |
+      image: cloud-fedora
+      flavor: m1.small
+      key_name: test-key
+      user_data:
+        str_replace:
+        template: |
           #!/bin/bash -v
-          
           yum -y install postgresql-server postgresql-contrib
           postgresql-setup initdb
           systemctl enable postgresql.service  
-          systemctl start postgresql.service  
+          systemctl start postgresql.service
+          /opt/aws/bin/cfn-signal -e 0 signalhandle
+        params:
+          signalhandle: { get_resource: dbwaitHandle }
     
   applicationServer:
     type: OS::Nova::Server
     properties:
-      image: F18-x86_64-cfntools
-      flavor: m1.medium
-      key_name: mykey
-      user_data: |
-        #!/bin/bash -v
-                         
-        yum -y install tomcat tomcat-webapps tomcat-admin-webapps
-        systemctl enable tomcat.service  
-        systemctl start tomcat.service
-
-  waitHandle: 
-    type: AWS::CloudFormation::WaitConditionHandle
-  
-  waitCondition:
-    type: AWS::CloudFormation::WaitCondition
-    depends_on: applicationServer
-    properties:
-      Handle: {get_resource:  waitHandle}
-      Count: 1
-      Timeout: 600
+      image: cloud-fedora
+      flavor: m1.small
+      key_name: test-key
+      user_data:
+        str_raplace:
+          template: |
+            #!/bin/bash -v
+            yum -y install tomcat tomcat-webapps tomcat-admin-webapps
+            systemctl enable tomcat.service  
+            systemctl start tomcat.service
+            /opt/aws/bin/cfn-signal -e 0 signalhandle
+        params:
+          signalhandle: { get_resource: dbwaitHandle }
 
 outputs:
   applicationServerIp:
     description: URL for application server
     value: { get_attr: [applicationServer, first_address] }
+  dbServerIp:
+    description: URL for application server
+    value: { get_attr: [databaseServer, first_address] }
+  
