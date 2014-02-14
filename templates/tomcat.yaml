@@ -1,0 +1,60 @@
+heat_template_version: 2013-05-23
+
+description: >
+  Tomcat instance with Hello World App
+
+parameters:
+  key_name:
+    type: string
+    description: SSH key to inject into instances
+    default: test-key
+  image:
+    type: string
+    description: Image to boot instances from
+    default: cloud-fedora
+  flavor:
+    type: string
+    description: Flavor of the created images
+    default: m1.small
+
+resources:
+
+  AppWaitHandle: 
+    type: AWS::CloudFormation::WaitConditionHandle
+  
+  AppWaitCondition:
+    type: AWS::CloudFormation::WaitCondition
+    depends_on: ApplicationServerOne
+    properties:
+      Handle: { get_resource: AppWaitHandle }
+      Count: 1
+      Timeout: 600
+    
+
+  ApplicationServerOne:
+    type: OS::Nova::Server
+    properties:
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
+      user_data:
+        str_replace:
+          template: |
+            #!/bin/bash -v
+            yum -y install tomcat tomcat-webapps tomcat-admin-webapps git
+            git clone 'https://github.com/sergmelikyan/hello-world-servlet.git' hello
+            mv hello /var/lib/tomcat/webapps
+            systemctl enable tomcat.service  
+            systemctl start tomcat.service
+            /opt/aws/bin/cfn-signal -e 0 'signalhandle'
+          params:
+            signalhandle: { get_resource: AppWaitHandle }
+            
+outputs:
+  ApplicationOne:
+    description: URL for application on server one
+    value:
+      str_replace:
+        template: 'http://loadbalancer:8080/hello/HelloWorld'
+        params:
+          loadbalancer: { get_attr: [ApplicationServerOne, first_address] }
