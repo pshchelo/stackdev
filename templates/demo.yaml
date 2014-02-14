@@ -1,0 +1,94 @@
+heat_template_version: 2013-05-23
+
+description: >
+  Heat Tomcat + PostgreSQL template
+
+parameters:
+  key_name:
+    type: string
+    description: SSH key to inject into instances
+    default: test-key
+  image:
+    type: string
+    description: Image to boot instances from
+    default: cloud-fedora
+  flavor:
+    type: string
+    description: Flavor of the created images
+    default: m1.small
+
+resources:
+
+  DbWaitHandle: 
+    type: AWS::CloudFormation::WaitConditionHandle
+  
+  DbWaitCondition:
+    type: AWS::CloudFormation::WaitCondition
+    depends_on: DatabaseServer
+    properties:
+      Handle: { get_resource: DbWaitHandle }
+      Count: 1
+      Timeout: 600
+
+  ApplicationServerOne:
+    type: OS::Nova::Server
+    depends_on: { get_resource: DbWaitCondition }
+    properties:
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
+      user_data: |
+        #!/bin/bash -v
+        yum -y install tomcat tomcat-webapps tomcat-admin-webapps
+        systemctl enable tomcat.service  
+        systemctl start tomcat.service
+
+  ApplicationServerTwo:
+    type: OS::Nova::Server
+    depends_on: { get_resource: DbWaitCondition }
+    properties:
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
+      user_data: |
+        #!/bin/bash -v
+        yum -y install tomcat tomcat-webapps tomcat-admin-webapps
+        systemctl enable tomcat.service  
+        systemctl start tomcat.service
+
+  DatabaseServer:
+    type: OS::Nova::Server
+    properties:
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
+      user_data:
+        str_replace:
+          template: |
+            #!/bin/bash -v
+            yum -y install postgresql-server postgresql-contrib
+            postgresql-setup initdb
+            systemctl enable postgresql.service  
+            systemctl start postgresql.service
+            /opt/aws/bin/cfn-signal -e 0 'signalhandle'
+          params:
+            signalhandle: { get_resource: DbWaitHandle }
+
+  LoadBalancer:
+    type: AWS::ElasticLoadBalancing::LoadBalancer
+    properties:
+      AvailabilityZones: [ nova ]
+      Instances:
+        - { get_resource: ApplicationServerOne }
+        - { get_resource: ApplicationServerTwo }
+      Listeners:
+        - { LoadBalancerPort: 80, InstancePort: 8080, Protocol: HTTP }
+    
+outputs:
+  ApplicationServerBalanced:
+    description: URL for load-balanced application
+    value:
+      str_replace:
+        template: 'http://loadbalancer'
+        params:
+          loadbalancer: { get_attr: [LoadBalancer, DNSName] }

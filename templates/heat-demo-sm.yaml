@@ -59,7 +59,6 @@ resources:
         str_replace:
           template: |
             #!/bin/bash -v
-
             yum -y install postgresql-server postgresql-contrib
             postgresql-setup initdb
             systemctl enable postgresql.service  
