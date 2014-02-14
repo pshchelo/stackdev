@@ -39,7 +39,9 @@ resources:
       key_name: { get_param: key_name }
       user_data: |
         #!/bin/bash -v
-        yum -y install tomcat tomcat-webapps tomcat-admin-webapps
+        yum -y install tomcat tomcat-webapps tomcat-admin-webapps git
+        git clone 'https://github.com/sergmelikyan/hello-world-servlet.git' hello
+        mv hello /var/lib/tomcat/webapps
         systemctl enable tomcat.service  
         systemctl start tomcat.service
 
@@ -52,7 +54,9 @@ resources:
       key_name: { get_param: key_name }
       user_data: |
         #!/bin/bash -v
-        yum -y install tomcat tomcat-webapps tomcat-admin-webapps
+        yum -y install tomcat tomcat-webapps tomcat-admin-webapps git
+        git clone 'https://github.com/sergmelikyan/hello-world-servlet.git' hello
+        mv hello /var/lib/tomcat/webapps
         systemctl enable tomcat.service  
         systemctl start tomcat.service
 
