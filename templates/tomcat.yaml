@@ -44,6 +44,7 @@ resources:
             yum -y install tomcat tomcat-webapps tomcat-admin-webapps git
             git clone 'https://github.com/sergmelikyan/hello-world-servlet.git' hello
             mv hello /var/lib/tomcat/webapps
+            iptables -I INPUT 1 -p tcp -m tcp --dport 8080 -j ACCEPT
             systemctl enable tomcat.service  
             systemctl start tomcat.service
             /opt/aws/bin/cfn-signal -e 0 'signalhandle'

@@ -39,9 +39,11 @@ resources:
       key_name: { get_param: key_name }
       user_data: |
         #!/bin/bash -v
-        yum -y install tomcat tomcat-webapps tomcat-admin-webapps git
+        yum -y install tomcat tomcat-webapps tomcat-admin-webapps git java-devel
+        iptables -I INPUT 1 -p tcp -m tcp --dport 8080 -j ACCEPT
+        cd /var/lib/tomcat/webapps
         git clone 'https://github.com/sergmelikyan/hello-world-servlet.git' hello
-        mv hello /var/lib/tomcat/webapps
+        javac -cp /usr/share/tomcat/lib/tomcat-servlet-3.0-api.jar hello/WEB-INF/classes/HelloServlet.java
         systemctl enable tomcat.service  
         systemctl start tomcat.service
 
@@ -54,9 +56,11 @@ resources:
       key_name: { get_param: key_name }
       user_data: |
         #!/bin/bash -v
-        yum -y install tomcat tomcat-webapps tomcat-admin-webapps git
+        yum -y install tomcat tomcat-webapps tomcat-admin-webapps git java-devel
+        iptables -I INPUT 1 -p tcp -m tcp --dport 8080 -j ACCEPT
+        cd /var/lib/tomcat/webapps
         git clone 'https://github.com/sergmelikyan/hello-world-servlet.git' hello
-        mv hello /var/lib/tomcat/webapps
+        javac -cp /usr/share/tomcat/lib/tomcat-servlet-3.0-api.jar hello/WEB-INF/classes/HelloServlet.java
         systemctl enable tomcat.service  
         systemctl start tomcat.service
 
@@ -72,6 +76,7 @@ resources:
             #!/bin/bash -v
             yum -y install postgresql-server postgresql-contrib
             postgresql-setup initdb
+            iptables -I INPUT 1 -p tcp -m tcp --dport 5432 -j ACCEPT
             systemctl enable postgresql.service  
             systemctl start postgresql.service
             /opt/aws/bin/cfn-signal -e 0 'signalhandle'
@@ -93,6 +98,6 @@ outputs:
     description: URL for load-balanced application
     value:
       str_replace:
-        template: 'http://loadbalancer'
+        template: 'http://loadbalancer/hello/HelloWorld'
         params:
           loadbalancer: { get_attr: [LoadBalancer, DNSName] }
