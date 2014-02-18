@@ -1,0 +1,223 @@
+heat_template_version: 2013-05-23
+
+description: >
+  Heat 2 x Tomcat behind HTTP Neutron load balancer + PostgreSQL
+
+parameters:
+  key_name:
+    type: string
+    description: SSH key to inject into instances
+    default: test-key
+  image:
+    type: string
+    description: Image to boot instances from
+    default: cloud-fedora
+  flavor:
+    type: string
+    description: Flavor of the created images
+    default: m1.small
+  external_network:
+    type: string
+    description: Network of floating IPs
+ 
+resources:
+
+  DbWaitHandle: 
+    type: AWS::CloudFormation::WaitConditionHandle
+  
+  DbWaitCondition:
+    type: AWS::CloudFormation::WaitCondition
+    depends_on: DatabaseServer
+    properties:
+      Handle: { get_resource: DbWaitHandle }
+      Count: 1
+      Timeout: 600
+
+  ApplicationServerOne:
+    type: OS::Nova::Server
+    depends_on: { get_resource: DbWaitCondition }
+    properties:
+      availability_zone: nova
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
+      networks:
+        - { port: { get_resource: PortAppOne } }
+      security_groups:
+        - { get_resource: SecGroup }
+      user_data: |
+        #!/bin/bash -v
+        yum -y install tomcat tomcat-webapps tomcat-admin-webapps git java-devel
+        iptables -I INPUT 1 -p tcp -m tcp --dport 8080 -j ACCEPT
+        cd /var/lib/tomcat/webapps
+        git clone 'https://github.com/sergmelikyan/hello-world-servlet.git' hello
+        javac -cp /usr/share/tomcat/lib/tomcat-servlet-3.0-api.jar hello/WEB-INF/classes/HelloServlet.java
+        systemctl enable tomcat.service  
+        systemctl start tomcat.service
+
+  ApplicationServerTwo:
+    type: OS::Nova::Server
+    depends_on: { get_resource: DbWaitCondition }
+    properties:
+      availability_zone: nova
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
+      networks:
+        - { port: { get_resource: PortAppTwo } }
+      security_groups:
+        - { get_resource: SecGroup }
+      user_data: |
+        #!/bin/bash -v
+        yum -y install tomcat tomcat-webapps tomcat-admin-webapps git java-devel
+        iptables -I INPUT 1 -p tcp -m tcp --dport 8080 -j ACCEPT
+        cd /var/lib/tomcat/webapps
+        git clone 'https://github.com/sergmelikyan/hello-world-servlet.git' hello
+        javac -cp /usr/share/tomcat/lib/tomcat-servlet-3.0-api.jar hello/WEB-INF/classes/HelloServlet.java
+        systemctl enable tomcat.service  
+        systemctl start tomcat.service
+
+  DatabaseServer:
+    type: OS::Nova::Server
+    properties:
+      availability_zone: nova
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
+      networks:
+        - { port: { get_resource: PortDB } }
+      security_groups:
+        - { get_resource: SecGroup }
+      user_data:
+        str_replace:
+          template: |
+            #!/bin/bash -v
+            yum -y install postgresql-server postgresql-contrib
+            postgresql-setup initdb
+            iptables -I INPUT 1 -p tcp -m tcp --dport 5432 -j ACCEPT
+            systemctl enable postgresql.service  
+            systemctl start postgresql.service
+            /opt/aws/bin/cfn-signal -e 0 'signalhandle'
+          params:
+            signalhandle: { get_resource: DbWaitHandle }
+
+  Router:
+    type: OS::Neutron::Router
+    properties:
+      external_gateway_info:
+        network: { get_param: external_network }
+  
+  Net:
+    type: OS::Neutron::Net
+    name: 'Demo-Net'
+
+  Subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      network_id: { get_resource: Net }
+      ip_version: 4
+      cidr: '10.0.1.0/24'
+      dns_nameservers:
+        - '8.8.8.8'
+
+  RouterInterface:
+    type: OS::Neutron::RouterInterface
+    properties:
+      router_id: { get_resource: Router }
+      subnet_id: { get_resource: Subnet }
+
+  PortAppOne:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_resource: Net }
+      fixed_ips:
+        - { subnet_id: { get_resource: Subnet } }
+      security_groups:
+        - { get_resource: SecGroup }
+
+  PortAppTwo:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_resource: Net }
+      fixed_ips:
+        - { subnet_id: { get_resource: Subnet } }
+      security_groups:
+        - { get_resource: SecGroup }
+
+  PortAppDB:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_resource: Net }
+      fixed_ips:
+        - { subnet_id: { get_resource: Subnet } }
+      security_groups:
+        - { get_resource: SecGroup }
+
+  AppPool:
+    type: OS::Neutron::Pool
+    properties:
+      lb_method: ROUND_ROBIN
+      protocol: HTTP
+      name: AppPool
+      subnet_id: { get_resource: Subnet }
+      vip:
+        protocol_port: 8080
+        name: AppPoolVIP
+
+  AppLoadBalancer:
+    type: OS::Neutron::LoadBalancer
+    properties:
+      protocol_port: 8080
+      pool_id: { get_resource: AppPool }
+      members:
+        - { get_resource: ApplicationServerOne }
+        - { get_resource: ApplicationServerTwo }
+
+  AppFloatingIP:
+    type: OS::Neutron::FloatingIP
+    depends_on: { get_resource: RouterInterface }
+    properties:
+      floating_network_id: { get_param: external_network }
+
+  AppFloatingIPassoc:
+    type: OS::Neutron::FloatingIPAssociation
+    properties: 
+      floatingip_id: { get_resource: AppFloatingIP }
+      port_id: { get_attr: [ AppPool, vip, port_id] }
+  
+  SecGroup:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      description: Heat Demo
+      name: Demo
+      rules:
+        - { direction: ingress,
+            ethertype: IPv4,
+            protocol: tcp, 
+            port_range_min: 22, 
+            port_range_max: 22, 
+            remote_ip_prefix: '0.0.0.0/0'
+           }
+        - { direction: ingress,
+            ethertype: IPv4, 
+            protocol: tcp, 
+            port_range_min: 8080, 
+            port_range_max: 8080, 
+            remote_ip_prefix: '0.0.0.0/0'
+           }
+        - { direction: ingress,
+            ethertype: IPv4, 
+            protocol: tcp, 
+            port_range_min: 5432,
+            port_range_max: 5432,
+            remote_ip_prefix: '0.0.0.0/0'
+           }
+
+outputs:
+  ApplicationServerBalanced:
+    description: URL for load-balanced application
+    value:
+      str_replace:
+        template: 'http://loadbalancer:8080/hello/HelloWorld'
+        params:
+          loadbalancer: { get_attr: [AppFloatingIP, floating_ip_address] }
