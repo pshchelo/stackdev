@@ -1,4 +1,4 @@
 export OS_TENANT_NAME=admin
 export OS_USERNAME=admin
 export OS_PASSWORD=admin
-export OS_AUTH_URL="http://192.168.122.246:5000/v2.0/"
+export OS_AUTH_URL="http://192.168.122.216:5000/v2.0/"
