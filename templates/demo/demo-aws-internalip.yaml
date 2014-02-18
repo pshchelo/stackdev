@@ -77,6 +77,7 @@ resources:
             yum -y install postgresql-server postgresql-contrib
             postgresql-setup initdb
             iptables -I INPUT 1 -p tcp -m tcp --dport 5432 -j ACCEPT
+            sed -e "s/^#listen_addresses =.*$/listen_addresses = \'*\'/" -i /var/lib/pgsql/data/postgresql.conf
             systemctl enable postgresql.service  
             systemctl start postgresql.service
             /opt/aws/bin/cfn-signal -e 0 'signalhandle'
