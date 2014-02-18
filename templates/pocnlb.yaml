@@ -4,26 +4,22 @@ description: >
   2 x CirrOS behind SSH Neutron load balancer
 
 parameters:
+  key_name:
+    type: string
+    description: SSH key to inject into instances
+    default: mykey
   image:
     type: string
     description: Image to boot instances from
-    default: cirros-0.3.0-x86_64-disk
+    default: cirros-0.3.1-x86_64-disk
   flavor:
     type: string
     description: Flavor of the created images
     default: m1.nano
-  floating_network:
+  external_network:
     type: string
     description: Network of floating IPs
-    default: 21e725b4-d6f1-47c1-97a9-f9a5def96824
-  tenant_network:
-    type: string
-    description: ID of the tenant network where to creat a subnet
-    default: 425216e9-3207-441f-bd0e-26eae64fb7ce
-  router:
-    type: string
-    description: ID of the tenant's router
-    default: 4b09165a-e5c0-4627-ad62-39806bc3fd18
+    default: 8339ffcb-3b0d-40ec-8901-d09d7a5bde88
 
 resources:
 
@@ -33,8 +29,11 @@ resources:
       availability_zone: nova
       image: { get_param: image }
       flavor: { get_param: flavor }
-      networks: [ { port: { get_resource: PortAppOne } } ]
-      security_groups: [ { get_resource: SecGroup } ]
+      key_name: { get_param: key_name }
+      networks:
+        - { port: { get_resource: PortAppOne } }
+      security_groups:
+        - { get_resource: SecGroup }
 
   ApplicationServerTwo:
     type: OS::Nova::Server
@@ -42,38 +41,54 @@ resources:
       availability_zone: nova
       image: { get_param: image }
       flavor: { get_param: flavor }
-      networks: [ { port: { get_resource: PortAppTwo } } ]
-      security_groups: [ { get_resource: SecGroup } ]
+      key_name: { get_param: key_name }
+      networks:
+        - { port: { get_resource: PortAppTwo } }
+      security_groups:
+        - { get_resource: SecGroup }
 
+  Router:
+    type: OS::Neutron::Router
+    properties:
+      external_gateway_info:
+        network: { get_param: external_network }
+  
+  Net:
+    type: OS::Neutron::Net
+    name: 'Demo-Net'
+ 
   Subnet:
     type: OS::Neutron::Subnet
     properties:
-      network_id: { get_param: tenant_network }
+      network_id: { get_resource: Net }
       ip_version: 4
       cidr: '10.0.1.0/24'
-      dns_nameservers: [ '8.8.8.8' ]
+      dns_nameservers:
+        - '8.8.8.8'
 
   RouterInterface:
     type: OS::Neutron::RouterInterface
     properties:
-      router_id: { get_param: router }
+      router_id: { get_resource: Router }
       subnet_id: { get_resource: Subnet }
 
   PortAppOne:
     type: OS::Neutron::Port
     properties:
-      network_id: { get_param: tenant_network }
+      network_id: { get_resource: Net }
       fixed_ips:
         - { subnet_id: { get_resource: Subnet } }
-      security_groups: [ { get_resource: SecGroup } ]
+      security_groups:
+        - { get_resource: SecGroup }
 
   PortAppTwo:
     type: OS::Neutron::Port
     properties:
-      network_id: { get_param: tenant_network }
+      network_id: { get_resource: Net }
       fixed_ips:
         - { subnet_id: { get_resource: Subnet } }
-      security_groups: [ { get_resource: SecGroup } ]
+      security_groups:
+        - { get_resource: SecGroup }
 
   AppPool:
     type: OS::Neutron::Pool
@@ -91,14 +106,15 @@ resources:
     properties:
       protocol_port: 22
       pool_id: { get_resource: AppPool }
-      members: [ { get_resource: ApplicationServerOne }, 
-                 { get_resource: ApplicationServerTwo }
-               ]
+      members:
+        - { get_resource: ApplicationServerOne }
+        - { get_resource: ApplicationServerTwo }
 
   AppFloatingIP:
     type: OS::Neutron::FloatingIP
+    depends_on: { get_resource: RouterInterface }
     properties:
-      floating_network_id: { get_param: floating_network }
+      floating_network_id: { get_param: external_network }
 
   AppFloatingIPassoc:
     type: OS::Neutron::FloatingIPAssociation
@@ -111,33 +127,20 @@ resources:
     properties:
       description: Heat Demo
       name: Demo
-      rules: [ { direction: ingress,
-                 ethertype: IPv4, 
-                 protocol: tcp, 
-                 port_range_min: 8080, 
-                 port_range_max: 8080, 
-                 remote_ip_prefix: '0.0.0.0/0'
-              },
-              { direction: ingress,
-                ethertype: IPv4,
-                protocol: tcp, 
-                port_range_min: 22, 
-                port_range_max: 22, 
-                remote_ip_prefix: '0.0.0.0/0'
-              },
-              { direction: ingress,
-                ethertype: IPv4, 
-                protocol: tcp, 
-                port_range_min: 5432,
-                port_range_max: 5432,
-                remote_ip_prefix: '0.0.0.0/0'  }
-            ]
+      rules:
+        - { direction: ingress,
+            ethertype: IPv4,
+            protocol: tcp, 
+            port_range_min: 22, 
+            port_range_max: 22, 
+            remote_ip_prefix: '0.0.0.0/0'
+           }
 
 outputs:
   ApplicationServerBalanced:
     description: URL for load-balanced application
     value:
       str_replace:
-        template: 'http://loadbalancer/hello/HelloWorld'
+        template: 'ssh cirros@loadbalancer'
         params:
           loadbalancer: { get_attr: [AppFloatingIP, floating_ip_address] }
