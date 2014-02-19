@@ -1,5 +1,5 @@
-#!/bin/sh
-#source ~/devstack-settings/creds/userrc
+#!/usr/bin/env bash
+source ~/stackdev/creds/userrc
 nova keypair-add --pub-key ~/.ssh/id_rsa.pub mykey
 cinder create --display-name vol1 1
 cinder create --display-name vol2 2
