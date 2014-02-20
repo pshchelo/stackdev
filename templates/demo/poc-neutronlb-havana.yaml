@@ -1,7 +1,7 @@
 heat_template_version: 2013-05-23
 
 description: >
-  2 x CirrOS behind SSH Neutron load balancer
+  Heat 2 x Tomcat behind HTTP Neutron load balancer + PostgreSQL
 
 parameters:
   key_name:
@@ -19,23 +19,44 @@ parameters:
   external_network:
     type: string
     description: Network of floating IPs
-    default: 8339ffcb-3b0d-40ec-8901-d09d7a5bde88
-
+    default: 5a34e787-a75e-4e71-857c-01fe29e5437f
+ 
 resources:
+
+  #DbWaitHandle: 
+    #type: AWS::CloudFormation::WaitConditionHandle
+  
+  #DbWaitCondition:
+    #type: AWS::CloudFormation::WaitCondition
+    #depends_on: DatabaseServer
+    #properties:
+      #Handle: { get_resource: DbWaitHandle }
+      #Count: 1
+      #Timeout: 600
 
   ApplicationServerOne:
     type: OS::Nova::Server
+    #depends_on: { get_resource: DbWaitCondition }
     properties:
       availability_zone: nova
       image: { get_param: image }
       flavor: { get_param: flavor }
       key_name: { get_param: key_name }
       networks:
-        - { port: { get_resource: PortAppOne } }
-      security_groups:
-        - { get_resource: SecGroup }
+      - { port: { get_resource: PortAppOne } }
 
   ApplicationServerTwo:
+    type: OS::Nova::Server
+    #depends_on: { get_resource: DbWaitCondition }
+    properties:
+      availability_zone: nova
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
+      networks:
+      - { port: { get_resource: PortAppTwo } }
+
+  DatabaseServer:
     type: OS::Nova::Server
     properties:
       availability_zone: nova
@@ -43,20 +64,19 @@ resources:
       flavor: { get_param: flavor }
       key_name: { get_param: key_name }
       networks:
-        - { port: { get_resource: PortAppTwo } }
-      security_groups:
-        - { get_resource: SecGroup }
+      - { port: { get_resource: PortDB } }
 
   Router:
     type: OS::Neutron::Router
     properties:
-      external_gateway_info:
-        network: { get_param: external_network }
+      value_specs:
+        external_gateway_info:
+          network_id: { get_param: external_network }
   
   Net:
     type: OS::Neutron::Net
     name: 'Demo-Net'
- 
+
   Subnet:
     type: OS::Neutron::Subnet
     properties:
@@ -64,7 +84,7 @@ resources:
       ip_version: 4
       cidr: '10.0.1.0/24'
       dns_nameservers:
-        - '8.8.8.8'
+      - '8.8.8.8'
 
   RouterInterface:
     type: OS::Neutron::RouterInterface
@@ -77,38 +97,47 @@ resources:
     properties:
       network_id: { get_resource: Net }
       fixed_ips:
-        - { subnet_id: { get_resource: Subnet } }
+      - { subnet_id: { get_resource: Subnet } }
       security_groups:
-        - { get_resource: SecGroup }
+      - { get_resource: SecGroup }
 
   PortAppTwo:
     type: OS::Neutron::Port
     properties:
       network_id: { get_resource: Net }
       fixed_ips:
-        - { subnet_id: { get_resource: Subnet } }
+      - { subnet_id: { get_resource: Subnet } }
       security_groups:
-        - { get_resource: SecGroup }
+      - { get_resource: SecGroup }
+
+  PortDB:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_resource: Net }
+      fixed_ips:
+      - { subnet_id: { get_resource: Subnet } }
+      security_groups:
+      - { get_resource: SecGroup }
 
   AppPool:
     type: OS::Neutron::Pool
     properties:
       lb_method: ROUND_ROBIN
-      protocol: TCP
+      protocol: HTTP
       name: AppPool
       subnet_id: { get_resource: Subnet }
       vip:
-        protocol_port: 22
+        protocol_port: 8080
         name: AppPoolVIP
 
   AppLoadBalancer:
     type: OS::Neutron::LoadBalancer
     properties:
-      protocol_port: 22
+      protocol_port: 8080
       pool_id: { get_resource: AppPool }
       members:
-        - { get_resource: ApplicationServerOne }
-        - { get_resource: ApplicationServerTwo }
+      - { get_resource: ApplicationServerOne }
+      - { get_resource: ApplicationServerTwo }
 
   AppFloatingIP:
     type: OS::Neutron::FloatingIP
@@ -120,27 +149,34 @@ resources:
     type: OS::Neutron::FloatingIPAssociation
     properties: 
       floatingip_id: { get_resource: AppFloatingIP }
-      port_id: { get_attr: [ AppPool, vip, port_id] }
+      port_id:
+        Fn::Select:
+        - 'port_id'
+        - Fn::GetAtt: [ 'AppPool', 'vip' ]
   
   SecGroup:
-    type: OS::Neutron::SecurityGroup
+    type: AWS::EC2::SecurityGroup
     properties:
-      description: Heat Demo
-      name: Demo
-      rules:
-        - { direction: ingress,
-            ethertype: IPv4,
-            protocol: tcp, 
-            port_range_min: 22, 
-            port_range_max: 22, 
-            remote_ip_prefix: '0.0.0.0/0'
-           }
+      GroupDescription: Heat Demo
+      SecurityGroupIngress:
+      - { CidrIp: '0.0.0.0/0',
+          IpProtocol: 'tcp',
+          FromPort: '22',
+          ToPort: '22'}
+      - { CidrIp: '0.0.0.0/0',
+          IpProtocol: 'tcp',
+          FromPort: '5432',
+          ToPort: '5432'}
+      - { CidrIp: '0.0.0.0/0',
+          IpProtocol: 'tcp',
+          FromPort: '8080',
+          ToPort: '8080'}
 
 outputs:
   ApplicationServerBalanced:
     description: URL for load-balanced application
     value:
       str_replace:
-        template: 'ssh cirros@loadbalancer'
+        template: 'http://loadbalancer:8080/hello/HelloWorld'
         params:
           loadbalancer: { get_attr: [AppFloatingIP, floating_ip_address] }
