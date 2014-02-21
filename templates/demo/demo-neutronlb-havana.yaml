@@ -48,8 +48,8 @@ resources:
         yum -y install tomcat tomcat-webapps tomcat-admin-webapps git java-devel
         iptables -I INPUT 1 -p tcp -m tcp --dport 8080 -j ACCEPT
         cd /var/lib/tomcat/webapps
-        git clone 'https://github.com/sergmelikyan/hello-world-servlet.git' hello
-        javac -cp /usr/share/tomcat/lib/tomcat-servlet-3.0-api.jar hello/WEB-INF/classes/HelloServlet.java
+        git clone 'https://github.com/sergmelikyan/hello-world-servlet.git' app
+        javac -cp /usr/share/tomcat/lib/tomcat-servlet-3.0-api.jar app/WEB-INF/classes/HelloServlet.java
         systemctl enable tomcat.service  
         systemctl start tomcat.service
 
@@ -68,8 +68,8 @@ resources:
         yum -y install tomcat tomcat-webapps tomcat-admin-webapps git java-devel
         iptables -I INPUT 1 -p tcp -m tcp --dport 8080 -j ACCEPT
         cd /var/lib/tomcat/webapps
-        git clone 'https://github.com/sergmelikyan/hello-world-servlet.git' hello
-        javac -cp /usr/share/tomcat/lib/tomcat-servlet-3.0-api.jar hello/WEB-INF/classes/HelloServlet.java
+        git clone 'https://github.com/sergmelikyan/hello-world-servlet.git' app
+        javac -cp /usr/share/tomcat/lib/tomcat-servlet-3.0-api.jar app/WEB-INF/classes/HelloServlet.java
         systemctl enable tomcat.service  
         systemctl start tomcat.service
 
@@ -207,6 +207,6 @@ outputs:
     description: URL for load-balanced application
     value:
       str_replace:
-        template: 'http://loadbalancer:8080/hello/HelloWorld'
+        template: 'http://loadbalancer:8080/app/HelloWorld'
         params:
           loadbalancer: { get_attr: [AppFloatingIP, floating_ip_address] }
