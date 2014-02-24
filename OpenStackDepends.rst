@@ -14,6 +14,7 @@ libxml2-dev
 libxslt1-dev
 libyaml-dev
 libssl-dev
+libffi-dev
 
 python-heatclient
 -----------------
