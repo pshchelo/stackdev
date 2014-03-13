@@ -1,0 +1,15 @@
+heat_template_version: 2013-05-23
+
+description: Pool with pre-created monitors.
+
+resources:
+  Pool:
+    type: OS::Neutron::Pool
+    properties:
+      lb_method: ROUND_ROBIN
+      protocol: TCP
+      subnet_id: 92872f7e-dcc3-45b3-9f2e-76ff3a0a1165
+      vip:
+        protocol_port: 22
+      monitors:
+      - debd64f2-7bfc-49fe-9ff4-848328b9f44a

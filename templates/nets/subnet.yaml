@@ -1,0 +1,23 @@
+heat_template_version: 2013-05-23
+
+description: Define single subnet
+
+parameters:
+  name:
+    type: string
+    description: name of the subnet
+
+resources:
+  Net:
+    type: OS::Neutron::Net
+  Subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      cidr: '10.0.2.0/24'
+      network_id: { get_resource: Net }
+      name: { get_param: name }
+
+outputs:
+  subnet_name:
+    description: Name of the subnet
+    value: { get_attr: [ Subnet, name ] }

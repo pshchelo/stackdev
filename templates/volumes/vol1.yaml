@@ -1,0 +1,24 @@
+# This is a hello world HOT template just defining a single compute instance
+heat_template_version: 2013-05-23
+
+description: >
+  HOT template that creates one instance and attaches a cinder volume to it.
+
+resources:
+  nova_instance:
+    type: OS::Nova::Server
+    properties:
+      availability_zone: nova
+      image: cirros-0.3.1-x86_64-disk
+      flavor: m1.nano
+  volume_attachment:
+    type: OS::Cinder::VolumeAttachment
+    properties:
+      instance_uuid: { get_resource: nova_instance }
+      volume_id: e90d0e9f-3cf4-4513-8112-0387fc75378c
+      mountpoint: '/dev/vdc'
+
+outputs:
+  instance_ip:
+    description: The IP address of the deployed instance
+    value: { get_attr: [nova_instance, first_address] }
