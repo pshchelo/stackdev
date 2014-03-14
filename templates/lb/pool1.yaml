@@ -8,8 +8,8 @@ resources:
     properties:
       lb_method: ROUND_ROBIN
       protocol: TCP
-      subnet_id: 92872f7e-dcc3-45b3-9f2e-76ff3a0a1165
+      subnet_id: b69416f3-d612-459b-84d6-9f1dd210a16a
       vip:
         protocol_port: 22
       monitors:
-      - 421599fb-d596-48e1-88e9-16fbf4a8f673
+      - e1be4c99-2f59-4ff1-be7f-ae614afe300b

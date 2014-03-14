@@ -22,7 +22,7 @@ resources:
     properties:
       lb_method: ROUND_ROBIN
       protocol: TCP
-      subnet_id: 92872f7e-dcc3-45b3-9f2e-76ff3a0a1165
+      subnet_id: b69416f3-d612-459b-84d6-9f1dd210a16a
       vip:
         protocol_port: 22
       monitors: [ { get_resource: HealthMon2 } ]
