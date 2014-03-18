@@ -1,13 +1,16 @@
-# This is a hello world HOT template just defining a single compute instance
 heat_template_version: 2013-05-23
 
 description: >
-  HOT template that creates one instance and attaches a cinder volume to it.
+  HOT template that creates one instance and attaches an existing cinder volume to it.
 
 parameters:
   volume:
     type: string
     description: ID of the volume to attach
+  device:
+    type: string
+    description: mountpoint for the volume
+    default: '/dev/vdc'
     
 resources:
   nova_instance:
@@ -21,7 +24,7 @@ resources:
     properties:
       instance_uuid: { get_resource: nova_instance }
       volume_id: { get_param: volume }
-      mountpoint: '/dev/vdc'
+      mountpoint: { get_param: device }
 
 outputs:
   instance_ip:
