@@ -3,13 +3,14 @@ MYSQL_PASSWORD=mysql
 RABBIT_PASSWORD=rabbit
 SERVICE_PASSWORD=service
 SERVICE_TOKEN=tokentoken
+# disable Dashboard
+disable_service horizon
 # disable Nova-network
 disable_service n-net
 # enable Neutron
 enable_service q-svc q-agt q-dhcp q-l3 q-meta q-metering neutron
-#enable_service q-lbaas
-# enable Heat
-enable_service heat h-api h-api-cfn h-api-cw h-eng
+enable_service q-lbaas
+# Heat is enabled by default on latest devstack
 # Download some images for use with Heat
 # CirrOS - minimal cloud-oriented testing Linux distro
 IMAGE_URLS+=",http://download.cirros-cloud.net/0.3.1/cirros-0.3.1-x86_64-disk.img"
