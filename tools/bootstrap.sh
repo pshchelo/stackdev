@@ -5,41 +5,43 @@
 sudo apt-get install mc htop ctags
 # install Python packages in local user location
 pip install --user -r personal-requirements.txt
-cp ack-2.12-single-file ~/.local/bin/ack
-cp tig-precise_x64 ~/.local/bin/tig
-hash -r
+cp ack-2.12-single-file "$HOME/.local/bin/ack"
+cp tig-precise_x64 "$HOME/.local/bin/tig"
 # prepare Vundle to later install ViM plugins
-mkdir -p ~/.vim/bundle
-git clone git://github.com/gmarik/vundle.git ~/.vim/bundle/vundle
+mkdir -p "$HOME/.vim/bundle"
+git clone https://github.com/gmarik/vundle.git "$HOME/.vim/bundle/vundle"
 
-DOTFILES='~/dotfiles'
+DOTFILES="$HOME/dotfiles"
 git clone git@github.com:pshchelo/dotfiles.git $DOTFILES
 
-ln -s $DOTFILES/ack/ackrc ~/.ackrc
-ln -s $DOTFILES/colors/dircolors-solarized ~/.dircolors
-ln -s $DOTFILES/colors/mc-solarized ~/.config/mc/mc-solarized
-ln -s $DOTFILES/git/gitignore_global ~/.gitignore_global
-ln -s $DOTFILES/git/tigrc ~/.tigrc
-ln -s $DOTFILES/powerline ~/.config/powerline
-ln -s $DOTFILES/vim/vimrc ~/.vimrc
-ln -s $DOTFILES/shell/tmux.conf ~/.tmux.conf
-ln -s $DOTFILES/shell/bash_aliases ~/.bash_aliases
-
-mv ~/.profile ~/.profile-original
-mv ~/.bashrc ~/.bashrc-original
-ln -s $DOTFILES/shell/bashrc ~/.bashrc
-ln -s $DOTFILES/environment/profile ~/.profile
-
 # create and edit gitconfig
-cp $DOTFILES/git/gitconfig ~/.gitconfig
-sed -i 's/shchelokovskyy@gmail/pshchelokovskyy@mirantis/' ~/.gitconfig 
-# following two are for the config to work on older git
-sed -i 's/default = simple//' ~/.gitconfig
+cp "$DOTFILES/git/gitconfig" "$HOME/.gitconfig"
+sed -i 's/shchelokovskyy@gmail/pshchelokovskyy@mirantis/' "$HOME/.gitconfig" 
+# following one is for the config to work on older git
+sed -i 's/default = simple//' "$HOME/.gitconfig"
+
+# create links
+ln -s "$DOTFILES/ack/ackrc" "$HOME/.ackrc"
+ln -s "$DOTFILES/git/gitignore_global" "$HOME/.gitignore_global"
+ln -s "$DOTFILES/git/tigrc" "$HOME/.tigrc"
+ln -s "$DOTFILES/vim/vimrc" "$HOME/.vimrc"
+ln -s "$DOTFILES/shell/tmux.conf" "$HOME/.tmux.conf"
+ln -s "$DOTFILES/shell/bash_aliases" "$HOME/.bash_aliases"
+ln -s "$DOTFILES/colors/dircolors-solarized" "$HOME/.dircolors"
+
+mkdir -p "$HOME/.config/mc"
+ln -s "$DOTFILES/colors/mc-solarized" "$HOME/.config/mc/mc-solarized"
+ln -s "$DOTFILES/powerline" "$HOME/.config/powerline"
+
+mv "$HOME/.profile" "$HOME/.profile-original"
+mv "$HOME/.bashrc" "$HOME/.bashrc-original"
+ln -s "$DOTFILES/shell/bashrc" "$HOME/.bashrc"
+ln -s "$DOTFILES/environment/profile" "$HOME/.profile"
 
 # create ipython profile to hold custom settings
-ipython profile create
-rm ~/.ipython/profile_default/ipython_config.py
-ln -s $DOTFILES/ipython/ipython_config.py ~/.ipython/profile_default/ipython_config.py
+"$HOME/.local/bin/ipython" profile create
+rm "$HOME/.ipython/profile_default/ipython_config.py"
+ln -s "$DOTFILES/ipython/ipython_config.py" "$HOME/.ipython/profile_default/ipython_config.py"
 
 # setup all ViM plugins (requires input)
 vim -c BundleInstall
