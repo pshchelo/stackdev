@@ -1,0 +1,91 @@
+heat_template_version: 2013-05-23
+
+description: >
+  Validate bug 1298350 
+
+parameters:
+  flavor:
+    type: string
+    description: Instance type for the instance to be created
+    default: m1.nano
+    constraints:
+      - allowed_values: [m1.nano, m1.micro, m1.tiny, m1.small, m1.large]
+        description: Value must be one of 'm1.nano', 'm1.micro', 'm1.tiny', 'm1.small' or 'm1.large'
+  image:
+    type: string
+    description: name of the image to use for the instance
+    default: cirros-0.3.1-x86_64-disk 
+  availability_zone:
+    type: string
+    description: The Availability Zone to launch the instance.
+    default: nova
+  volume_size:
+    type: number
+    description: Size of the volume to be created.
+    default: 1
+    constraints:
+      - range: { min: 1, max: 1024 }
+        description: must be between 1 and 1024 Gb.
+
+resources:
+  instance_1:
+    type: OS::Nova::Server
+    properties:
+      availability_zone: { get_param: availability_zone }
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+  volume_1_1:
+    type: OS::Cinder::Volume
+    properties:
+      size: { get_param: volume_size }
+      availability_zone: { get_param: availability_zone }
+  instance_1_attachment_1:
+    type: OS::Cinder::VolumeAttachment
+    properties:
+      volume_id: { get_resource: volume_1_1 }
+      instance_uuid: { get_resource: instance_1 }
+  volume_1_2:
+    type: OS::Cinder::Volume
+    properties:
+      size: { get_param: volume_size }
+      availability_zone: { get_param: availability_zone }
+  instance_1_attachment_2:
+    type: OS::Cinder::VolumeAttachment
+    properties:
+      volume_id: { get_resource: volume_1_2 }
+      instance_uuid: { get_resource: instance_1 }
+
+  instance_2:
+    type: OS::Nova::Server
+    properties:
+      availability_zone: { get_param: availability_zone }
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+  volume_2_1:
+    type: OS::Cinder::Volume
+    properties:
+      size: { get_param: volume_size }
+      availability_zone: { get_param: availability_zone }
+  instance_2_attachment_1:
+    type: OS::Cinder::VolumeAttachment
+    properties:
+      volume_id: { get_resource: volume_2_1 }
+      instance_uuid: { get_resource: instance_2 }
+  volume_2_2:
+    type: OS::Cinder::Volume
+    properties:
+      size: { get_param: volume_size }
+      availability_zone: { get_param: availability_zone }
+  instance_2_attachment_2:
+    type: OS::Cinder::VolumeAttachment
+    properties:
+      volume_id: { get_resource: volume_2_2 }
+      instance_uuid: { get_resource: instance_2 }
+
+outputs:
+  instance_1_ip:
+    description: The IP address of the first deployed instance
+    value: { get_attr: [instance_1, first_address] }
+  instance_2_ip:
+    description: The IP address of the secind deployed instance
+    value: { get_attr: [instance_2, first_address] }
