@@ -1,30 +1,67 @@
+# This is a hello world HOT template just defining a single compute instance
 heat_template_version: 2013-05-23
 
 description: >
-  HOT template that creates one instance and attaches an existing cinder volume to it.
+  HOT template that creates two instances, two cinder volumes and attaches
+  one of the volumes to one of the instances.
 
 parameters:
-  volume:
+  flavor:
     type: string
-    description: ID of the volume to attach
-  device:
+    description: Instance type for the instance to be created
+    default: m1.nano
+    constraints:
+      - allowed_values: [m1.nano, m1.micro, m1.tiny, m1.small, m1.large]
+        description: Value must be one of 'm1.nano', 'm1.micro', 'm1.tiny', 'm1.small' or 'm1.large'
+  image:
     type: string
-    description: mountpoint for the volume
-    default: '/dev/vdc'
-    
+    description: name of the image to use for the instance
+    default: cirros-0.3.1-x86_64-disk 
+  availability_zone:
+    type: string
+    description: The Availability Zone to launch the instance.
+    default: nova
+  volume_size:
+    type: number
+    description: Size of the volume to be created.
+    default: 1
+    constraints:
+      - range: { min: 1, max: 1024 }
+        description: must be between 1 and 1024 Gb.
+  mount:
+    type: string
+    description: mountpoint for a volume on a server
+    default: /dev/vdc
+
 resources:
-  nova_instance:
+  instance_1:
     type: OS::Nova::Server
     properties:
-      availability_zone: nova
-      image: cirros-0.3.1-x86_64-disk
-      flavor: m1.nano
+      availability_zone: { get_param: availability_zone }
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+  instance_2:
+    type: OS::Nova::Server
+    properties:
+      availability_zone: { get_param: availability_zone }
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+  volume_1:
+    type: OS::Cinder::Volume
+    properties:
+      size: { get_param: volume_size }
+      availability_zone: { get_param: availability_zone }
+  volume_2:
+    type: OS::Cinder::Volume
+    properties:
+      size: { get_param: volume_size }
+      availability_zone: { get_param: availability_zone }
   volume_attachment:
     type: OS::Cinder::VolumeAttachment
     properties:
-      instance_uuid: { get_resource: nova_instance }
-      volume_id: { get_param: volume }
-      mountpoint: { get_param: device }
+      volume_id: { get_resource: volume_1 }
+      instance_uuid: { get_resource: instance_1 }
+      mountpoint: { get_param: mount }
 
 outputs:
   instance_ip:
