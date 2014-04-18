@@ -1,0 +1,20 @@
+heat_template_version: 2013-05-23
+
+description: AWS SecurityGroup with nova-network
+
+parameters:
+    network:
+      type: string
+      description: ID of the netowrk for Security Group
+      default: fef100c4-6224-4c96-b52b-6a8ec066b472
+
+resources:
+  SecurityGroup:
+    type: AWS::EC2::SecurityGroup
+    properties:
+      GroupDescription: Test SecGroup Nova-Net - Updated
+      SecurityGroupIngress:
+      - CidrIp: '0.0.0.0/24'
+        FromPort: '80'
+        ToPort: '80'
+        IpProtocol: 'tcp'
