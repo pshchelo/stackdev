@@ -18,7 +18,7 @@ git clone git@github.com:pshchelo/dotfiles.git $DOTFILES
 cp "$DOTFILES/git/gitconfig" "$HOME/.gitconfig"
 sed -i 's/shchelokovskyy@gmail/pshchelokovskyy@mirantis/' "$HOME/.gitconfig" 
 # following one is for the config to work on older git
-sed -i 's/default = simple//' "$HOME/.gitconfig"
+#sed -i 's/default = simple//' "$HOME/.gitconfig"
 
 # create links
 ln -s "$DOTFILES/ack/ackrc" "$HOME/.ackrc"
