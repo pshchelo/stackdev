@@ -10,4 +10,4 @@ sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 # attach stack-volumes
 sudo losetup /dev/loop0 /opt/stack/data/stack-volumes-backing-file
 # run DevStack services
-. ~/devstack/rejoin_stack.sh
+$HOME/devstack/rejoin-stack.sh
