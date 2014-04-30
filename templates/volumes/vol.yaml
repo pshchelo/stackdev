@@ -1,11 +1,18 @@
 heat_template_version: 2013-05-23
 
-description: > 
-  Create a volume
+description: Create a volume
+
+parameters:
+  size:
+    type: number
+    description: size of the volume
+    default: 1
 
 resources:
   volume:
     type: OS::Cinder::Volume
+    properties:
+      size: { get_param: size }
 
 outputs:
   volume_size:
