@@ -1,0 +1,13 @@
+heat_template_version: 2013-05-23
+
+description: > 
+  Create a volume
+
+resources:
+  volume:
+    type: OS::Cinder::Volume
+
+outputs:
+  volume_size:
+    description: size of the volume
+    value: { get_attr: [volume, size] }

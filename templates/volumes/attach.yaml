@@ -1,0 +1,24 @@
+heat_template_version: 2013-05-23
+
+description: > 
+  Create a volume attachment
+
+parameters:
+  instance:
+    type: string
+    description: ID of nova instance
+  vol:
+    type: string
+    description: ID of volume
+  dev:
+    type: string
+    description: mountpoint on instance
+    default: /dev/vdb
+
+resources:
+  volume:
+    type: OS::Cinder::VolumeAttachment
+    properties:
+      instance_uuid: { get_param: instance }
+      volume_id: { get_param: vol }
+      mountpoint: { get_param: dev }

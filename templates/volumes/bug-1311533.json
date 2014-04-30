@@ -1,0 +1,34 @@
+HeatTemplateFormatVersion: '2012-12-12'
+Description: Instance creation template
+Parameters:
+  Flavor:
+    Type: String
+    Default: m1.nano
+  VolumeSize:
+    Type: Number
+    Default : '1'
+  ImageId:
+    Type: String
+  AvailabilityZone:
+    Type: String
+    Default: nova
+Resources:
+  BaseInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: {Ref: ImageId}
+      InstanceType: {Ref: Flavor}
+      AvailabilityZone: {Ref: AvailabilityZone}
+  DataVolume:
+    Type: AWS::EC2::Volume
+    Properties:
+      Size: {Ref: VolumeSize}
+      AvailabilityZone: {Ref: AvailabilityZone}
+      Tags:
+      - {Key: Usage, Value: Test}
+  MountPoint:
+    Type: AWS::EC2::VolumeAttachment
+    Properties:
+      InstanceId: {Ref: BaseInstance}
+      VolumeId: {Ref: DataVolume}
+      Device: /dev/vdb
