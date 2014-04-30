@@ -1,9 +1,8 @@
-# This is a hello world HOT template just defining a single compute instance
 heat_template_version: 2013-05-23
 
 description: >
-  HOT template that creates two instances, two cinder volumes and attaches
-  one of the volumes to one of the instances.
+  HOT template that creates a nova instance, a cinder volumes and attaches
+  the volumes to the instance.
 
 parameters:
   flavor:
@@ -11,8 +10,8 @@ parameters:
     description: Instance type for the instance to be created
     default: m1.nano
     constraints:
-      - allowed_values: [m1.nano, m1.micro, m1.tiny, m1.small, m1.large]
-        description: Value must be one of 'm1.nano', 'm1.micro', 'm1.tiny', 'm1.small' or 'm1.large'
+      - allowed_values: [m1.nano, m1.micro, m1.tiny]
+        description: Value must be one of 'm1.nano', 'm1.micro', 'm1.tiny'.
   image:
     type: string
     description: name of the image to use for the instance
@@ -34,24 +33,13 @@ parameters:
     default: /dev/vdc
 
 resources:
-  instance_1:
+  instance:
     type: OS::Nova::Server
     properties:
       availability_zone: { get_param: availability_zone }
       image: { get_param: image }
       flavor: { get_param: flavor }
-  instance_2:
-    type: OS::Nova::Server
-    properties:
-      availability_zone: { get_param: availability_zone }
-      image: { get_param: image }
-      flavor: { get_param: flavor }
-  volume_1:
-    type: OS::Cinder::Volume
-    properties:
-      size: { get_param: volume_size }
-      availability_zone: { get_param: availability_zone }
-  volume_2:
+  volume:
     type: OS::Cinder::Volume
     properties:
       size: { get_param: volume_size }
@@ -59,11 +47,14 @@ resources:
   volume_attachment:
     type: OS::Cinder::VolumeAttachment
     properties:
-      volume_id: { get_resource: volume_1 }
-      instance_uuid: { get_resource: instance_1 }
+      volume_id: { get_resource: volume }
+      instance_uuid: { get_resource: instance }
       mountpoint: { get_param: mount }
 
 outputs:
   instance_ip:
     description: The IP address of the deployed instance
-    value: { get_attr: [nova_instance, first_address] }
+    value: { get_attr: [instance, first_address] }
+  volume_size:
+    description: Size of the volume
+    value: { get_attr: [volume, size] }
