@@ -19,7 +19,7 @@ parameters:
   image:
     type: string
     description: Name of the image to use for the instance
-    default: cirros-0.3.1-x86_64-disk 
+    default: cirros-0.3.2-x86_64-disk 
 
 resources:
   my_instance:
