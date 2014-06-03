@@ -6,7 +6,6 @@ parameters:
     network:
       type: string
       description: ID of the netowrk for Security Group
-      default: fef100c4-6224-4c96-b52b-6a8ec066b472
 
 resources:
   SecurityGroup:

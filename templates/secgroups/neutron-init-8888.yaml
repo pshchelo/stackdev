@@ -6,7 +6,6 @@ parameters:
     network:
       type: string
       description: ID of the netowrk for Security Group
-      default: b7efaabb-5a40-43af-99e1-77d8eb9aac4e
 
 resources:
   SecurityGroup:
@@ -24,3 +23,8 @@ resources:
         FromPort: '8888'
         ToPort: '8888'
         IpProtocol: 'tcp'
+
+outputs:
+  rules:
+    description: Rules belonging to the security group
+    value: { get_attr: [SecurutyGroup, Rules] }
