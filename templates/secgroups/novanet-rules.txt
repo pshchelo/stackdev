@@ -1,0 +1,13 @@
+[
+  {
+    "from_port": 8888, 
+    "group": {}, 
+    "ip_protocol": "tcp", 
+    "to_port": 8888, 
+    "parent_group_id": 2, 
+    "ip_range": {
+      "cidr": "0.0.0.0/24"
+    }, 
+    "id": 1
+  }
+]
