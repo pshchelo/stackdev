@@ -1,0 +1,14 @@
+heat_template_version: 2013-05-23
+
+description: Define Neutron net and port
+
+resources:
+
+  my_net:
+    type: OS::Neutron::Net
+  
+  my_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_resource: my_net }
+

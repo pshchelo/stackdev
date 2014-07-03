@@ -1,0 +1,17 @@
+heat_template_version: 2013-05-23
+
+description: Define Neutron net and Server on this net
+
+resources:
+
+  my_net:
+    type: OS::Neutron::Net
+
+  server:
+    type: OS::Nova::Server
+    properties:
+      image: cirros-0.3.2-x86_64-disk
+      flavor: 'm1.nano'
+      networks:
+        - network: { get_resource: my_net }
+
