@@ -1,0 +1,32 @@
+From 3d92b6501502a17c049f331c5143221fe79b4984 Mon Sep 17 00:00:00 2001
+From: Pavlo Shchelokovskyy <pshchelokovskyy@mirantis.com>
+Date: Tue, 15 Jul 2014 15:50:43 +0000
+Subject: [PATCH] Fix RNG forking
+
+---
+ cinder/utils.py | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/cinder/utils.py b/cinder/utils.py
+index d3fb33d..1847984 100644
+--- a/cinder/utils.py
++++ b/cinder/utils.py
+@@ -30,6 +30,7 @@ import stat
+ import sys
+ import tempfile
+ 
++from Crypto import Random
+ from Crypto.Random import random
+ from eventlet import pools
+ from oslo.config import cfg
+@@ -384,6 +385,7 @@ def generate_password(length=20, symbolgroups=DEFAULT_PASSWORD_SYMBOLS):
+     # NOTE(jerdfelt): Some password policies require at least one character
+     # from each group of symbols, so start off with one random character
+     # from each symbol group
++    Random.atfork()
+     password = [random.choice(s) for s in symbolgroups]
+     # If length < len(symbolgroups), the leading characters will only
+     # be from the first length groups. Try our best to not be predictable
+-- 
+1.9.1
+
