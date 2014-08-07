@@ -1,0 +1,48 @@
+heat_template_version: 2013-05-23
+
+description: >
+  HOT template that just defines AWS instance.
+
+parameters:
+  flavor:
+    type: string
+    description: Instance type for the instance to be created
+    default: m1.nano
+  image:
+    type: string
+    description: name of the image to use for the instance
+    default: cirros-0.3.2-x86_64-uec 
+
+resources:
+  subnet1:
+    type: AWS::EC2::Subnet
+    properties:
+      VpcId: 2100e119-ed5e-4ae8-a586-2f9ec280a2ae
+      CidrBlock: 10.0.1.0/24
+  #subnet2:
+    #type: AWS::EC2::Subnet
+    #properties:
+      #VpcId: 2100e119-ed5e-4ae8-a586-2f9ec280a2ae
+      #CidrBlock: 10.0.2.0/24
+  port1:
+    type: AWS::EC2::NetworkInterface
+    properties:
+      SubnetId: { get_resource: subnet1 }
+  port2:
+    type: AWS::EC2::NetworkInterface
+    properties:
+      SubnetId: { get_resource: subnet1 }
+  my_instance_1:
+    type: AWS::EC2::Instance
+    properties:
+      ImageId: { get_param: image }
+      InstanceType: { get_param: flavor }
+      #SubnetId: { get_resource: subnet2 }
+      NetworkInterfaces:
+        - { get_resource: port1 }
+        #- { get_resource: port2 }
+
+outputs:
+  instance_1_ip:
+    description: The IP address of the first deployed instance
+    value: { get_attr: [my_instance_1, PrivateIp] }
