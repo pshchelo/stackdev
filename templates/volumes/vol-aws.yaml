@@ -1,0 +1,11 @@
+heat_template_version: 2013-05-23
+
+description: Create a volume
+
+resources:
+  volume:
+    type: AWS::EC2::Volume
+    properties:
+      AvailabilityZone: nova
+      Size: 1
+      Tags: [ {Key: TestTag, Value: TestValue} ]
