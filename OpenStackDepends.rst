@@ -15,6 +15,8 @@ libxslt1-dev
 libyaml-dev
 libssl-dev
 libffi-dev
+libmysqlclient-dev
+libpq-dev
 
 python-heatclient
 -----------------
