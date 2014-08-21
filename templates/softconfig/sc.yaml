@@ -1,0 +1,24 @@
+heat_template_version: 2013-05-23
+
+description: 2 SoftwareConfig and SoftwareDeployment for update testing
+
+resources:
+  
+  Server:
+    type: OS::Nova::Server
+    properties:
+      image: cirros-0.3.2-x86_64-uec
+      flavor: m1.nano
+
+  SoftConfig1:
+    type: OS::Heat::SoftwareConfig
+
+  SoftConfig2:
+    type: OS::Heat::SoftwareConfig
+
+  SoftDeploy:
+    type: OS::Heat::SoftwareDeployment
+    properties:
+      config: { get_resource: SoftConfig2 }
+      server: { get_resource: Server }
+      signal_transport: NO_SIGNAL
