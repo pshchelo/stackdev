@@ -1,0 +1,27 @@
+heat_template_version: 2013-05-23
+
+description: Sahara Resources
+
+resources:
+  NodeGroupTmpl:
+    type: OS::Sahara::NodeGroupTemplate
+    properties:
+      plugin_name: vanilla
+      hadoop_version: 2.3.0
+      flavor: m1.nano
+      floating_ip_pool: public  
+      node_processes:
+      - namenode
+      - resourcemanager
+
+  ClusterTmpl:
+    type: OS::Sahara::ClusterTemplate
+    properties:
+      name: I_am_not_valid
+      plugin_name: vanilla
+      hadoop_version: 2.3.0
+      neutron_management_network: private
+      node_groups:
+      - name: group1
+        count: 2
+        node_group_template_id: { get_resource: NodeGroupTmpl }
