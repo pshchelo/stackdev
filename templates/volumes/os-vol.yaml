@@ -1,6 +1,6 @@
 heat_template_version: 2013-05-23
 
-description: Create a volume
+description: Create native OS volume
 
 parameters:
   size:

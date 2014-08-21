@@ -1,7 +1,7 @@
 heat_template_version: 2013-05-23
 
 description: >
-  Validate bug 1298350 
+  Validate bug 1298350 - 3 servers each attached 2 volumes, native OS.
 
 parameters:
   flavor:

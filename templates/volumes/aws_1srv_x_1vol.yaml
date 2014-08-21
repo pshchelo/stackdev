@@ -1,0 +1,45 @@
+heat_template_version: 2013-05-23
+
+description: >
+  Create an instance, a volume and attach volume to instance - all AWS-comp,
+  validate for bug 1311533.
+
+parameters:
+  flavor:
+    type: string
+    default: m1.nano
+  image:
+    type: string
+    default: cirros-0.3.2-x86_64-uec
+  path:
+    type: string
+    default: /dev/vdb
+  size:
+    type: number
+    default: 1
+  zone:
+    type: string
+    default: nova
+
+resources:
+  server:
+    type: AWS::EC2::Instance
+    properties:
+      ImageId: { get_param: image }
+      InstanceType: { get_param: flavor }
+      AvailabilityZone: { get_param: zone }
+
+  volume:
+    type: AWS::EC2::Volume
+    properties:
+      AvailabilityZone: { get_param: zone }
+      Size: { get_param: size }
+      Tags:
+      - {Key: Usage, Value: Test}
+
+  mount:
+    type: AWS::EC2::VolumeAttachment
+    properties:
+      InstanceId: { get_resource: server }
+      VolumeId: { get_resource: volume }
+      Device: { get_param: path }

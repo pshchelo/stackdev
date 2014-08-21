@@ -1,8 +1,8 @@
 heat_template_version: 2013-05-23
 
 description: >
-  HOT template that creates a nova instance, a cinder volumes and attaches
-  the volumes to the instance.
+  Create a nova instance, a cinder volume and attaches the volume 
+  to the instance - all native OS resources.
 
 parameters:
   flavor:
