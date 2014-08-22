@@ -1,0 +1,33 @@
+heat_template_version: 2013-05-23
+
+description: AWS SecurityGroup with Neutron opening single port.
+
+parameters:
+  network:
+    type: string
+    description: ID of the netowrk for Security Group
+  port:
+    type: string
+    description: Port number to open
+    default: '22'
+  describe:
+    type: string
+    description: Description of the security group
+    default: Test AWS SecGroup Neutron
+
+resources:
+  SecurityGroup:
+    type: AWS::EC2::SecurityGroup
+    properties:
+      GroupDescription: { get_param: describe }
+      VpcId: { get_param: network }
+      SecurityGroupEgress:
+      - CidrIp: '0.0.0.0/24'
+        FromPort: { get_param: port }
+        ToPort: { get_param: port }
+        IpProtocol: 'tcp'
+      SecurityGroupIngress:
+      - CidrIp: '0.0.0.0/24'
+        FromPort: { get_param: port }
+        ToPort: { get_param: port }
+        IpProtocol: 'tcp'
