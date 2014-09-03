@@ -9,5 +9,6 @@ sudo route add -net 10.0.0.0/24 gw 172.24.4.1
 sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 # attach stack-volumes
 sudo losetup /dev/loop0 /opt/stack/data/stack-volumes-backing-file
+sudo losetup /dev/loop1 /opt/stack/data/stack-volumes-lvmdriver-1-backing-file
 # run DevStack services
 $HOME/devstack/rejoin-stack.sh
