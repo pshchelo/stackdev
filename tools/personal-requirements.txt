@@ -1,5 +1,0 @@
-ipdb
-jedi
-virtualenvwrapper
-git-review
-git+https://github.com/Lokaltog/powerline.git
