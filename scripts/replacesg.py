@@ -32,7 +32,7 @@ new_rules = [
      'protocol': 'tcp',
      'remote_ip_prefix': '0.0.0.0/0',
      'port_range_min': 1,
-     'port_range_max': 65553
+     'port_range_max': 1024
      },
 
     {'direction': 'egress',
@@ -40,7 +40,7 @@ new_rules = [
      'protocol': 'tcp',
      'remote_ip_prefix': '0.0.0.0/0',
      'port_range_min': 1,
-     'port_range_max': 65553
+     'port_range_max': 1024
      },
     {'direction': 'ingress',
      'ethertype': 'IPv4',
@@ -59,4 +59,5 @@ new_rules = [
 ]
 
 for rule in new_rules:
+    rule['security_group_id'] = default_sg['id']
     neutron.create_security_group_rule({'security_group_rule': rule})
