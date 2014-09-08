@@ -1,0 +1,39 @@
+heat_template_version: 2013-05-23
+description: Instance creation template for {{datastore_manager}}
+parameters:
+  Flavor:
+    type: string
+    default: m1.nano
+  ImageId:
+    type: string
+    default: cirros-0.3.2-x86_64-uec 
+  AvailabilityZone:
+    type: string
+    default: nova
+  userparam:
+    type: string
+    default: SomeMoreData
+
+resources:
+  BaseConfig:
+    type: OS::Heat::CloudConfig
+    properties:
+      cloud_config:
+        write_files:
+        - path: /etc/check.conf
+          owner: root:root
+          mode: '000644'
+          content: |
+            [DEFAULT]
+            param = { get_param: userparam }
+        runcmd:
+          sudo cat /etc/check.conf > /etc/root-was-here
+
+  BaseInstance:
+    type: OS::Nova::Server
+    properties:
+      image: { get_param: ImageId }
+      flavor: { get_param: Flavor }
+      availability_zone: { get_param: AvailabilityZone }
+      user_data: { get_resource: BaseConfig }
+
