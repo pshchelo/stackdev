@@ -1,0 +1,12 @@
+HeatTemplateFormatVersion: '2012-12-12'
+
+Resources:
+  ElasticLoadBalancer:
+    Type: AWS::ElasticLoadBalancing::LoadBalancer
+    Properties:
+      AvailabilityZones: {'Fn::GetAZs': ''}
+      Listeners:
+      - {LoadBalancerPort: '80', InstancePort: '80',
+        Protocol: HTTP}
+      HealthCheck: {Target: 'HTTP:80/', HealthyThreshold: '3',
+        UnhealthyThreshold: '5', Interval: '30', Timeout: '5'}
