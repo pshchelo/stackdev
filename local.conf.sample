@@ -10,10 +10,16 @@ SERVICE_TOKEN=tokentoken
 ### SET SOME INSTALL OPTIONS ###
 # run already-installed devstack in offline mode
 #OFFLINE=True
+
 # refresh repos
 #RECLONE=yes
+
 # set the size of the stack volume backing file (in MB, default 10250M)
 #VOLUME_BACKING_FILE_SIZE=41000M
+
+# Add more images to Glance
+# Fedora 20 x64 cloud image
+#IMAGE_URLS+=",http://archive.fedoraproject.org/pub/alt/openstack/20/x86_64/Fedora-x86_64-20-20140618-sda.qcow2"
 
 ### DISABLE/ENABLE INSTALLED SERVICES ###
 # disable Dashboard

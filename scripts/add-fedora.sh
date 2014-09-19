@@ -1,0 +1,1 @@
+glance image-create --name F20-x86_64-cfntools --disk-format qcow2 --container-format bare --location http://archive.fedoraproject.org/pub/alt/openstack/20/x86_64/Fedora-x86_64-20-20140618-sda.qcow2 --is-public True
