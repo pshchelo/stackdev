@@ -1,0 +1,17 @@
+heat_template_version: 2013-05-23
+
+#parameters:
+  #console_type:
+    #type: string
+    #default: novnc
+
+resources:
+  server:
+    type: OS::Nova::Server
+    properties:
+      image: cirros-0.3.2-x86_64-uec
+      flavor: m1.nano
+
+outputs:
+  console:
+    value: { get_attr: [ server, console_url, novnc ] }

@@ -1,0 +1,135 @@
+heat_template_version: 2013-05-23
+description: Instance creation template for Trove
+parameters:
+  Flavor:
+    type: string
+    default: m1.heat
+  VolumeSize:
+    type: number
+    default : 1
+  InstanceId:
+    type: string
+    default: fake-instance-id
+  ImageId:
+    type: string
+    default: F20-x86_64-cfntools
+  DatastoreManager:
+    type: string
+    default: fake-datastore-manager-id
+  AvailabilityZone:
+    type: string
+    default: nova
+  TenantId:
+    type: string
+    default: fake-tenant-id
+resources:
+#{% for port in ports %}
+  #{{ port.name }}:
+    #type: OS::Neutron::Port
+    #properties:
+      #network_id: {{ port.net_id }}
+      #security_groups:
+        #- { get_resource: DatastoreSG }
+      #{% if port.fixed_ip %}
+      #fixed_ips:
+        #- ip_address: {{ port.fixed_ip }}
+      #{% endif %}
+#{% endfor %}
+
+  BaseConfig:
+    type: OS::Heat::CloudConfig
+    properties:
+      cloud_config:
+        write_files:
+        - path: /etc/guest_info
+          owner: root:root
+          permissions: '000644'
+          content:
+            str_replace:
+              template: |
+                [DEFAULT]
+                guest_id=INSTANCE_ID
+                datastore_manager=MANAGER_ID
+                tenant_id=TENANT
+              params:
+                INSTANCE_ID: { get_param: InstanceId }
+                MANAGER_ID: { get_param: DatastoreManager }
+                TENANT: { get_param: TenantId }
+        runcmd:
+        - cp /etc/guest_info ~/guest.conf
+          
+  BaseInstance:
+    type: OS::Nova::Server
+    properties:
+      availability_zone: { get_param: AvailabilityZone }
+      flavor: { get_param: Flavor }
+      image: { get_param: ImageId }
+      key_name: mykey
+      user_data_format: RAW
+      user_data:
+        get_resource: BaseConfig
+      security_groups:
+      - get_resource: DatastoreSG
+    #type: AWS::EC2::Instance
+    #metadata:
+      #AWS::CloudFormation::Init:
+        #config:
+          #files:
+            #/etc/guest_info:
+              #content:
+                #Fn::Join:
+                #- ''
+                #- ["[DEFAULT]\nguest_id=", { get_param: InstanceId },
+                  #"\ndatastore_manager=", { get_param: DatastoreManager 
+                  #"\ntenant_id=", {get_param: TenantId}]
+              #mode: '000644'
+              #owner: root
+              #group: root
+    #properties:
+      #ImageId: { get_param: ImageId }
+      #InstanceType: { get_param: Flavor }
+      #AvailabilityZone: { get_param: AvailabilityZone }
+      #SecurityGroups:
+        #- { get_resource: DatastoreSG }
+      #UserData:
+        #Fn::Base64:
+          #Fn::Join:
+          #- ''
+          #- ["#!/bin/bash -v\n",
+              #"#/opt/aws/bin/cfn-init\n",
+              #"#sudo service trove-guest start\n",
+              #"touch ~/cloudwashere\n"]
+
+  DataVolume:
+    type: OS::Cinder::Volume
+    properties:
+      size: { get_param: VolumeSize }
+      availability_zone: { get_param: AvailabilityZone }
+      metadata:
+        Usage: Test
+
+  MountPoint:
+    type: OS::Cinder::VolumeAttachment
+    properties:
+      instance_uuid: { get_resource: BaseInstance }
+      volume_id: { get_resource: DataVolume }
+      mountpoint: /dev/vdb
+
+  DatastoreSG:
+    type: AWS::EC2::SecurityGroup
+    properties:
+      GroupDescription: Default Security group for Trove
+      SecurityGroupIngress:
+      - IpProtocol: "tcp"
+        FromPort: "22"
+        ToPort: "22"
+        CidrIp: "0.0.0.0/0"
+
+  DatabaseIPAddress:
+    type: AWS::EC2::EIP
+
+  DatabaseIPAssoc :
+    type: AWS::EC2::EIPAssociation
+    properties:
+      InstanceId: { get_resource: BaseInstance }
+      EIP: { get_resource: DatabaseIPAddress }
