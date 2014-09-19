@@ -8,8 +8,9 @@ Parameters:
   InstanceType:
     Description: WebServer EC2 instance type
     Type: String
-    Default: m1.tiny
+    Default: m1.wp
     AllowedValues:
+    - m1.wp
     - m1.tiny
     - m1.small
     - m1.medium
@@ -145,6 +146,7 @@ Resources:
               group: root
           packages:
             yum:
+              stress: []
               mysql: []
               mysql-server: []
               httpd: []
