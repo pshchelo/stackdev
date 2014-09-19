@@ -1,0 +1,11 @@
+heat_template_version: 2013-05-23
+
+resources:
+  secret:
+    type: OS::Heat::RandomString
+
+outputs:
+  my_secret:
+    value: 
+      get_attr: [ secret, value ]
+      description: My Secret Value
