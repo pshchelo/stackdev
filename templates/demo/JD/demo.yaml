@@ -1,5 +1,7 @@
 HeatTemplateFormatVersion: '2012-12-12'
-Description: Creates an autoscaling wordpress application using Ceilometer.
+Description: >
+  Tomcat webapp autoscaled by Ceilometer and AWS LoadBalancer.
+  Based on https://github.com/openstack/heat-templates/blob/master/cfn/F17/AutoScalingCeilometer.yaml
 Parameters:
   KeyName:
     Description: Name of an existing EC2 KeyPair to enable SSH access to the instances
@@ -8,10 +10,9 @@ Parameters:
   InstanceType:
     Description: WebServer EC2 instance type
     Type: String
-    Default: m1.wp
+    Default: m1.heat
     AllowedValues:
-    - m1.wp
-    - m1.tiny
+    - m1.heat
     - m1.small
     - m1.medium
     - m1.large
@@ -21,33 +22,6 @@ Parameters:
     Description: the name or uuid of the image in glance
     Type: String
     Default: F20-x86_64-cfntools
-  DBUsername:
-    Default: admin
-    NoEcho: 'true'
-    Description: The WordPress database admin account username
-    Type: String
-    MinLength: '1'
-    MaxLength: '16'
-    AllowedPattern: '[a-zA-Z][a-zA-Z0-9]*'
-    ConstraintDescription: must begin with a letter and contain only alphanumeric characters.
-  DBPassword:
-    Default: admin
-    NoEcho: 'true'
-    Description: The WordPress database admin account password
-    Type: String
-    MinLength: '1'
-    MaxLength: '41'
-    AllowedPattern: '[a-zA-Z0-9]*'
-    ConstraintDescription: must contain only alphanumeric characters.
-  DBRootPassword:
-    Default: admin
-    NoEcho: 'true'
-    Description: Root password for MySQL
-    Type: String
-    MinLength: '1'
-    MaxLength: '41'
-    AllowedPattern: '[a-zA-Z0-9]*'
-    ConstraintDescription: must contain only alphanumeric characters.
 
 Resources:
   CfnUser:
@@ -131,30 +105,16 @@ Resources:
               mode: '000400'
               owner: root
               group: root
-            /tmp/setup.mysql:
-              content:
-                'Fn::Replace':
-                - DBPassword: {Ref: DBPassword}
-                  DBUsername: {Ref: DBUsername}
-                - |
-                  CREATE DATABASE wordpress;
-                  GRANT ALL PRIVILEGES ON wordpress .* TO 'DBUsername'@'localhost' IDENTIFIED BY 'DBPassword';
-                  FLUSH PRIVILEGES;
-                  EXIT
-              mode: '000644'
-              owner: root
-              group: root
           packages:
             yum:
-              stress: []
-              mysql: []
-              mysql-server: []
-              httpd: []
-              wordpress: []
+              git: []
+              java-devel: []
+              tomcat: []
+              tomcat-webapps: []
+              tomcat-admin-webapps: []
           services:
             systemd:
-              mysqld: {enabled: 'true', ensureRunning: 'true'}
-              httpd: {enabled: 'true', ensureRunning: 'true'}
+              tomcat.service: {enabled: 'true', ensureRunning: 'true'} 
     Properties:
       ImageId: {Ref: ImageId}
       InstanceType: {Ref: InstanceType}
@@ -164,19 +124,16 @@ Resources:
           Fn::Replace:
           - 'AWS::StackName': {Ref: 'AWS::StackName'}
             'AWS::Region': {Ref: 'AWS::Region'}
-            DBRootPassword: {Ref: DBRootPassword}
-            DBPassword: {Ref: DBPassword}
-            DBUsername: {Ref: DBUsername}
           - |
             #!/bin/bash -v
             /opt/aws/bin/cfn-init -s AWS::StackName -r LaunchConfig --region AWS::Region
-            # Setup MySQL root password and create a user
-            mysqladmin -u root password DBRootPassword
-            mysql -u root --password=DBRootPassword < /tmp/setup.mysql
-            sed -i "/Deny from All/d" /etc/httpd/conf.d/wordpress.conf
-            sed -i "/Deny from all/d" /etc/httpd/conf.d/wordpress.conf
-            sed --in-place --e s/database_name_here/wordpress/ --e s/username_here/DBUsername/ --e s/password_here/DBPassword/ /usr/share/wordpress/wp-config.php
-            systemctl restart httpd.service
+            iptables -I INPUT 1 -p tcp -m tcp --dport 80 -j ACCEPT
+            cd /var/lib/tomcat/webapps
+            git clone 'https://github.com/pshchelo/hello-world-servlet.git' hello
+            cd hello
+            git checkout nodb
+            javac -cp /usr/share/tomcat/lib/tomcat-servlet-3.0-api.jar WEB-INF/classes/HelloServlet.java
+            systemctl restart tomcat.service
 Outputs:
   URL:
     Description: The URL of the website
