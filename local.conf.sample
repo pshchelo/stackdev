@@ -18,14 +18,23 @@ SERVICE_TOKEN=tokentoken
 #VOLUME_BACKING_FILE_SIZE=41000M
 
 # Add more images to Glance
-# Fedora 20 x64 cloud image
-#IMAGE_URLS+=",http://archive.fedoraproject.org/pub/alt/openstack/20/x86_64/Fedora-x86_64-20-20140618-sda.qcow2"
+# Fedora 20 x64 cloud image - needed on DevStack Icehouse and older
+#IMAGE_URLS+=",http://dl.fedoraproject.org/pub/alt/openstack/20/x86_64/Fedora-x86_64-20-20140618-sda.qcow2
 
 ### DISABLE/ENABLE INSTALLED SERVICES ###
-# disable Dashboard
+#
+# Default set of components installed (as of DevStack Icehouse) is:
+# - Nova with Nova-network
+# - Keystone
+# - Glance
+# - Cinder
+# - Heat
+# - Horizon
+
+# disable Horizon (Dashboard)
 #disable_service horizon
 
-# disable Nova-network and and enable Neutron
+# disable Nova-network and enable Neutron
 #disable_service n-net
 #enable_service q-svc q-agt q-dhcp q-l3 q-meta q-metering q-lbaas neutron
 
