@@ -2,5 +2,6 @@
 # possible clashes of pip and requests libs
 git+https://github.com/Lokaltog/powerline.git
 jedi
+ipython
 ipdb
 git-review
