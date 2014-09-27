@@ -1,0 +1,91 @@
+HeatTemplateFormatVersion: '2012-12-12'
+
+Description: Tomcat webapp
+
+Parameters:
+  KeyName:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instances
+    Type: String
+    Default: mykey
+
+  InstanceType:
+    Description: WebServer EC2 instance type
+    Type: String
+    Default: m1.heat
+    AllowedValues:
+    - m1.heat
+    - m1.small
+    - m1.medium
+    - m1.large
+    - m1.xlarge
+    ConstraintDescription: must be a valid EC2 instance type.
+  
+  ImageId:
+    Description: the name or uuid of the image in glance
+    Type: String
+    Default: F20-x86_64-cfntools
+
+Resources:
+
+  CfnUser:
+    Type: 'AWS::IAM::User'
+  
+  WebServerKeys:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      UserName: {Ref: CfnUser}
+
+  Instance:
+    Type: AWS::EC2::Instance
+    Metadata:
+      AWS::CloudFormation::Init:
+        config:
+          files:
+            /etc/cfn/cfn-credentials:
+              content:
+                'Fn::Replace':
+                - WebServerKeys: {Ref: WebServerKeys}
+                  WebSecretKey: {'Fn::GetAtt': [WebServerKeys, SecretAccessKey]}
+                - |
+                  AWSAccessKeyId=WebServerKeys
+                  AWSSecretKey=WebSecretKey
+              mode: '000400'
+              owner: root
+              group: root
+          packages:
+            yum:
+              tomcat-webapps: []
+              tomcat-admin-webapps: []
+          services:
+            systemd:
+              tomcat.service:
+                enabled: 'true'
+                ensureRunning: 'true'
+    Properties:
+      ImageId: {Ref: ImageId}
+      InstanceType: {Ref: InstanceType}
+      KeyName: {Ref: KeyName}
+      UserData:
+        Fn::Base64:
+          Fn::Replace:
+          - 'AWS::StackName': {Ref: 'AWS::StackName'}
+            'AWS::Region': {Ref: 'AWS::Region'}
+          - |
+            #!/bin/bash -v
+            /opt/aws/bin/cfn-init -s AWS::StackName -r LaunchConfig --region AWS::Region
+            iptables -I INPUT 1 -p tcp -m tcp --dport 8080 -j ACCEPT
+            appsrc="https://github.com/pshchelo/hello-world-servlet/archive/nodb.tar.gz"
+            app=/var/lib/tomcat/webapps/hello
+            mkdir $app
+            curl -Lk $appsrc | tar xz -C $app --strip-components 1
+            yum -y install java-devel
+            javac -cp /usr/share/tomcat/lib/tomcat-servlet-3.0-api.jar $app/WEB-INF/classes/HelloServlet.java
+            systemctl restart tomcat.service
+
+Outputs:
+  url:
+    Description: The URL of the website
+    Value:
+      Fn::Replace:
+      - IpAddress: {'Fn::GetAtt': [ Instance, PublicIp]}
+      - http://IpAddress:8080/hello/HelloWorld
