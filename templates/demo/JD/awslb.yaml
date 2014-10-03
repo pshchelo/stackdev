@@ -1,17 +1,37 @@
 heat_template_version: 2013-05-23
 
+properties:
+  KeyName:
+    description: Name of an existing EC2 KeyPair to enable SSH access to the instances
+    type: String
+    default: mykey
+
 resources:
+  CfnUser:
+    type: 'AWS::IAM::User'
+  
+  WebServerKeys:
+    type: AWS::IAM::AccessKey
+    properties:
+      UserName: { get_resource: CfnUser}
+
   LoadBalancer:
     type: AWS::ElasticLoadBalancing::LoadBalancer
     properties:
       AvailabilityZones: {'Fn::GetAZs': ''}
       Listeners:
       - LoadBalancerPort: '80'
-        InstancePort: '80'
+        InstancePort: '8080'
         Protocol: HTTP
       HealthCheck:
-        Target: 'HTTP:80/'
+        Target: 'HTTP:8080/'
         HealthyThreshold: '3'
         UnhealthyThreshold: '5'
         Interval: '30'
         Timeout: '5'
+
+outputs:
+
+  LoadBalancerAddress:
+    description: The address of the website
+    value: {get_attr: [LoadBalancer, DNSName]}

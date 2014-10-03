@@ -1,12 +1,15 @@
 HeatTemplateFormatVersion: '2012-12-12'
+
 Description: >
   Tomcat webapp autoscaled by Ceilometer and AWS LoadBalancer.
   Based on https://github.com/openstack/heat-templates/blob/master/cfn/F17/AutoScalingCeilometer.yaml
+
 Parameters:
   KeyName:
     Description: Name of an existing EC2 KeyPair to enable SSH access to the instances
     Type: String
     Default: mykey
+
   InstanceType:
     Description: WebServer EC2 instance type
     Type: String
@@ -38,7 +41,8 @@ Resources:
       MinSize: '1'
       MaxSize: '3'
       LoadBalancerNames:
-      - {Ref: ElasticLoadBalancer}
+      - {Ref: LoadBalancer}
+  
   WebServerScaleUpPolicy:
     Type: AWS::AutoScaling::ScalingPolicy
     Properties:
@@ -46,6 +50,7 @@ Resources:
       AutoScalingGroupName: {Ref: WebServerGroup}
       Cooldown: '60'
       ScalingAdjustment: '1'
+  
   WebServerScaleDownPolicy:
     Type: AWS::AutoScaling::ScalingPolicy
     Properties:
@@ -53,6 +58,7 @@ Resources:
       AutoScalingGroupName: {Ref: WebServerGroup}
       Cooldown: '60'
       ScalingAdjustment: '-1'
+  
   CPUAlarmHigh:
     Type: OS::Ceilometer::Alarm
     Properties:
@@ -66,6 +72,7 @@ Resources:
       - {"Fn::GetAtt": [WebServerScaleUpPolicy, AlarmUrl]}
       matching_metadata: {'metadata.user_metadata.groupname': {Ref: 'WebServerGroup'}}
       comparison_operator: gt
+  
   CPUAlarmLow:
     Type: OS::Ceilometer::Alarm
     Properties:
@@ -79,15 +86,22 @@ Resources:
       - {"Fn::GetAtt": [WebServerScaleDownPolicy, AlarmUrl]}
       matching_metadata: {'metadata.user_metadata.groupname': {Ref: 'WebServerGroup'}}
       comparison_operator: lt
-  ElasticLoadBalancer:
+  
+  LoadBalancer:
     Type: AWS::ElasticLoadBalancing::LoadBalancer
     Properties:
       AvailabilityZones: {'Fn::GetAZs': ''}
       Listeners:
-      - {LoadBalancerPort: '80', InstancePort: '80',
-        Protocol: HTTP}
-      HealthCheck: {Target: 'HTTP:80/', HealthyThreshold: '3',
-        UnhealthyThreshold: '5', Interval: '30', Timeout: '5'}
+      - LoadBalancerPort: '80'
+        InstancePort: '8080'
+        Protocol: HTTP
+      HealthCheck:
+        Target: 'HTTP:8080/'
+        HealthyThreshold: '3'
+        UnhealthyThreshold: '5'
+        Interval: '30'
+        Timeout: '5'
+  
   LaunchConfig:
     Type: AWS::AutoScaling::LaunchConfiguration
     Metadata:
@@ -107,14 +121,13 @@ Resources:
               group: root
           packages:
             yum:
-              git: []
-              java-devel: []
-              tomcat: []
               tomcat-webapps: []
               tomcat-admin-webapps: []
           services:
             systemd:
-              tomcat.service: {enabled: 'true', ensureRunning: 'true'} 
+              tomcat.service:
+                enabled: 'true'
+                ensureRunning: 'true'
     Properties:
       ImageId: {Ref: ImageId}
       InstanceType: {Ref: InstanceType}
@@ -127,17 +140,20 @@ Resources:
           - |
             #!/bin/bash -v
             /opt/aws/bin/cfn-init -s AWS::StackName -r LaunchConfig --region AWS::Region
-            iptables -I INPUT 1 -p tcp -m tcp --dport 80 -j ACCEPT
-            cd /var/lib/tomcat/webapps
-            git clone 'https://github.com/pshchelo/hello-world-servlet.git' hello
-            cd hello
-            git checkout nodb
-            javac -cp /usr/share/tomcat/lib/tomcat-servlet-3.0-api.jar WEB-INF/classes/HelloServlet.java
+            iptables -I INPUT 1 -p tcp -m tcp --dport 8080 -j ACCEPT
+            appsrc="https://github.com/pshchelo/hello-world-servlet/archive/nodb.tar.gz"
+            app=/var/lib/tomcat/webapps/hello
+            mkdir $app
+            curl -Lk $appsrc | tar xz -C $app --strip-components 1
+            yum -y install java-devel
+            javac -cp /usr/share/tomcat/lib/tomcat-servlet-3.0-api.jar $app/WEB-INF/classes/HelloServlet.java
             systemctl restart tomcat.service
+
 Outputs:
+
   URL:
     Description: The URL of the website
     Value:
       Fn::Replace:
-      - IpAddress: {'Fn::GetAtt': [ElasticLoadBalancer, DNSName]}
-      - http://IpAddress/wordpress
+      - IpAddress: {'Fn::GetAtt': [LoadBalancer, DNSName]}
+      - http://IpAddress/hello/HelloWorld
