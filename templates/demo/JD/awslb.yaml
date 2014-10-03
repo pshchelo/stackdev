@@ -1,20 +1,12 @@
 heat_template_version: 2013-05-23
 
-properties:
+parameters:
   KeyName:
     description: Name of an existing EC2 KeyPair to enable SSH access to the instances
-    type: String
+    type: string
     default: mykey
 
 resources:
-  CfnUser:
-    type: 'AWS::IAM::User'
-  
-  WebServerKeys:
-    type: AWS::IAM::AccessKey
-    properties:
-      UserName: { get_resource: CfnUser}
-
   LoadBalancer:
     type: AWS::ElasticLoadBalancing::LoadBalancer
     properties:
@@ -31,7 +23,6 @@ resources:
         Timeout: '5'
 
 outputs:
-
   LoadBalancerAddress:
     description: The address of the website
     value: {get_attr: [LoadBalancer, DNSName]}
