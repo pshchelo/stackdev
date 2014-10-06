@@ -5,6 +5,7 @@ Description: >
   Based on https://github.com/openstack/heat-templates/blob/master/cfn/F17/AutoScalingCeilometer.yaml
 
 Parameters:
+
   KeyName:
     Description: Name of an existing EC2 KeyPair to enable SSH access to the instances
     Type: String
@@ -21,18 +22,22 @@ Parameters:
     - m1.large
     - m1.xlarge
     ConstraintDescription: must be a valid EC2 instance type.
+  
   ImageId:
     Description: the name or uuid of the image in glance
     Type: String
-    Default: F20-x86_64-cfntools
+    Default: TomcatServer
 
 Resources:
+
   CfnUser:
-    Type: 'AWS::IAM::User'
+    Type: AWS::IAM::User
+  
   WebServerKeys:
     Type: AWS::IAM::AccessKey
     Properties:
       UserName: {Ref: CfnUser}
+  
   WebServerGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
@@ -119,10 +124,6 @@ Resources:
               mode: '000400'
               owner: root
               group: root
-          packages:
-            yum:
-              tomcat-webapps: []
-              tomcat-admin-webapps: []
           services:
             systemd:
               tomcat.service:
@@ -145,7 +146,6 @@ Resources:
             app=/var/lib/tomcat/webapps/hello
             mkdir $app
             curl -Lk $appsrc | tar xz -C $app --strip-components 1
-            yum -y install java-devel
             javac -cp /usr/share/tomcat/lib/tomcat-servlet-3.0-api.jar $app/WEB-INF/classes/HelloServlet.java
             systemctl restart tomcat.service
 
