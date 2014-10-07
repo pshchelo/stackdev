@@ -1,0 +1,195 @@
+HeatTemplateFormatVersion: '2012-12-12'
+
+Description: >
+  Tomcat webapp autoscaled by Ceilometer and AWS LoadBalancer backed by Trove DB.
+  Based on https://github.com/openstack/heat-templates/blob/master/cfn/F17/AutoScalingCeilometer.yaml
+
+Parameters:
+
+  KeyName:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instances
+    Type: String
+    Default: mykey
+
+  InstanceType:
+    Description: WebServer EC2 instance type
+    Type: String
+    Default: m1.heat
+    AllowedValues:
+    - m1.heat
+    - m1.small
+    - m1.medium
+    - m1.large
+    - m1.xlarge
+    ConstraintDescription: must be a valid EC2 instance type.
+  
+  ImageId:
+    Description: the name or uuid of the image in glance
+    Type: String
+    Default: TomcatServer
+
+  Proxy:
+    Description: HTTPS proxy address to access Tomcat servlet repo
+    Type: String
+    Default: ""
+
+  DBName:
+    Description: name of the database to create
+    Type: String
+    Default: demo
+
+  DBUser:
+    Description: user that will be created on the database
+    Type: String
+    Default: servlet
+
+  DPPassword:
+    Description: password for the user of the database
+    Type: String
+    Default: secure
+
+Resources:
+
+  CfnUser:
+    Type: AWS::IAM::User
+  
+  WebServerKeys:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      UserName: {Ref: CfnUser}
+  
+  WebServerGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AvailabilityZones: {'Fn::GetAZs': ''}
+      LaunchConfigurationName: {Ref: LaunchConfig}
+      MinSize: '1'
+      MaxSize: '3'
+      LoadBalancerNames:
+      - {Ref: LoadBalancer}
+  
+  WebServerScaleUpPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AdjustmentType: ChangeInCapacity
+      AutoScalingGroupName: {Ref: WebServerGroup}
+      Cooldown: '60'
+      ScalingAdjustment: '1'
+  
+  WebServerScaleDownPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AdjustmentType: ChangeInCapacity
+      AutoScalingGroupName: {Ref: WebServerGroup}
+      Cooldown: '60'
+      ScalingAdjustment: '-1'
+  
+  CPUAlarmHigh:
+    Type: OS::Ceilometer::Alarm
+    Properties:
+      description: Scale-up if the average CPU > 50% for 1 minute
+      meter_name: cpu_util
+      statistic: avg
+      period: '60'
+      evaluation_periods: '1'
+      threshold: '50'
+      alarm_actions:
+      - {"Fn::GetAtt": [WebServerScaleUpPolicy, AlarmUrl]}
+      matching_metadata: {'metadata.user_metadata.groupname': {Ref: 'WebServerGroup'}}
+      comparison_operator: gt
+  
+  CPUAlarmLow:
+    Type: OS::Ceilometer::Alarm
+    Properties:
+      description: Scale-down if the average CPU < 15% for 1 minute
+      meter_name: cpu_util
+      statistic: avg
+      period: '60'
+      evaluation_periods: '1'
+      threshold: '15'
+      alarm_actions:
+      - {"Fn::GetAtt": [WebServerScaleDownPolicy, AlarmUrl]}
+      matching_metadata: {'metadata.user_metadata.groupname': {Ref: 'WebServerGroup'}}
+      comparison_operator: lt
+  
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancing::LoadBalancer
+    Properties:
+      AvailabilityZones: {'Fn::GetAZs': ''}
+      Listeners:
+      - LoadBalancerPort: '80'
+        InstancePort: '8080'
+        Protocol: HTTP
+      HealthCheck:
+        Target: 'HTTP:8080/'
+        HealthyThreshold: '3'
+        UnhealthyThreshold: '5'
+        Interval: '30'
+        Timeout: '5'
+  
+  LaunchConfig:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Metadata:
+      AWS::CloudFormation::Init:
+        config:
+          files:
+            /etc/cfn/cfn-credentials:
+              content:
+                'Fn::Replace':
+                - WebServerKeys: {Ref: WebServerKeys}
+                  WebSecretKey: {'Fn::GetAtt': [WebServerKeys, SecretAccessKey]}
+                - |
+                  AWSAccessKeyId=WebServerKeys
+                  AWSSecretKey=WebSecretKey
+              mode: '000400'
+              owner: root
+              group: root
+          services:
+            systemd:
+              tomcat.service:
+                enabled: 'true'
+                ensureRunning: 'true'
+    Properties:
+      ImageId: {Ref: ImageId}
+      InstanceType: {Ref: InstanceType}
+      KeyName: {Ref: KeyName}
+      UserData:
+        Fn::Base64:
+          Fn::Replace:
+          - 'AWS::StackName': {Ref: 'AWS::StackName'}
+            'AWS::Region': {Ref: 'AWS::Region'}
+            'Proxy': {Ref: Proxy}
+          - |
+            #!/bin/bash -v
+            /opt/aws/bin/cfn-init -s AWS::StackName -r LaunchConfig --region AWS::Region
+            iptables -I INPUT 1 -p tcp -m tcp --dport 8080 -j ACCEPT
+            appsrc="https://github.com/pshchelo/hello-world-servlet/archive/nodb.tar.gz"
+            app=/var/lib/tomcat/webapps/hello
+            mkdir $app
+            export https_proxy=Proxy
+            curl -Lk $appsrc | tar xz -C $app --strip-components 1
+            javac -cp /usr/share/tomcat/lib/tomcat-servlet-3.0-api.jar $app/WEB-INF/classes/HelloServlet.java
+            systemctl restart tomcat.service
+
+  TroveDB:
+    Type: OS::Trove::Instance
+    Properties:
+      availability_zone: {'Fn::GetAZs': ''}
+      name: trovedb
+      flavor: m1.tiny
+      size: 10
+      databases:
+        - name: {Ref: DBName}
+      users:
+      - name: {Ref: DBUser}
+        password: {Ref: DPPassword}
+        databases: [ {Ref: DBName} ]
+
+Outputs:
+
+  URL:
+    Description: The URL of the website
+    Value:
+      Fn::Replace:
+      - IpAddress: {'Fn::GetAtt': [LoadBalancer, DNSName]}
+      - http://IpAddress/hello/HelloWorld
