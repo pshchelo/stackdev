@@ -28,6 +28,11 @@ Parameters:
     Type: String
     Default: TomcatServer
 
+  Proxy:
+    Description: HTTPS proxy address to access Tomcat servlet repo
+    Type: String
+    Default: ""
+
 Resources:
 
   CfnUser:
@@ -138,6 +143,7 @@ Resources:
           Fn::Replace:
           - 'AWS::StackName': {Ref: 'AWS::StackName'}
             'AWS::Region': {Ref: 'AWS::Region'}
+            'Proxy': {Ref: Proxy}
           - |
             #!/bin/bash -v
             /opt/aws/bin/cfn-init -s AWS::StackName -r LaunchConfig --region AWS::Region
@@ -145,6 +151,7 @@ Resources:
             appsrc="https://github.com/pshchelo/hello-world-servlet/archive/nodb.tar.gz"
             app=/var/lib/tomcat/webapps/hello
             mkdir $app
+            export https_proxy=Proxy
             curl -Lk $appsrc | tar xz -C $app --strip-components 1
             javac -cp /usr/share/tomcat/lib/tomcat-servlet-3.0-api.jar $app/WEB-INF/classes/HelloServlet.java
             systemctl restart tomcat.service
