@@ -48,7 +48,7 @@ Resources:
     Properties:
       AvailabilityZones: {'Fn::GetAZs': ''}
       LaunchConfigurationName: {Ref: LaunchConfig}
-      MinSize: '1'
+      MinSize: '2'
       MaxSize: '3'
       LoadBalancerNames:
       - {Ref: LoadBalancer}
