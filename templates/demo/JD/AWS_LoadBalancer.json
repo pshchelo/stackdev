@@ -111,8 +111,8 @@
         "KeyName": { "Ref": "KeyName" },
         "UserData": { "Fn::Base64": { "Fn::Join": ["", [
           "#!/bin/bash -v\n",
-          "# Enable HAProxy in Selinux (see LP bug #1339938)\n",
-          "setsebool -P haproxy_connect_any 1\n",
+          "# Disable SELinux (see LP bug #1339938)\n",
+          "setenforce 0\n",
           "# Helper function\n",
           "function error_exit\n",
           "{\n",
