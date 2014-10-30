@@ -14,8 +14,7 @@ Total time: 60m.
 
   - Templates: 5m
   - Deployment: 3m
-  - Scaling demo: 10m
-  - Ceilometer overview: 10m
+  - Heat + Ceilometer scaling demo: 20m
   - Spare time: 2m
 
 - Trove demo: 10m
@@ -115,3 +114,42 @@ Heat + Ceilometer Demo
 
 Trove
 =====
+
+- List available datastores
+
+  - ``trove datastore-list``
+
+- List available datastore versions
+
+  - ``trove-datastore-version-list mysql``
+
+- Show information about given datastore + version
+
+  - ``trove datastore-version-show <datastore-version-id>``
+  - contains used image, status, packages
+
+- Show available instance flavors
+
+  - ``trove flavor-list``
+
+- Create Trove DB instance (MySQL), get its ID
+
+  - ``trove create mysql_server <flavor-id> --size 2 --datastore mysql``
+  - as it might take some time to spin up, we already pre-created one
+
+- List available Trove instances
+
+  - ``trove list``
+
+- Show details about the database instance to get the IP
+
+  - ``trove show <trove-instance-id>``
+
+- Create a database and a user for it on the instance
+
+  - ``trove database-create <trove-instance-id> demo``
+  - ``trove user-create <trove-instance-id> user password``
+
+- Access the database
+
+  - ``mysql -h<trove-instance-ip> -uuser -ppassword -e " use demo; CREATE TABLE demo (id INT, data VARCHAR(100));"``
