@@ -56,7 +56,7 @@ Heat + Ceilometer Demo
 
   - Limits
 
-    - ``ceilometer sample-list -m cpu_util limit 1``
+    - ``ceilometer sample-list -m cpu_util --limit 1``
 
   - Resource list
 
@@ -77,7 +77,7 @@ Heat + Ceilometer Demo
 - assign a floating ip to one of the webapp vms (just to be able to access it for stress-loading)
 - stress this webapp vm
 
-  - ``ssh ec2-user@vm-ip -i privatekeyfile "stress -c 2 &"``
+  - ``ssh ec2-user@vm-ip -i keyfile "stress -c 2 &"``
 
 - observe a third instance spin up in nova, wait some more for webapp to initialize
 
@@ -110,7 +110,7 @@ Heat + Ceilometer Demo
 
     - specific to a resource
 
-      - ``ceilometer statistics -m cpu_util -q resource_id={loadbalancer_vm_id} -p 60 -f avg``
+      - ``ceilometer statistics -m cpu_util -q resource_id={loadbalancer_vm_id} -p 60 -a avg``
 
 Trove
 =====
@@ -148,8 +148,10 @@ Trove
 - Create a database and a user for it on the instance
 
   - ``trove database-create <trove-instance-id> demo``
-  - ``trove user-create <trove-instance-id> user password``
+  - ``trove user-create <trove-instance-id> user password --host % --databases demo``
 
-- Access the database
+- Access the database - create table, insert into table, read from table
 
   - ``mysql -h<trove-instance-ip> -uuser -ppassword -e " use demo; CREATE TABLE demo (id INT, data VARCHAR(100));"``
+  - ``mysql -h<trove-instance-ip> -uuser -ppassword -e " use demo; INSERT INTO demo VALUES (1,'a');"``
+  - ``mysql -h<trove-instance-ip> -uuser -ppassword -e " use demo; SELECT * FROM demo;"``
