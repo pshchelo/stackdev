@@ -155,3 +155,8 @@ Trove
   - ``mysql -h<trove-instance-ip> -uuser -ppassword -e " use demo; CREATE TABLE demo (id INT, data VARCHAR(100));"``
   - ``mysql -h<trove-instance-ip> -uuser -ppassword -e " use demo; INSERT INTO demo VALUES (1,'a');"``
   - ``mysql -h<trove-instance-ip> -uuser -ppassword -e " use demo; SELECT * FROM demo;"``
+
+- Make and list database backups
+  
+  - ``trove backup-create <backup_name> <instance_id>``
+  - ``trove backup-list``
