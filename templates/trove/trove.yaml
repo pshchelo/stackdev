@@ -64,7 +64,7 @@ resources:
       availability_zone: { get_param: AvailabilityZone }
       flavor: { get_param: Flavor }
       image: { get_param: ImageId }
-      key_name: mykey
+      key_name: demo
       user_data_format: RAW
       user_data:
         get_resource: BaseConfig

@@ -16,7 +16,7 @@ parameters:
     default: cirros-0.3.2-x86_64-uec 
   key:
     type: string
-    default: mykey
+    default: demo
 
 resources:
   my_instance_1:
