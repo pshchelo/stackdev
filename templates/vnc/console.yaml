@@ -1,9 +1,9 @@
 heat_template_version: 2013-05-23
 
-#parameters:
-  #console_type:
-    #type: string
-    #default: novnc
+parameters:
+  console_type:
+    type: string
+    default: xvpvnc
 
 resources:
   server:
@@ -14,4 +14,9 @@ resources:
 
 outputs:
   console:
-    value: { get_attr: [ server, console_url, novnc ] }
+    description: Console for server
+    value:
+      get_attr:
+      - server
+      - console_urls
+      - get_param: console_type
