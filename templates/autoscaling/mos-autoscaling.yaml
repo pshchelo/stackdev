@@ -1,0 +1,73 @@
+heat_template_version: '2013-05-23'
+description: Autoscaling using Ceilometer
+parameters:
+  InstanceType:
+    type: string
+  ImageId:
+    type: string
+  Subnet:
+    type: string
+  KeyName:
+    type: string
+  SecurityGroup:
+    type: string
+resources:
+  AGroup:
+    type: AWS::AutoScaling::AutoScalingGroup
+    properties:
+      AvailabilityZones: {'Fn::GetAZs': ""}
+      LaunchConfigurationName: {Ref: LaunchConfig}
+      MinSize: '1'
+      MaxSize: '2'
+      VPCZoneIdentifier: [{Ref: Subnet}]
+  AScaleUpPolicy:
+    type: AWS::AutoScaling::ScalingPolicy
+    properties:
+      AdjustmentType: ChangeInCapacity
+      AutoScalingGroupName: {Ref: AGroup}
+      Cooldown: '30'
+      ScalingAdjustment: '1'
+  AScaleDownPolicy:
+    type: AWS::AutoScaling::ScalingPolicy
+    properties:
+      AdjustmentType: ChangeInCapacity
+      AutoScalingGroupName: {Ref: AGroup}
+      Cooldown: '30'
+      ScalingAdjustment: '-1'
+  CPUAlarmHigh:
+    type: OS::Ceilometer::Alarm
+    properties:
+      description: Scale-up if the average CPU > 50% for 1 minute
+      meter_name: cpu_util
+      statistic: avg
+      period: '30'
+      evaluation_periods: '1'
+      threshold: '50'
+      alarm_actions:
+      - {get_attr: [AScaleUpPolicy, AlarmUrl]}
+      matching_metadata: {'metadata.user_metadata.groupname': {Ref: 'AGroup'}}
+     comparison_operator: gt
+  CPUAlarmLow:
+    type: OS::Ceilometer::Alarm
+    properties:
+      description: Scale-down if the average CPU < 15% for 1 minute
+      meter_name: cpu_util
+      statistic: avg
+      period: '30'
+      evaluation_periods: '1'
+      threshold: '15'
+      alarm_actions:
+      - {get_attr: [AScaleDownPolicy, AlarmUrl]}
+      matching_metadata: {'metadata.user_metadata.groupname': {Ref: 'AGroup'}}
+      comparison_operator: lt
+  LaunchConfig:
+    type: AWS::AutoScaling::LaunchConfiguration
+    properties:
+      ImageId: {Ref: ImageId}
+      InstanceType: {Ref: InstanceType}
+      KeyName: {Ref: KeyName}
+      SecurityGroups: [{Ref: SecurityGroup}]
+      UserData:
+        Fn::Base64:
+          #!/bin/bash -v
+          touch /tmp/vm_ready.txt
