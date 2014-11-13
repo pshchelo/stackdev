@@ -1,3 +1,4 @@
 #!/usr/bin/env sh
 . ${HOME}/devstack/accrc/demo/demo
 nova keypair-add demo > $HOME/demo.pem
+chmod 600 $HOME/demo.pem
