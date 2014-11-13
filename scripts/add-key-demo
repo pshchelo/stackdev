@@ -1,3 +1,3 @@
 #!/usr/bin/env sh
 . ${HOME}/devstack/accrc/demo/demo
-nova keypair-add --pub-key ~/.ssh/id_rsa.pub mykey
+nova keypair-add demo > $HOME/demo.pem
