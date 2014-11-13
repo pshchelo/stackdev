@@ -1,5 +1,12 @@
 [[local|localrc]]
 
+### NETWORK SETTINGS ###
+#FLOATING_RANGE=192.168.122.112/28
+#FIXED_RANGE=10.0.0.1/24
+#FIXED_NETWORK_SIZE=256
+#FLAT_INTERFACE=eth0
+#EXT_GW_IP=192.168.122.1
+
 ### SET PASSWORDS FOR SERVICES AND USERS ###
 ADMIN_PASSWORD=admin
 MYSQL_PASSWORD=mysql
@@ -21,7 +28,7 @@ SERVICE_TOKEN=tokentoken
 # Fedora 20 x64 cloud image - needed on DevStack Icehouse and older
 #IMAGE_URLS+=",http://dl.fedoraproject.org/pub/alt/openstack/20/x86_64/Fedora-x86_64-20-20140618-sda.qcow2"
 
-### DISABLE/ENABLE INSTALLED SERVICES ###
+### CONFIGURE INSTALLED SERVICES ###
 #
 # Default set of components installed (as of DevStack Icehouse) is:
 # - Nova with Nova-network
@@ -48,3 +55,5 @@ SERVICE_TOKEN=tokentoken
 #enable_service ceilometer-alarm-evaluator,ceilometer-alarm-notifier
 # api services
 #enable_service ceilometer-api
+# set shorter sample collection interval (default is 600)
+#CEILOMETER_PIPELINE_INTERVAL=60
