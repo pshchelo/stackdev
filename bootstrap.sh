@@ -8,7 +8,7 @@ git clone git@github.com:pshchelo/dotfiles.git $DOTFILES
 mkdir -p "$HOME/.config"
 mkdir -p "$HOME/.local/bin"
 sudo apt-get install mc htop ctags
-# create links
+# create links to config files
 ln -s "$DOTFILES/ack/ackrc" "$HOME/.ackrc"
 ln -s "$DOTFILES/git/gitignore_global" "$HOME/.gitignore_global"
 ln -s "$DOTFILES/git/tigrc" "$HOME/.tigrc"
@@ -27,17 +27,14 @@ ln -s "$DOTFILES/powerline" "$HOME/.config/powerline"
 cp "$DOTFILES/git/gitconfig" "$HOME/.gitconfig"
 sed -i 's/shchelokovskyy@gmail/pshchelokovskyy@mirantis/' "$HOME/.gitconfig"
 
-#mkdir -p "$HOME/.config/mc"
-#ln -s "$DOTFILES/colors/mc-solarized" "$HOME/.config/mc/mc-solarized"
-
 # install Python packages in local user location
 pip install --user -r dev-requirements.txt
 
-# download and install Ack standalone script
-curl http://beyondgrep.com/ack-2.14-single-file > $ack_bin && chmod 0755 $ack_bin
-chmod 0755 "$HOME/.local/bin/ack"
-# create link to Tig binary
+Make links to scripts/binaries
 ln -s "$DOTFILES/bin/tig-2.0.3_x64" "$HOME/.local/bin/tig"
+ln -s "$DOTFILES/scripts/ack" "$HOME/.local/bin/ack"
+ln -s "$DOTFILES/scripts/ppclean" "$HOME/.local/bin/ppclean"
+ln -s "$DOTFILES/scripts/dtestr" "$HOME/.local/bin/dtestr"
 
 # create ipython profile to hold custom settings
 #"$HOME/.local/bin/ipython" profile create
