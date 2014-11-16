@@ -1,5 +1,13 @@
 heat_template_version: 2013-05-23
 
+description: |
+  Test Heat autoscaling based on Ceilometer metering and alarms.
+  VM is a standard minimal Cirros image.
+  Load vm with
+  ssh cirros@floating-ip -i key-file "cat /dev/urandom | gzip -9 > /dev/null &"
+  release load with
+  ssh cirros@floating-ip -i key-file "kill -9 \$(ps -ef | grep 'cat /dev/urandom' | grep -v grep | awk '{print \$1}')"
+
 parameters:
   KeyName:
     type: string
