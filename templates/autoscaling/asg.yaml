@@ -20,7 +20,7 @@ parameters:
     default: TestVM
   SecurityGroup:
     type: string
-    default: ostf
+    default: demo
   Subnet:
     type: string
     default: private
