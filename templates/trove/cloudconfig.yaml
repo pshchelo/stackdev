@@ -3,10 +3,13 @@ description: Instance creation template for {{datastore_manager}}
 parameters:
   Flavor:
     type: string
-    default: m1.nano
+    default: m1.heat
+  Key:
+    type: string
+    default: demo
   ImageId:
     type: string
-    default: cirros-0.3.2-x86_64-uec 
+    default: Fedora-x86_64-20-20140618-sda
   AvailabilityZone:
     type: string
     default: nova
@@ -15,6 +18,12 @@ parameters:
     default: SomeMoreData
 
 resources:
+
+  #Port:
+    #type: OS::Neutron::Port
+    #properties:
+      #network: private
+
   BaseConfig:
     type: OS::Heat::CloudConfig
     properties:
@@ -22,18 +31,42 @@ resources:
         write_files:
         - path: /etc/check.conf
           owner: root:root
-          mode: '000644'
-          content: |
-            [DEFAULT]
-            param = { get_param: userparam }
-        runcmd:
-          sudo cat /etc/check.conf > /etc/root-was-here
+          permissions: '0644'
+          content: "cloud-init was here"
+            #str_replace:
+              #template: |
+                #[DEFAULT]
+                #param = $USERPARAM
+              #params:
+                #$USERPARAM: { get_param: userparam }
+        #runcmd:
+          #cp /etc/check.conf > /etc/root-was-here
+          #whoami \> ~/whoami.txt
 
   BaseInstance:
     type: OS::Nova::Server
     properties:
       image: { get_param: ImageId }
       flavor: { get_param: Flavor }
+      key_name: { get_param: Key }
       availability_zone: { get_param: AvailabilityZone }
+      #networks:
+        #- port: { get_resource: Port }
+      user_data_format: RAW
       user_data: { get_resource: BaseConfig }
 
+  #FloatIP:
+    #type: OS::Neutron::FloatingIP
+    #properties:
+      #floating_network: public
+
+  #FloatIPassoc:
+    #type: OS::Neutron::FloatingIPAssociation
+    #properties:
+      #floatingip_id: { get_resource: FloatIP }
+      #port_id: { get_resource: Port }
+
+#outputs:
+  #floatip:
+    #description: assigned addresses
+    #value: { get_attr: [ BaseInstance, addresses ] }
