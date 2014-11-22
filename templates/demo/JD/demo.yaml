@@ -164,3 +164,9 @@ Outputs:
       Fn::Replace:
       - IpAddress: {'Fn::GetAtt': [LoadBalancer, DNSName]}
       - http://IpAddress/hello/HelloWorld
+  ScaleUpHook:
+    Description: to scale up just make an empty POST request here
+    Value: {"Fn::GetAtt": [WebServerScaleUpPolicy, AlarmUrl]}
+  ScaleDownHook:
+    Description: to scale down just make an empty POST request here
+    Value: {"Fn::GetAtt": [WebServerScaleDownPolicy, AlarmUrl]}
