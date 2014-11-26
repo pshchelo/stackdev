@@ -112,10 +112,20 @@ Heat + Ceilometer Demo
     - specific to a resource
 
       - ``ceilometer statistics -m cpu_util -q resource_id={loadbalancer_vm_id} -p 60 -a avg``
-    
+
     - filtered by other field e.g. only servers from our autoscaling group
-      
+
       - ``ceilometer statistics -m cpu_util -q metadata.user_metadata.groupname={group-identity} -p 6000 -a avg``
+
+- Heat - manual scaling
+
+  - show stack outputs
+
+    - ``heat output-show asg ScaleUpHook``
+
+  - manually trigger scaling up
+
+    - ``curl -X POST {url-of-the-scale-up-hook}``
 
 
 Trove
