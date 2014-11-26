@@ -63,7 +63,8 @@ Heat + Ceilometer Demo
     - ``ceilometer resource-list``
     - Choose one resource id
 
-      - ``ceilometer resource-show {resource_id}``
+      - ``ceilometer resource-show -r {id-of-tomcat-server}``
+      - note the ``user_metadata.groupname`` field
 
   - Alarms
 
@@ -71,32 +72,32 @@ Heat + Ceilometer Demo
 
     - Choose id of one alarm
 
-      - ``ceilometer alarm-show {alarm_id}``
-      - ``ceilometer alarm-history {alarm_id}``
+      - ``ceilometer alarm-show -a {alarm_id}``
 
 - assign a floating ip to one of the webapp vms (just to be able to access it for stress-loading)
-- stress this webapp vm
+- stress this webapp vm and check that load is applied
 
-  - ``ssh ec2-user@vm-ip -i keyfile "stress -c 2 &"``
-
-- observe a third instance spin up in nova, wait some more for webapp to initialize
+  - ``ssh ec2-user@vm-ip -i {keyfile} "stress -c 2 &"``
+  - ``ssh ec2-user@vm-ip -i {keyfile} "top -b | head"``
 
 - Ceilometer
 
-  - list samples from the stressed vm:
+  - list CPU usage samples from the servers in the autoscaling group:
 
-    - ``ceilometer sample-list -m cpu_util -q resource_id={stressed_vm_id} --limit 10``
+    - ``ceilometer sample-list -m cpu_util -q metadata.user_metadata.groupname={group-identity} --limit 10``
 
   - confirm that alarm went off
 
     - ``ceilometer alarm-list``
     - ``ceilometer alarm-show -a {CPUhighAlarm_id}``
+    - ``ceilometer alarm-history -a {CPUhighAlarm_id}``
 
+- observe a third instance spin up in nova, wait some more for webapp to initialize
 - keep accessing the webapp via load balancer
 - observe the host name of the third vm appear in webapp
 - release stress from the vm
 
-  - ``ssh ec2-user@vm-ip -i keyfile "pkill stress"``
+  - ``ssh ec2-user@vm-ip -i {keyfile} "pkill stress"``
 
 - observe vm disappearing from nova
 - Ceilometer
@@ -111,6 +112,11 @@ Heat + Ceilometer Demo
     - specific to a resource
 
       - ``ceilometer statistics -m cpu_util -q resource_id={loadbalancer_vm_id} -p 60 -a avg``
+    
+    - filtered by other field e.g. only servers from our autoscaling group
+      
+      - ``ceilometer statistics -m cpu_util -q metadata.user_metadata.groupname={group-identity} -p 6000 -a avg``
+
 
 Trove
 =====
@@ -121,11 +127,11 @@ Trove
 
 - List available datastore versions
 
-  - ``trove-datastore-version-list mysql``
+  - ``trove-datastore-version-list {datastore-name}``
 
 - Show information about given datastore + version
 
-  - ``trove datastore-version-show <datastore-version-id>``
+  - ``trove datastore-version-show {datastore-version-id}``
   - contains used image, status, packages
 
 - Show available instance flavors
@@ -134,7 +140,7 @@ Trove
 
 - Create Trove DB instance (MySQL), get its ID
 
-  - ``trove create mysql_server <flavor-id> --size 2 --datastore mysql``
+  - ``trove create mysql_server {flavor-id} --datastore mysql``
   - as it might take some time to spin up, we already pre-created one
 
 - List available Trove instances
@@ -143,20 +149,15 @@ Trove
 
 - Show details about the database instance to get the IP
 
-  - ``trove show <trove-instance-id>``
+  - ``trove show {trove-instance-id}``
 
 - Create a database and a user for it on the instance
 
-  - ``trove database-create <trove-instance-id> demo``
-  - ``trove user-create <trove-instance-id> user password --host % --databases demo``
+  - ``trove database-create {trove-instance-id} demo``
+  - ``trove user-create {trove-instance-id} user password --host % --databases demo``
 
 - Access the database - create table, insert into table, read from table
 
-  - ``mysql -h<trove-instance-ip> -uuser -ppassword -e " use demo; CREATE TABLE demo (id INT, data VARCHAR(100));"``
-  - ``mysql -h<trove-instance-ip> -uuser -ppassword -e " use demo; INSERT INTO demo VALUES (1,'a');"``
-  - ``mysql -h<trove-instance-ip> -uuser -ppassword -e " use demo; SELECT * FROM demo;"``
-
-- Make and list database backups
-  
-  - ``trove backup-create <backup_name> <instance_id>``
-  - ``trove backup-list``
+  - ``mysql -h{trove-instance-ip} -uuser -ppassword -e " use demo; CREATE TABLE demo (id INT, data VARCHAR(100));"``
+  - ``mysql -h{trove-instance-ip} -uuser -ppassword -e " use demo; INSERT INTO demo VALUES (1,'a');"``
+  - ``mysql -h{trove-instance-ip} -uuser -ppassword -e " use demo; SELECT * FROM demo;"``
