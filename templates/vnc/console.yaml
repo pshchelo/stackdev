@@ -3,13 +3,13 @@ heat_template_version: 2013-05-23
 parameters:
   console_type:
     type: string
-    default: xvpvnc
+    default: novnc
 
 resources:
   server:
     type: OS::Nova::Server
     properties:
-      image: cirros-0.3.2-x86_64-uec
+      image: TestVM
       flavor: m1.nano
 
 outputs:
@@ -19,4 +19,4 @@ outputs:
       get_attr:
       - server
       - console_urls
-      - get_param: console_type
+      #- get_param: console_type
