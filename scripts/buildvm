@@ -1,0 +1,5 @@
+#! /usr/bin/env sh
+PKGS="haproxy,socat,cronie,python-psutil"
+cp "$1" "$1.orig"
+virt-customize -a $1 --update --install $PKGS
+virt-customize -a $1 --selinux-relabel --no-network
