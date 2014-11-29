@@ -19,11 +19,6 @@ parameters:
 
 resources:
 
-  #Port:
-    #type: OS::Neutron::Port
-    #properties:
-      #network: private
-
   BaseConfig:
     type: OS::Heat::CloudConfig
     properties:
@@ -32,16 +27,15 @@ resources:
         - path: /etc/check.conf
           owner: root:root
           permissions: '0644'
-          content: "cloud-init was here"
-            #str_replace:
-              #template: |
-                #[DEFAULT]
-                #param = $USERPARAM
-              #params:
-                #$USERPARAM: { get_param: userparam }
-        #runcmd:
-          #cp /etc/check.conf > /etc/root-was-here
-          #whoami \> ~/whoami.txt
+          content:
+            str_replace:
+              template: |
+                [DEFAULT]
+                param = $USERPARAM
+              params:
+                $USERPARAM: { get_param: userparam }
+        runcmd:
+          whoami > /home/fedora/whowasi.txt
 
   BaseInstance:
     type: OS::Nova::Server
@@ -50,23 +44,5 @@ resources:
       flavor: { get_param: Flavor }
       key_name: { get_param: Key }
       availability_zone: { get_param: AvailabilityZone }
-      #networks:
-        #- port: { get_resource: Port }
       user_data_format: RAW
       user_data: { get_resource: BaseConfig }
-
-  #FloatIP:
-    #type: OS::Neutron::FloatingIP
-    #properties:
-      #floating_network: public
-
-  #FloatIPassoc:
-    #type: OS::Neutron::FloatingIPAssociation
-    #properties:
-      #floatingip_id: { get_resource: FloatIP }
-      #port_id: { get_resource: Port }
-
-#outputs:
-  #floatip:
-    #description: assigned addresses
-    #value: { get_attr: [ BaseInstance, addresses ] }
