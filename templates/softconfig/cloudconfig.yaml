@@ -1,5 +1,5 @@
 heat_template_version: 2013-05-23
-description: Instance creation template for {{datastore_manager}}
+description: Test for CloudConfig resource
 parameters:
   Flavor:
     type: string
@@ -13,11 +13,22 @@ parameters:
   AvailabilityZone:
     type: string
     default: nova
+  PublicNet:
+    type: string
+    default: public
+  PrivateNet:
+    type: string
+    default: private
   userparam:
     type: string
     default: SomeMoreData
 
 resources:
+
+  Port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: PrivateNet }
 
   BaseConfig:
     type: OS::Heat::CloudConfig
@@ -35,7 +46,7 @@ resources:
               params:
                 $USERPARAM: { get_param: userparam }
         runcmd:
-          whoami > /home/fedora/whowasi.txt
+          - whoami > /home/fedora/whowasi.txt
 
   BaseInstance:
     type: OS::Nova::Server
@@ -44,5 +55,23 @@ resources:
       flavor: { get_param: Flavor }
       key_name: { get_param: Key }
       availability_zone: { get_param: AvailabilityZone }
+      networks:
+        - port: { get_resource: Port }
       user_data_format: RAW
       user_data: { get_resource: BaseConfig }
+
+  FloatIP:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network: { get_param: PublicNet }
+
+  FloatIPassoc:
+    type: OS::Neutron::FloatingIPAssociation
+    properties:
+      floatingip_id: { get_resource: FloatIP }
+      port_id: { get_resource: Port }
+
+outputs:
+  PublicIP:
+    description: Public IP of the instance
+    value: { get_attr: [ BaseInstance,  networks, { get_param: PrivateNet }, 1 ] }
