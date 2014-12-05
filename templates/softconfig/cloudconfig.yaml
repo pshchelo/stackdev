@@ -1,22 +1,22 @@
 heat_template_version: 2013-05-23
 description: Test for CloudConfig resource
 parameters:
-  Flavor:
+  flavor:
     type: string
     default: m1.heat
-  Key:
+  key:
     type: string
     default: demo
-  ImageId:
+  image:
     type: string
     default: F20-x86_64-cfntools
-  AvailabilityZone:
+  availability_zone:
     type: string
     default: nova
-  PublicNet:
+  public_net:
     type: string
     default: public
-  PrivateNet:
+  private_net:
     type: string
     default: private
   userparam:
@@ -25,12 +25,12 @@ parameters:
 
 resources:
 
-  Port:
+  port:
     type: OS::Neutron::Port
     properties:
-      network: { get_param: PrivateNet }
+      network: { get_param: private_net }
 
-  BaseConfig:
+  server_config:
     type: OS::Heat::CloudConfig
     properties:
       cloud_config:
@@ -48,30 +48,30 @@ resources:
         runcmd:
           - whoami > /home/fedora/whowasi.txt
 
-  BaseInstance:
+  server:
     type: OS::Nova::Server
     properties:
-      image: { get_param: ImageId }
-      flavor: { get_param: Flavor }
-      key_name: { get_param: Key }
-      availability_zone: { get_param: AvailabilityZone }
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key }
+      availability_zone: { get_param: availability_zone }
       networks:
-        - port: { get_resource: Port }
+        - port: { get_resource: port }
       user_data_format: RAW
-      user_data: { get_resource: BaseConfig }
+      user_data: { get_resource: server_config }
 
-  FloatIP:
+  float_ip:
     type: OS::Neutron::FloatingIP
     properties:
-      floating_network: { get_param: PublicNet }
+      floating_network: { get_param: public_net }
 
-  FloatIPassoc:
+  float_ip_assoc:
     type: OS::Neutron::FloatingIPAssociation
     properties:
-      floatingip_id: { get_resource: FloatIP }
-      port_id: { get_resource: Port }
+      floatingip_id: { get_resource: float_ip }
+      port_id: { get_resource: port }
 
 outputs:
-  PublicIP:
+  public_ip:
     description: Public IP of the instance
-    value: { get_attr: [ BaseInstance,  networks, { get_param: PrivateNet }, 1 ] }
+    value: { get_attr: [ float_ip, floating_ip_address ] }
