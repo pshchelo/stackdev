@@ -7,7 +7,7 @@ parameters:
   key_name:
     type: string
     description: SSH key to inject into instances
-    default: mykey
+    default: demo
   image:
     type: string
     description: Image to boot instances from

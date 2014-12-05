@@ -9,7 +9,7 @@ parameters:
     default: 487c48b6-459f-4324-abcc-36c725c0d422
   KeyName:
     type: string
-    default: mykey 
+    default: demo
   SecurityGroup:
     type: string
     default: ostf

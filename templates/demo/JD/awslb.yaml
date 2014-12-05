@@ -4,7 +4,7 @@ parameters:
   KeyName:
     description: Name of an existing EC2 KeyPair to enable SSH access to the instances
     type: string
-    default: mykey
+    default: demo
 
 resources:
   LoadBalancer:
