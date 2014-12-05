@@ -10,7 +10,7 @@ resources:
   server:
     type: OS::Nova::Server
     properties:
-      image: cirros-0.3.2-x86_64-uec
+      image: TestVM
       flavor: 'm1.nano'
       networks:
         - network: { get_resource: my_net }
