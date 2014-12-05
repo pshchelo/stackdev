@@ -1,9 +1,19 @@
-#! /usr/bin/env sh
-testvm_url="http://download.cirros-cloud.net/0.3.3/cirros-0.3.3-x86_64-disk.img"
-f20cloud_url="http://archive.fedoraproject.org/pub/alt/openstack/20/x86_64/Fedora-x86_64-20-20140618-sda.qcow2"
-# Add latest Cirros amd64 qcow2 as public 'TestVM" image
-. $HOME/devstack/accrc/admin/admin
-glance image-create --progress --name TestVM --disk-format qcow2 --container-format bare --is-public True --location $testvm_url
+# My default local.conf already loads Cirros qcow2 image instead of UEC ones,
+# and Heat loads Fedora20 image, but Heat's AWS load balancer expects different name,
+# so I like them images all renamed.
+
+# Get and rename the Cirros qcow2 image
+testvm=$(glance image-list --disk-format qcow2 | awk 'NR>2 {print $4}'| grep cirros)
+if [ -n "$testvm" ]; then
+    glance image-update $testvm --name TestVM --property description=$testvm
+fi
+
+# Get and rename Fedora20 image
+fedora20=$(glance image-list --disk-format qcow2 | awk 'NR>2 {print $4}' | grep Fedora.*20)
+if [ -n "$fedora20" ]; then
+    glance image-update $fedora20 --name F20-x86_64-cfntools --property description=$fedora20
+fi
+
 # Create passwordless ssh key to access VMs
 . $HOME/devstack/accrc/demo/demo
 nova keypair-add demo > $HOME/demo.pem
