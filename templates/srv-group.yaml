@@ -1,0 +1,49 @@
+heat_template_version: 2013-05-23
+
+description: >
+  HOT template that defines group of compute instances.
+
+parameters:
+  flavor:
+    type: string
+    description: Instance type for the instance to be created
+    default: m1.nano
+    constraints:
+      - allowed_values: [m1.nano, m1.micro, m1.tiny, m1.small, m1.heat]
+  image:
+    type: string
+    description: name of the image to use for the instance
+    default: TestVM 
+  key:
+    type: string
+    description: SSH key that will be used to access instances
+    default: demo
+  size:
+    type: number
+    description: Number of instances to deploy
+    default: 1
+  update_flavor:
+    type: string
+    description: How to update the flavor of instances
+    default: RESIZE
+    constraints:
+      - allowed_values: [RESIZE, REPLACE]
+
+resources:
+
+  srv_group:
+    type: OS::Heat::ResourceGroup
+    properties:
+      count: { get_param: size }
+      resource_def:
+        type: OS::Nova::Server
+        properties:
+          image: { get_param: image }
+          flavor: { get_param: flavor }
+          key_name: { get_param: key }
+          flavor_update_policy: { get_param: update_flavor }
+
+outputs:
+  srv_ips:
+    description: Private IP addresses of the deployed instances
+    value: { get_attr: [srv_group, first_address] }
