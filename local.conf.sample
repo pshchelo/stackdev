@@ -6,6 +6,7 @@
 #FIXED_NETWORK_SIZE=256
 #FLAT_INTERFACE=eth0
 #EXT_GW_IP=192.168.122.1
+#HOST_IP=192.168.100.127
 
 ### SET PASSWORDS FOR SERVICES AND USERS ###
 ADMIN_PASSWORD=admin
@@ -25,30 +26,36 @@ SERVICE_TOKEN=tokentoken
 #VOLUME_BACKING_FILE_SIZE=41000M
 
 # Add more images to Glance
-# Fedora 20 x64 cloud image - needed on DevStack Icehouse and older
-#IMAGE_URLS+=",http://dl.fedoraproject.org/pub/alt/openstack/20/x86_64/Fedora-x86_64-20-20140618-sda.qcow2"
+# Use CirrOS qcow2 image instead of UEC ones
+IMAGE_URLS="http://download.cirros-cloud.net/0.3.3/cirros-0.3.3-x86_64-disk.img"
 
 ### CONFIGURE INSTALLED SERVICES ###
 #
-# Default set of components installed (as of DevStack Icehouse) is:
+# Default set of components installed (as of DevStack Juno) is:
 # - Nova with Nova-network
 # - Keystone
 # - Glance
-# - Cinder
+# - Cinder with LVM backend
 # - Heat
 # - Horizon
 
+### HORIZON ###
+#
 # disable Horizon (Dashboard)
 #disable_service horizon
 
+### NEUTRON ###
+#
 # disable Nova-network and enable Neutron
 #disable_service n-net
 #enable_service q-svc q-agt q-dhcp q-l3 q-meta q-metering q-lbaas neutron
 
-# enable Sahara
+### SAHARA ###
+#
 #enable_service sahara
 
-# enable Ceilometer
+### CEILOMETER ###
+#
 # metering services
 #enable_service ceilometer-acompute ceilometer-acentral ceilometer-anotification ceilometer-collector
 # alarming services
@@ -57,3 +64,14 @@ SERVICE_TOKEN=tokentoken
 #enable_service ceilometer-api
 # set shorter sample collection interval (default is 600)
 #CEILOMETER_PIPELINE_INTERVAL=60
+
+### SWIFT ###
+#
+#enable_service s-proxy s-object s-container s-account
+# set swift hash - the hash below is result of
+# echo "SWIFT_HASH" | md5sum | awk '{print $1}'
+#SWIFT_HASH=096d08da4f8d4cce3a724c5f6c18f055
+
+### TROVE ###
+#
+#enable_service trove,tr-api,tr-tmgr,tr-cond
