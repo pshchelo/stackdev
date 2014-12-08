@@ -1,6 +1,14 @@
+# TODO: rewrite (parts of this) as Python script using client's Python APIs
+
 # My default local.conf already loads Cirros qcow2 image instead of UEC ones,
 # and Heat loads Fedora20 image, but Heat's AWS load balancer expects different name,
 # so I like them images all renamed.
+
+if [ -n $1 ]; then
+    netbackend=$1
+else
+    netbackend='neutron'
+fi
 
 . /opt/stack/devstack/accrc/admin/admin
 # Get and rename the Cirros qcow2 image
@@ -19,6 +27,18 @@ fi
 . /opt/stack/devstack/accrc/demo/demo
 nova keypair-add demo > $HOME/demo.pem
 chmod 600 $HOME/demo.pem
+
+# add Google's DNS server fo default subnet so that package managers
+# can work from inside guests
+if [$netbackend == 'neutron']; then
+    subnet=$(neutron subnet-list | grep start | awk -F "|" '{print $2}' | tr -d ' ')
+    neutron subnet-update $subnet --dns-nameserver 8.8.8.8
+    neutron subnet-show $subnet
+fi
+
+# TODO: add change similar net change for nova-network if needed
+
+# TODO: add fixing default security group
 
 glance image-list
 nova keypair-list
