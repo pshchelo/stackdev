@@ -39,6 +39,9 @@ IMAGE_URLS="http://download.cirros-cloud.net/0.3.3/cirros-0.3.3-x86_64-disk.img"
 # - Heat
 # - Horizon
 
+# Set libraries that will be installed from git and not PyPI
+LIBS_FROM_GIT=python-heatclient
+
 ### HORIZON ###
 #
 # disable Horizon (Dashboard)
