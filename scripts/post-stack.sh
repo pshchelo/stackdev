@@ -2,6 +2,7 @@
 # and Heat loads Fedora20 image, but Heat's AWS load balancer expects different name,
 # so I like them images all renamed.
 
+. /opt/stack/devstack/accrc/admin/admin
 # Get and rename the Cirros qcow2 image
 testvm=$(glance image-list --disk-format qcow2 | awk 'NR>2 {print $4}'| grep cirros)
 if [ -n "$testvm" ]; then
@@ -15,7 +16,7 @@ if [ -n "$fedora20" ]; then
 fi
 
 # Create passwordless ssh key to access VMs
-. $HOME/devstack/accrc/demo/demo
+. /opt/stack/devstack/accrc/demo/demo
 nova keypair-add demo > $HOME/demo.pem
 chmod 600 $HOME/demo.pem
 
