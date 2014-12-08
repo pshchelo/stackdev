@@ -1,0 +1,55 @@
+heat_template_version: 2014-10-16
+
+description:  AWS Load Balancer balancing HTTP connections
+
+parameters:
+  
+  KeyName:
+    type: string
+    default: demo
+
+  image:
+    type: string
+    default: F20-x86_64-cfntools
+
+  flavor:
+    type: string
+    default: m1.heat
+
+resources:
+
+  config:
+    type: AWS::AutoScaling::LaunchConfiguration
+    properties:
+      KeyName: { get_param: KeyName }
+      ImageId: { get_param: image }
+      InstanceType: { get_param: flavor }
+      UserData: |
+          #!/bin/bash -v
+          cat /etc/hostname > hostname
+          python -m SimpleHTTPServer
+
+  group:
+    type: OS::Heat::InstanceGroup
+    properties:
+      AvailabilityZones:
+        - nova
+      LaunchConfigurationName: { get_resource: config }
+      LoadBalancerNames:
+        - get_resource: aws_lb
+      Size: 2
+
+  aws_lb:
+    type: AWS::ElasticLoadBalancing::LoadBalancer
+    properties:
+      AvailabilityZones:
+        - nova
+      Listeners:
+      - LoadBalancerPort: '8000'
+        InstancePort: '8000'
+        Protocol: HTTP
+
+outputs:
+  lbref:
+    description: in-template handle to load balancer
+    value: {get_resource: aws_lb }
