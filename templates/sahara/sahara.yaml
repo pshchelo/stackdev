@@ -1,27 +1,81 @@
-heat_template_version: 2013-05-23
+heat_template_version: 2014-10-16
+#heat_template_version: 2013-05-23
 
-description: Sahara Resources
+description: Sahara resources - Templates and Cluster
+
+parameters:
+
+  flavor:
+    type: string
+    description: Flavor for use in cluster instances
+    default: m1.micro
+
+  image:
+    type: string
+    description: Image must have fully functional cloud-init
+    default: ubuntu-trusty
+  
+  key:
+    type: string
+    description: SSH key to access cluster instances
+    default: demo
+
+  plugin:
+    type: string
+    description: type of hadoop plugin to use
+    default: fake
+
+  version:
+    type: string
+    description: version of hadoop plugin to use
+    default: '0.1'
+
+  public_net:
+    type: string
+    description: public ip neutron network / nova-network floating ip pool
+    default: public
+
+  private_net:
+    type: string
+    description: private neutron network to create the cluster in
+    default: private
 
 resources:
-  NodeGroupTmpl:
+  
+  fake_ng_tmpl:
     type: OS::Sahara::NodeGroupTemplate
     properties:
-      plugin_name: vanilla
-      hadoop_version: 2.3.0
-      flavor: m1.nano
-      floating_ip_pool: public  
+      name: fake-ng-tmpl
+      plugin_name: { get_param: plugin }
+      hadoop_version: { get_param: version }
+      flavor: { get_param: flavor }
       node_processes:
-      - namenode
-      - resourcemanager
-
-  ClusterTmpl:
+        - namenode
+        #- datanode
+        #- jobtracker
+        #- tasktracker
+        #- resourcemanager
+      floating_ip_pool: { get_param: public_net }
+  
+  fake_ct_tmpl:
     type: OS::Sahara::ClusterTemplate
     properties:
-      name: I_am_not_valid
-      plugin_name: vanilla
-      hadoop_version: 2.3.0
-      neutron_management_network: private
+      name: fake-ct-tmpl
+      plugin_name: { get_param: plugin }
+      hadoop_version: { get_param: version }
       node_groups:
-      - name: group1
-        count: 2
-        node_group_template_id: { get_resource: NodeGroupTmpl }
+        - count: 1
+          name: fake-ng
+          node_group_template_id: { get_resource: fake_ng_tmpl }
+      neutron_management_network: { get_param: private_net }
+  
+  fake_cluster:
+    type: OS::Sahara::Cluster
+    properties:
+      name: fake-cluster
+      plugin_name: { get_param: plugin }
+      hadoop_version: { get_param: version }
+      cluster_template_id: { get_resource: fake_ct_tmpl }
+      image: { get_param: image }
+      key_name: { get_param: key }
+      neutron_management_network: { get_param: private_net }

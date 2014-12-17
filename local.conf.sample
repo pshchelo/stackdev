@@ -56,6 +56,12 @@ LIBS_FROM_GIT=python-heatclient
 ### SAHARA ###
 #
 #enable_service sahara
+#
+# Sahara needs (even for a 'fake' plugin) an image with 
+# - fully functional cloud-init (no stock CirrOS)
+# - no-tty sudo over SSH (no stock cloud Fedora)
+# so add the latest Ubuntu Trusty amd64 cloud image
+#IMAGE_URLS+=",https://cloud-images.ubuntu.com/releases/trusty/release/ubuntu-14.04-server-cloudimg-amd64-disk1.img"
 
 ### CEILOMETER ###
 #
