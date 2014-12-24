@@ -10,11 +10,23 @@ parameters:
 
   image:
     type: string
-    default: F20-x86_64-cfntools
+    default: Fedora-x86_64-20-20140618-sda
 
   flavor:
     type: string
     default: m1.heat
+
+  size:
+    type: number
+    default: 2
+
+  port_lb:
+    type: string
+    default: '80'
+
+  port_app:
+    type: string
+    default: '8000'
 
 resources:
 
@@ -24,10 +36,15 @@ resources:
       KeyName: { get_param: KeyName }
       ImageId: { get_param: image }
       InstanceType: { get_param: flavor }
-      UserData: |
-          #!/bin/bash -v
-          cat /etc/hostname > hostname
-          python -m SimpleHTTPServer
+      UserData:
+        str_replace:
+          template: |
+            #!/bin/bash -v
+            echo $(hostname) > index.html
+            echo $(hostname -i) >> index.html
+            python -m SimpleHTTPServer PORT
+          params:
+            PORT: { get_param: port_app }
 
   group:
     type: OS::Heat::InstanceGroup
@@ -35,9 +52,8 @@ resources:
       AvailabilityZones:
         - nova
       LaunchConfigurationName: { get_resource: config }
-      LoadBalancerNames:
-        - get_resource: aws_lb
-      Size: 2
+      LoadBalancerNames: [ { get_resource: aws_lb }, ]
+      Size: { get_param: size }
 
   aws_lb:
     type: AWS::ElasticLoadBalancing::LoadBalancer
@@ -45,11 +61,16 @@ resources:
       AvailabilityZones:
         - nova
       Listeners:
-      - LoadBalancerPort: '8000'
-        InstancePort: '8000'
-        Protocol: HTTP
+        - LoadBalancerPort: { get_param: port_lb }
+          InstancePort: { get_param: port_app }
+          Protocol: HTTP
 
 outputs:
-  lbref:
-    description: in-template handle to load balancer
-    value: {get_resource: aws_lb }
+  app:
+    description: loadbalanced app URL
+    value:
+      str_replace:
+        template: http://IPADDRESS:PORT
+        params:
+          IPADDRESS: { get_attr: [ aws_lb, DNSName ] }
+          PORT: { get_param: port_lb }
