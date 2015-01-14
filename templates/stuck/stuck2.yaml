@@ -1,0 +1,12 @@
+heat_template_version: 2014-10-16
+
+resources:
+  first:
+    type: OS::Test::StuckUpdate
+    properties:
+      data: old
+
+  second:
+    type: OS::Test::StuckUpdate
+    properties:
+      data: old
