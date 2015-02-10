@@ -17,13 +17,17 @@ parameters:
   image:
     type: string
     description: Image name
-    default: TestVM
+    default: cirros-0.3.2-x86_64-uec
   flavor:
     type: string
     description: Flavor
     default: m1.nano
     constraints:
-      - allowed_values: [m1.nano,m1.heat,m1.tiny,m1.small]
+      - allowed_values:
+        - m1.nano
+        - m1.heat
+        - m1.tiny
+        - m1.small
   public_net:
     type: string
     description: Name or ID of the external network
@@ -49,7 +53,8 @@ resources:
     type: OS::Neutron::Port
     properties:
       network: { get_param: private_net }
-      security_groups: [{ get_resource: server_security_group }]
+      security_groups:
+        - get_resource: server_security_group
 
   server_floating_ip:
     type: OS::Neutron::FloatingIP
@@ -73,7 +78,13 @@ resources:
 outputs:
   server_private_ip:
     description: IP address of server on private network
-    value: { get_attr: [ server, first_address ] }
+    value:
+      get_attr:
+      - server
+      - first_address
   server_public_ip:
     description: Floating IP address of server on public network
-    value: { get_attr: [ server_floating_ip, floating_ip_address ] }
+    value:
+      get_attr:
+      - server_floating_ip
+      - floating_ip_address
