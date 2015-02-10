@@ -1,0 +1,32 @@
+heat_template_version: 2014-10-16
+
+description: Sahara Node Group Template test
+
+parameters:
+
+  flavor:
+    type: string
+    description: Flavor for use in cluster instances
+    default: m1.micro
+
+  plugin:
+    type: string
+    description: type of hadoop plugin to use
+    default: fake
+
+  version:
+    type: string
+    description: version of hadoop plugin to use
+    default: '0.1'
+
+resources:
+  
+  fake_ng_tmpl:
+    type: OS::Sahara::NodeGroupTemplate
+    properties:
+      name: fake-ng-tmpl
+      plugin_name: { get_param: plugin }
+      hadoop_version: { get_param: version }
+      flavor: { get_param: flavor }
+      node_processes:
+        - namenode
