@@ -19,7 +19,7 @@ parameters:
   image:
     type: string
     description: Name of the image to use for the instance
-    default: TestVM 
+    default: cirros-0.3.2-x86_64-uec 
 
 resources:
   my_instance:

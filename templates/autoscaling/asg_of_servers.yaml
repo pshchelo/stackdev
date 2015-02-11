@@ -36,7 +36,7 @@ parameters:
       http://cloud.fedoraproject.org/fedora-20.i386.qcow2
       Any image should work since this template
       does not ask the VMs to do anything.
-    default: TestVM
+    default: cirros-0.3.2-x86_64-uec
     constraints:
       - custom_constraint: glance.image
         description: Must identify an image known to Glance

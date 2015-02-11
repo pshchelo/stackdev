@@ -10,7 +10,7 @@ parameters:
   image:
     type: string
     description: Image to boot instances from
-    default: F20-x86_64-cfntools
+    default: Fedora-x86_64-20-20140618-sda
   flavor:
     type: string
     description: Flavor of the created images

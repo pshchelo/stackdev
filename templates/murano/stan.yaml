@@ -7,7 +7,7 @@ resources:
     type: OS::Nova::Server
     properties:
       user_data_format: HEAT_CFNTOOLS
-      image: TestVM
+      image: cirros-0.3.2-x86_64-uec
       flavor: m1.nano
       security_groups:
       - { get_resource: secgroup }

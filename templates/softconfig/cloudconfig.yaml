@@ -9,7 +9,7 @@ parameters:
     default: demo
   image:
     type: string
-    default: F20-x86_64-cfntools
+    default: Fedora-x86_64-20-20140618-sda
   availability_zone:
     type: string
     default: nova

@@ -15,7 +15,7 @@ parameters:
   image:
     type: string
     description: name of the image to use for the instance
-    default: TestVM 
+    default: cirros-0.3.2-x86_64-uec 
   availability_zone:
     type: string
     description: The Availability Zone to launch the instance.

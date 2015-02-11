@@ -13,7 +13,7 @@ parameters:
   image:
     type: string
     description: name of the image to use for the instance
-    default: TestVM 
+    default: cirros-0.3.2-x86_64-uec 
   key:
     type: string
     description: SSH key that will be used to access instances

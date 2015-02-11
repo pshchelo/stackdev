@@ -11,7 +11,7 @@ parameters:
   image:
     type: string
     description: Image to boot instances from
-    default: TestVM
+    default: cirros-0.3.2-x86_64-uec
   flavor:
     type: string
     description: Flavor of the created images
