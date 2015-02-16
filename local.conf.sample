@@ -30,6 +30,8 @@ SERVICE_TOKEN=tokentoken
 #IMAGE_URLS+=",http://download.cirros-cloud.net/0.3.3/cirros-0.3.3-x86_64-disk.img"
 # latest Ubuntu Trusty amd64 cloud image
 #IMAGE_URLS+=",https://cloud-images.ubuntu.com/releases/trusty/release/ubuntu-14.04-server-cloudimg-amd64-disk1.img"
+# Fedora 21 cloud image (e.g. for AWS LoadBalancer resource in Heat)
+#IMAGE_URLS+=",http://download.fedoraproject.org/pub/fedora/linux/releases/21/Cloud/Images/x86_64/Fedora-Cloud-Base-20141203-21.x86_64.qcow2"
 
 ### CONFIGURE INSTALLED SERVICES ###
 #
