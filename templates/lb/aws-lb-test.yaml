@@ -1,0 +1,68 @@
+heat_template_version: '2014-10-16'
+
+description: |
+  AWS LB Template that assigns instances directly to AWS LB.
+
+parameters:
+  flavor:
+   type: string
+   default: m1.heat
+  image:
+    type: string
+    default: Fedora-x86_64-20-20140618-sda
+  AZ:
+    type: string
+    default: nova
+  port:
+    type: number
+    default: 80
+  KeyName:
+    type: string
+    default: demo
+
+resources:
+  WikiServerOne:
+    type: OS::Nova::Server
+    properties:
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: KeyName }
+      user_data_format: RAW
+      user_data:
+        str_replace:
+          template: |
+            #!/bin/bash -v
+            echo  $(hostname) > index.html
+            python -m SimpleHTTPServer PORT
+          params:
+            PORT: { get_param: port }
+  WikiServerTwo:
+    type: OS::Nova::Server
+    properties:
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      user_data_format: RAW
+      user_data:
+        str_replace:
+          template: |
+            #!/bin/bash -v
+            echo  $(hostname) > index.html
+            python -m SimpleHTTPServer PORT
+          params:
+            PORT: { get_param: port }
+
+  LoadBalancer:
+    type: AWS::ElasticLoadBalancing::LoadBalancer
+    properties:
+      AvailabilityZones:
+        - { get_param: AZ }
+      Instances :
+        - { get_resource: WikiServerOne }
+      Listeners :
+        - LoadBalancerPort : { get_param: port }
+          InstancePort : { get_param: port }
+          Protocol : HTTP
+outputs:
+  LB_ip:
+    value: { get_attr: [LoadBalancer, DNSName]}
+    description: LB ip address
