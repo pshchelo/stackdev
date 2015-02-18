@@ -7,11 +7,11 @@ description: >
 parameters:
   flavor:
     type: string
-    default: m1.nano
+    default: m1.heat
   image:
     type: string
-    default: cirros-0.3.2-x86_64-uec
-  path:
+    default: Fedora-x86_64-20-20140618-sda
+  mount:
     type: string
     default: /dev/vdb
   size:
@@ -20,6 +20,9 @@ parameters:
   zone:
     type: string
     default: nova
+  key:
+    type: string
+    default: demo
 
 resources:
   server:
@@ -28,6 +31,7 @@ resources:
       ImageId: { get_param: image }
       InstanceType: { get_param: flavor }
       AvailabilityZone: { get_param: zone }
+      KeyName: { get_param: key }
 
   volume:
     type: AWS::EC2::Volume
@@ -42,4 +46,4 @@ resources:
     properties:
       InstanceId: { get_resource: server }
       VolumeId: { get_resource: volume }
-      Device: { get_param: path }
+      Device: { get_param: mount }

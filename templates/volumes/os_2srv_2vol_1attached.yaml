@@ -8,18 +8,19 @@ parameters:
   flavor:
     type: string
     description: Instance type for the instance to be created
-    default: m1.nano
-    constraints:
-      - allowed_values: [m1.nano, m1.micro, m1.tiny, m1.small, m1.large]
-        description: Value must be one of 'm1.nano', 'm1.micro', 'm1.tiny', 'm1.small' or 'm1.large'
+    default: m1.heat
   image:
     type: string
     description: name of the image to use for the instance
-    default: cirros-0.3.2-x86_64-uec 
+    default: Fedora-x86_64-20-20140618-sda 
   availability_zone:
     type: string
     description: The Availability Zone to launch the instance.
     default: nova
+  key_name:
+    type: string
+    description: SSH key to access instances
+    default: demo
   volume_size:
     type: number
     description: Size of the volume to be created.
@@ -39,12 +40,14 @@ resources:
       availability_zone: { get_param: availability_zone }
       image: { get_param: image }
       flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
   instance_2:
     type: OS::Nova::Server
     properties:
       availability_zone: { get_param: availability_zone }
       image: { get_param: image }
       flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
   volume_1:
     type: OS::Cinder::Volume
     properties:
