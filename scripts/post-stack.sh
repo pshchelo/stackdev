@@ -1,4 +1,7 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
+
+awslbimage_name="Fedora-Cloud-Base-20141203-21.x86_64"
+awslbimage_url="http://download.fedoraproject.org/pub/fedora/linux/releases/21/Cloud/Images/x86_64/Fedora-Cloud-Base-20141203-21.x86_64.qcow2"
 
 # Assert the network service backend
 function is_neutron {
@@ -55,7 +58,13 @@ function fix_secgroup {
     fi
 }
 
+function add_awslb_image {
+    . /opt/stack/devstack/accrc/admin/admin
+    glance image-create --progress --is-public True --disk-format qcow2 --container-format bare --location $awslbimage_url --name $awslbimage_name
+}
+
 # Apply afterfixes
 demo_keypair
 add_dns
 fix_secgroup
+add_awslb_image
