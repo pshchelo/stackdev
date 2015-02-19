@@ -38,19 +38,21 @@ function add_dns_neutron {
 
 function add_dns_nova {
     . /opt/stack/devstack/accrc/demo/demo
-# TODO: add change similar dns net change for nova-network if needed
+    # TODO: add change similar dns net change for nova-network if needed
 }
 
 function fix_secgroup_neutron {
     . /opt/stack/devstack/accrc/demo/demo
-# TODO: fix default security group by
-# - removing existing ingress rules (they seem not to work)
-# - adding ingress rules for ICMP and SSH
+    # delete existing ingress rules in default security group
+    neutron security-group-rule-list -f csv -c id -c security_group -c direction | grep 'default.*ingress' | awk -F "," '{print $1}' | xargs -L1 neutron security-group-rule-delete
+    # add ingress rules for ICMP and SSH
+    neutron security-group-rule-create default --direction ingress --remote-ip-prefix "0.0.0.0/0" --ethertype IPv4 --protocol ICMP
+    neutron security-group-rule-create default --direction ingress --remote-ip-prefix "0.0.0.0/0" --ethertype IPv4 --protocol TCP --port-range-min 22 --port-range-max 22
 }
 
 function fix_secgroup_nova {
     . /opt/stack/devstack/accrc/demo/demo
-# TODO: add change similar secgroup change for nova-network if needed
+    # TODO: add change similar secgroup change for nova-network if needed
 }
 
 function add_dns {
