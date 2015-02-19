@@ -1,12 +1,8 @@
 #!/usr/bin/env bash
 
-awslbimage_name="Fedora-Cloud-Base-20141203-21.x86_64"
-awslbimage_url="http://download.fedoraproject.org/pub/fedora/linux/releases/21/Cloud/Images/x86_64/Fedora-Cloud-Base-20141203-21.x86_64.qcow2"
-
-# Assert the network service backend
-function is_neutron {
-    . /opt/stack/devstack/accrc/demo/demo
-    keystone catalog | grep "Service: network"
+# Allow WAN access for VMs
+function allow_wan_access {
+    sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 }
 
 # Create passwordless ssh key to access VMs
@@ -15,6 +11,20 @@ function demo_keypair {
     nova keypair-add demo > $HOME/demo.pem
     chmod 600 $HOME/demo.pem
     nova keypair-list
+}
+
+# Add Fedora 21 cloud image (needed for default AWS LoadBalancer resoure)
+function add_awslb_image {
+    . /opt/stack/devstack/accrc/admin/admin
+    awslbimage_name="Fedora-Cloud-Base-20141203-21.x86_64"
+    awslbimage_url="http://download.fedoraproject.org/pub/fedora/linux/releases/21/Cloud/Images/x86_64/Fedora-Cloud-Base-20141203-21.x86_64.qcow2"
+    glance image-create --progress --is-public True --disk-format qcow2 --container-format bare --location $awslbimage_url --name $awslbimage_name
+}
+
+# Assert the network service backend
+function is_neutron {
+    . /opt/stack/devstack/accrc/demo/demo
+    keystone catalog | grep "Service: network"
 }
 
 # add Google's DNS server fo default subnet so that package managers
@@ -33,8 +43,9 @@ function add_dns_nova {
 
 function fix_secgroup_neutron {
     . /opt/stack/devstack/accrc/demo/demo
-# TODO: fix default security group by adding pings and ssh into ingress
-# and everything to egress
+# TODO: fix default security group by
+# - removing existing ingress rules (they seem not to work)
+# - adding ingress rules for ICMP and SSH
 }
 
 function fix_secgroup_nova {
@@ -58,13 +69,9 @@ function fix_secgroup {
     fi
 }
 
-function add_awslb_image {
-    . /opt/stack/devstack/accrc/admin/admin
-    glance image-create --progress --is-public True --disk-format qcow2 --container-format bare --location $awslbimage_url --name $awslbimage_name
-}
-
 # Apply afterfixes
+allow_wan_access
 demo_keypair
+add_awslb_image
 add_dns
 fix_secgroup
-add_awslb_image
