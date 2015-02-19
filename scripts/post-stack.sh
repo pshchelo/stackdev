@@ -21,53 +21,29 @@ function add_awslb_image {
     glance image-create --progress --is-public True --disk-format qcow2 --container-format bare --location $awslbimage_url --name $awslbimage_name
 }
 
-# Assert the network service backend
-function is_neutron {
-    . /opt/stack/devstack/accrc/demo/demo
-    keystone catalog | grep "Service: network"
-}
-
-# add Google's DNS server fo default subnet so that package managers
+# Add a DNS server fo default Neutron subnet so that package managers
 # can work from inside guests
-function add_dns_neutron {
-    . /opt/stack/devstack/accrc/demo/demo
-    subnet=$(neutron subnet-list | grep private-subnet | grep start | awk -F "|" '{print $2}' | tr -d ' ')
-    neutron subnet-update $subnet --dns-nameserver 8.8.8.8
-    neutron subnet-show $subnet
-}
-
-function add_dns_nova {
-    . /opt/stack/devstack/accrc/demo/demo
-    # TODO: add change similar dns net change for nova-network if needed
-}
-
-function fix_secgroup_neutron {
-    . /opt/stack/devstack/accrc/demo/demo
-    # delete existing ingress rules in default security group
-    neutron security-group-rule-list -f csv -c id -c security_group -c direction | grep 'default.*ingress' | awk -F "," '{print $1}' | xargs -L1 neutron security-group-rule-delete
-    # add ingress rules for ICMP and SSH
-    neutron security-group-rule-create default --direction ingress --remote-ip-prefix "0.0.0.0/0" --ethertype IPv4 --protocol ICMP
-    neutron security-group-rule-create default --direction ingress --remote-ip-prefix "0.0.0.0/0" --ethertype IPv4 --protocol TCP --port-range-min 22 --port-range-max 22
-}
-
-function fix_secgroup_nova {
-    . /opt/stack/devstack/accrc/demo/demo
-    # TODO: add change similar secgroup change for nova-network if needed
-}
-
 function add_dns {
-    if [ is_neutron ]; then
-        add_dns_neutron
-    else
-        add_dns_nova
+    . /opt/stack/devstack/accrc/demo/demo
+    is_neutron=$(keystone catalog | grep "Service: network")
+    if [ "$is_neutron" ]; then
+        # Google's public DNS server address
+        dnsserver=8.8.8.8
+        subnet=$(neutron subnet-list | grep private-subnet | grep start | awk -F "|" '{print $2}' | tr -d ' ')
+        neutron subnet-update $subnet --dns-nameserver $dnsserver
+        neutron subnet-show $subnet
     fi
 }
 
+# Delete existing ingress rules in default Neutron security group
+# and add ingress rules for ICMP and SSH
 function fix_secgroup {
-    if [ is_neutron ]; then
-        fix_secgroup_neutron
-    else
-        fix_secgroup_nova
+    . /opt/stack/devstack/accrc/demo/demo
+    is_neutron=$(keystone catalog | grep "Service: network")
+    if [ "$is_neutron" ]; then
+        neutron security-group-rule-list -f csv -c id -c security_group -c direction | grep 'default.*ingress' | awk -F "," '{print $1}' | xargs -L1 neutron security-group-rule-delete
+        neutron security-group-rule-create default --direction ingress --remote-ip-prefix "0.0.0.0/0" --ethertype IPv4 --protocol ICMP
+        neutron security-group-rule-create default --direction ingress --remote-ip-prefix "0.0.0.0/0" --ethertype IPv4 --protocol TCP --port-range-min 22 --port-range-max 22
     fi
 }
 
