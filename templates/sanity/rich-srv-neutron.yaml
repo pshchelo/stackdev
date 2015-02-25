@@ -40,6 +40,7 @@ resources:
   server_port:
     type: OS::Neutron::Port
     properties:
+      replacement_policy: AUTO
       network: { get_param: private_net }
       fixed_ips:
         - subnet: {get_param: private_subnet }
