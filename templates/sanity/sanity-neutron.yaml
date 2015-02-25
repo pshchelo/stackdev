@@ -1,0 +1,122 @@
+heat_template_version: 2013-05-23
+
+description: >
+  Creates several rich servers with volumes, floating IPs
+  and a simple webapp running.
+
+parameters:
+  group_size:
+    type: number
+    description: Number of reich servers to create
+    default: 1
+  
+  server_image:
+    type: string
+    description: Image name
+    default: Fedora-x86_64-20-20140618-sda
+
+  server_flavor:
+    type: string
+    description: Flavor
+    default: m1.heat
+  
+  server_key:
+    type: string
+    description: Keypair name
+    default: demo
+
+  volume_size:
+    type: number
+    description: Size of the volume to create
+    default: 1
+
+  public_net:
+    type: string
+    description: Neutron network of Floating IPs (name or UUID)
+    default: public
+  
+  subnet_cidr:
+    type: string
+    description: IP range to create in subnet
+    default: '10.0.2.0/24'
+
+  app_port:
+    type: number
+    description: Port to start a simple webapp on
+    default: 80
+
+resources:
+
+  network:
+    type: OS::Neutron::Net
+  
+  subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      cidr: { get_param: subnet_cidr }
+      network: { get_resource: network }
+
+  router:
+    type: OS::Neutron::Router
+    properties:
+      external_gateway_info:
+        network: { get_param: public_net }
+
+  router_interface:
+    type: OS::Neutron::RouterInterface
+    properties:
+      router: { get_resource: router }
+      subnet: { get_resource: subnet }
+
+  secgroup:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      description: Allow ping, ssh and webapp access
+      name: security-group
+      rules:
+        - remote_ip_prefix: 0.0.0.0/0
+          protocol: tcp
+          port_range_min: 22
+          port_range_max: 22
+        - remote_ip_prefix: 0.0.0.0/0
+          protocol: tcp
+          port_range_min: { get_param: app_port }
+          port_range_max: { get_param: app_port }
+        - remote_ip_prefix: 0.0.0.0/0
+          protocol: icmp
+
+  server_config:
+    type: OS::Heat::CloudConfig
+    properties:
+      cloud_config:
+        runcmd:
+          - echo  $(hostname) > index.html
+          - str_replace:
+              template:
+                python -m SimpleHTTPServer PORT &
+              params:
+                PORT: { get_param: app_port }
+
+  server_group:
+    type: OS::Heat::ResourceGroup
+    # to resolve dependency with Floating IPs
+    depends_on: router_interface 
+    properties:
+      count: { get_param: group_size }
+      resource_def:
+        type: OS::Sanity::RichServer
+        properties:
+          image: { get_param: server_image }
+          flavor: { get_param: server_flavor }
+          key_name: { get_param: server_key }
+          security_group: { get_resource: secgroup }
+          public_net: { get_param: public_net }
+          private_net: { get_resource: network }
+          private_subnet: { get_resource: subnet }
+          volume_size: { get_param: volume_size }
+          config: { get_resource: server_config }
+
+outputs:
+  webapp_ips:
+    description: floating IPs of running webapp instances
+    value: { get_attr: [ server_group, server_public_ip ] }

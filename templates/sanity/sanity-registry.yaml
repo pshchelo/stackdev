@@ -1,0 +1,2 @@
+resource_registry:
+  "OS::Sanity::RichServer": rich-srv-neutron.yaml

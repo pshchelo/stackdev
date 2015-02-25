@@ -1,0 +1,83 @@
+heat_template_version: 2013-05-23
+
+description: >
+  Deploys server with user-provided image, key, flavor and config.
+  Attaches to private Neutron network, and obtains floating IP on public network
+  using a provided security group.
+  Creates a volume of given size and attaches it to server.
+      
+parameters:
+  key_name:
+    type: string
+    description: Keypair name
+  image:
+    type: string
+    description: Image name
+  flavor:
+    type: string
+    description: Flavor
+  public_net:
+    type: string
+    description: Name or ID of the external network
+  private_net:
+    type: string
+    description: Name or ID of the internal network
+  private_subnet:
+    type: string
+    description: Subnet to get fixed IPs from
+  security_group:
+    type: string
+    description: SecurityGroup assigned to the server
+  volume_size:
+    type: number
+    description: Size of the volume to create
+  config:
+    type: string
+    description: ID of the raw config resource to apply to servers
+
+resources:
+
+  server_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: private_net }
+      fixed_ips:
+        - subnet: {get_param: private_subnet }
+      security_groups:
+        - get_param: security_group
+
+  server_floating_ip:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network: { get_param: public_net }
+      port_id: { get_resource: server_port }
+
+  volume:
+    type: OS::Cinder::Volume
+    properties:
+      size: { get_param: volume_size }
+
+  server_volume:
+    type: OS::Cinder::VolumeAttachment
+    properties:
+      instance_uuid: { get_resource: server }
+      volume_id: { get_resource: volume }
+
+  server:
+    type: OS::Nova::Server
+    properties:
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
+      networks:
+        - port: { get_resource: server_port }
+      user_data_format: RAW
+      user_data: { get_param: config }
+
+outputs:
+  server_public_ip:
+    description: Floating IP address of server on public network
+    value:
+      get_attr:
+      - server_floating_ip
+      - floating_ip_address
