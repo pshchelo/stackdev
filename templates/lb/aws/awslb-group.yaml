@@ -8,6 +8,10 @@ parameters:
     type: string
     default: demo
 
+  LbFlavor:
+    type: string
+    default: m1.heat
+
   image:
     type: string
     default: Fedora-x86_64-20-20140618-sda
@@ -28,6 +32,10 @@ parameters:
     type: string
     default: '8000'
 
+  AZ:
+    type: string
+    default: nova
+
 resources:
 
   config:
@@ -42,7 +50,7 @@ resources:
             #!/bin/bash -v
             echo $(hostname) > index.html
             echo $(hostname -i) >> index.html
-            python -m SimpleHTTPServer PORT
+            python -m SimpleHTTPServer PORT &
           params:
             PORT: { get_param: port_app }
 
@@ -50,16 +58,17 @@ resources:
     type: OS::Heat::InstanceGroup
     properties:
       AvailabilityZones:
-        - nova
+        - { get_param: AZ }
       LaunchConfigurationName: { get_resource: config }
-      LoadBalancerNames: [ { get_resource: aws_lb }, ]
+      LoadBalancerNames:
+        - { get_resource: aws_lb }
       Size: { get_param: size }
 
   aws_lb:
     type: AWS::ElasticLoadBalancing::LoadBalancer
     properties:
       AvailabilityZones:
-        - nova
+        - { get_param: AZ }
       Listeners:
         - LoadBalancerPort: { get_param: port_lb }
           InstancePort: { get_param: port_app }

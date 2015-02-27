@@ -1,6 +1,6 @@
 heat_template_version: 2013-05-23
 
-description: Pool with Health monitors.
+description: Pool with pre-created Health monitor.
 
 parameters:
   monitor:
@@ -13,7 +13,7 @@ resources:
     properties:
       lb_method: ROUND_ROBIN
       protocol: TCP
-      subnet_id: b69416f3-d612-459b-84d6-9f1dd210a16a
+      subnet: private
       vip:
         protocol_port: 22
       monitors:

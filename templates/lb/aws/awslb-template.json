@@ -1,0 +1,200 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Built in HAProxy server using Fedora 21 x64 cloud image",
+  "Parameters" : {
+    "KeyName" : {
+      "Type" : "String"
+    }
+  },
+  "Resources": {
+    "latency_watcher": {
+     "Type": "AWS::CloudWatch::Alarm",
+     "Properties": {
+        "MetricName": "Latency",
+        "Namespace": "AWS/ELB",
+        "Statistic": "Average",
+        "Period": "60",
+        "EvaluationPeriods": "1",
+        "Threshold": "2",
+        "AlarmActions": [],
+        "ComparisonOperator": "GreaterThanThreshold"
+      }
+    },
+    "CfnLBUser" : {
+      "Type" : "AWS::IAM::User"
+    },
+    "CfnLBAccessKey" : {
+      "Type" : "AWS::IAM::AccessKey",
+      "Properties" : {
+        "UserName" : {"Ref": "CfnLBUser"}
+      }
+    },
+    "LB_instance": {
+      "Type": "AWS::EC2::Instance",
+      "Metadata": {
+        "AWS::CloudFormation::Init": {
+          "config": {
+            "packages": {
+              "yum": {
+                "haproxy"        : [],
+                "socat"          : []
+              }
+            },
+            "services": {
+              "systemd": {
+                "crond"     : { "enabled" : "true", "ensureRunning" : "true" }
+              }
+            },
+            "files": {
+              "/etc/cfn/cfn-credentials" : {
+                "content" : { "Fn::Join" : ["", [
+                  "AWSAccessKeyId=", { "Ref" : "CfnLBAccessKey" }, "\n",
+                  "AWSSecretKey=", {"Fn::GetAtt": ["CfnLBAccessKey",
+                                    "SecretAccessKey"]}, "\n"
+                ]]},
+                "mode"    : "000400",
+                "owner"   : "root",
+                "group"   : "root"
+              },
+              "/etc/cfn/cfn-hup.conf" : {
+                "content" : { "Fn::Join" : ["", [
+                  "[main]\n",
+                  "stack=", { "Ref" : "AWS::StackId" }, "\n",
+                  "credential-file=/etc/cfn/cfn-credentials\n",
+                  "region=", { "Ref" : "AWS::Region" }, "\n",
+                  "interval=60\n"
+                ]]},
+                "mode"    : "000400",
+                "owner"   : "root",
+                "group"   : "root"
+              },
+              "/etc/cfn/hooks.conf" : {
+                "content": { "Fn::Join" : ["", [
+                  "[cfn-init]\n",
+                  "triggers=post.update\n",
+                  "path=Resources.LB_instance.Metadata\n",
+                  "action=/opt/aws/bin/cfn-init -s ",
+                  { "Ref": "AWS::StackId" },
+                  "    -r LB_instance ",
+                  "    --region ", { "Ref": "AWS::Region" }, "\n",
+                  "runas=root\n",
+                  "\n",
+                  "[reload]\n",
+                  "triggers=post.update\n",
+                  "path=Resources.LB_instance.Metadata\n",
+                  "action=systemctl reload-or-restart haproxy.service\n",
+                  "runas=root\n"
+                ]]},
+                "mode"    : "000400",
+                "owner"   : "root",
+                "group"   : "root"
+              },
+              "/etc/haproxy/haproxy.cfg": {
+                "content": "",
+                "mode": "000644",
+                "owner": "root",
+                "group": "root"
+              },
+              "/root/haproxy_tmp.te": {
+                "mode": "000600",
+                "owner": "root",
+                "group": "root",
+                "content": { "Fn::Join" : [ "", [
+                  "module haproxy_tmp 1.0;\n",
+                  "require { type tmp_t; type haproxy_t;",
+                  "class sock_file { rename write create unlink link };",
+                  "class dir { write remove_name add_name };}\n",
+                  "allow haproxy_t ",
+                  "tmp_t:dir { write remove_name add_name };\n",
+                  "allow haproxy_t ",
+                  "tmp_t:sock_file { rename write create unlink link};\n"
+                 ]]}
+               },
+              "/tmp/cfn-hup-crontab.txt" : {
+                "content" : { "Fn::Join" : ["", [
+                "MAIL=\"\"\n",
+                "\n",
+                "* * * * * /opt/aws/bin/cfn-hup -f\n",
+                "* * * * * /opt/aws/bin/cfn-push-stats ",
+                " --watch ", { "Ref" : "latency_watcher" }, " --haproxy\n"
+                ]]},
+                "mode"    : "000600",
+                "owner"   : "root",
+                "group"   : "root"
+              }
+            }
+          }
+        }
+      },
+      "Properties": {
+        "ImageId": "Fedora-Cloud-Base-20141203-21.x86_64",
+        "InstanceType": "m1.small",
+        "KeyName": { "Ref": "KeyName" },
+        "UserData": { "Fn::Base64": { "Fn::Join": ["", [
+          "#!/bin/bash -v\n",
+          "# Helper function\n",
+          "function error_exit\n",
+          "{\n",
+          "  /opt/aws/bin/cfn-signal -e 1 -r \"$1\" '",
+          { "Ref" : "WaitHandle" }, "'\n",
+          "  exit 1\n",
+          "}\n",
+
+          "/opt/aws/bin/cfn-init -s ",
+          { "Ref": "AWS::StackId" },
+          "    -r LB_instance ",
+          "    --region ", { "Ref": "AWS::Region" }, "\n",
+
+          "# HAProxy+SELinux, https://www.mankier.com/8/haproxy_selinux \n",
+
+          "# this is exported by selinux-policy >=3.12.1.196\n",
+          "setsebool haproxy_connect_any 1\n",
+
+          "# when the location of haproxy stats file is fixed\n",
+          "# in heat-cfntools and AWS::ElasticLoadBalancing::LoadBalancer\n",
+          "# to point to /var/lib/haproxy/stats, \n",
+          "# this next block can be removed.\n",
+          "# compile custom module to allow /tmp files and sockets access\n",
+          "cd /root\n",
+          "checkmodule -M -m -o haproxy_tmp.mod haproxy_tmp.te\n",
+          "semodule_package -o haproxy_tmp.pp -m haproxy_tmp.mod\n",
+          "semodule -i haproxy_tmp.pp\n",
+          "touch /tmp/.haproxy-stats\n",
+          "semanage fcontext -a -t haproxy_tmpfs_t /tmp/.haproxy-stats\n",
+          "restorecon -R -v /tmp/.haproxy-stats\n",
+
+          "# install cfn-hup crontab\n",
+          "crontab /tmp/cfn-hup-crontab.txt\n",
+
+          "# restart haproxy service to catch initial changes\n",
+          "systemctl reload-or-restart haproxy.service\n",
+
+          "# LB setup completed, signal success\n",
+          "/opt/aws/bin/cfn-signal -e 0 -r \"LB server setup complete\" '",
+          { "Ref" : "WaitHandle" }, "'\n"
+
+        ]]}}
+      }
+    },
+    "WaitHandle" : {
+      "Type" : "AWS::CloudFormation::WaitConditionHandle"
+    },
+
+    "WaitCondition" : {
+      "Type" : "AWS::CloudFormation::WaitCondition",
+      "DependsOn" : "LB_instance",
+      "Properties" : {
+        "Handle" : {"Ref" : "WaitHandle"},
+        "Timeout" : "600"
+      }
+    }
+  },
+
+  "Outputs": {
+    "PublicIp": {
+      "Value": { "Fn::GetAtt": [ "LB_instance", "PublicIp" ] },
+      "Description": "instance IP"
+    }
+  }
+}
+
