@@ -7,14 +7,17 @@ parameters:
     type: number
     description: size of the volume
     default: 1
+  number:
+    type: number
+    description: number of volumes to create
+    default: 1
 
 resources:
-  volume:
-    type: OS::Cinder::Volume
+  volumes:
+    type: OS::Heat::ResourceGroup
     properties:
-      size: { get_param: size }
-
-outputs:
-  volume_size:
-    description: size of the volume
-    value: { get_attr: [volume, size] }
+      count: { get_param: number }
+      resource_def:
+        type: OS::Cinder::Volume
+        properties:
+          size: { get_param: size }

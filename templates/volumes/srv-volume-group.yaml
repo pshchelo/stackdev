@@ -1,0 +1,44 @@
+heat_template_version: 2013-05-23
+
+description: Creates servers with volumes (validate LP bug 1298350).
+
+parameters:
+  group_size:
+    type: number
+    description: Number of reich servers to create
+    default: 1
+  
+  server_image:
+    type: string
+    description: Image name
+    default: cirros-0.3.2-x86_64-uec
+
+  server_flavor:
+    type: string
+    description: Flavor
+    default: m1.nano
+  
+  server_key:
+    type: string
+    description: Keypair name
+    default: demo
+
+  volume_size:
+    type: number
+    description: Size of the volume to create
+    default: 1
+
+resources:
+
+
+  server_group:
+    type: OS::Heat::ResourceGroup
+    properties:
+      count: { get_param: group_size }
+      resource_def:
+        type: My::Test::ServerVolume
+        properties:
+          image: { get_param: server_image }
+          flavor: { get_param: server_flavor }
+          key_name: { get_param: server_key }
+          volume_size: { get_param: volume_size }

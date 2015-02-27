@@ -1,0 +1,2 @@
+resource_registry:
+  "My::Test::ServerVolume": srv-volume.yaml

@@ -1,0 +1,37 @@
+heat_template_version: 2013-05-23
+
+description: Deploys server + attached volume.
+      
+parameters:
+  key_name:
+    type: string
+    description: Keypair name
+  image:
+    type: string
+    description: Image name
+  flavor:
+    type: string
+    description: Flavor
+  volume_size:
+    type: number
+    description: Size of the volume to create
+
+resources:
+
+  volume:
+    type: OS::Cinder::Volume
+    properties:
+      size: { get_param: volume_size }
+
+  server_volume:
+    type: OS::Cinder::VolumeAttachment
+    properties:
+      instance_uuid: { get_resource: server }
+      volume_id: { get_resource: volume }
+
+  server:
+    type: OS::Nova::Server
+    properties:
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
