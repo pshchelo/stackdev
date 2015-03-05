@@ -12,13 +12,6 @@ Parameters:
     Description: WebServer EC2 instance type
     Type: String
     Default: m1.heat
-    AllowedValues:
-    - m1.heat
-    - m1.small
-    - m1.medium
-    - m1.large
-    - m1.xlarge
-    ConstraintDescription: must be a valid EC2 instance type.
   
   ImageId:
     Description: the name or uuid of the image in glance
@@ -26,34 +19,15 @@ Parameters:
     Default: Fedora-x86_64-20-20140618-sda
 
 Resources:
-
-  CfnUser:
-    Type: 'AWS::IAM::User'
   
-  WebServerKeys:
-    Type: AWS::IAM::AccessKey
-    Properties:
-      UserName: {Ref: CfnUser}
-
   Instance:
     Type: AWS::EC2::Instance
     Metadata:
       AWS::CloudFormation::Init:
         config:
-          files:
-            /etc/cfn/cfn-credentials:
-              content:
-                'Fn::Replace':
-                - WebServerKeys: {Ref: WebServerKeys}
-                  WebSecretKey: {'Fn::GetAtt': [WebServerKeys, SecretAccessKey]}
-                - |
-                  AWSAccessKeyId=WebServerKeys
-                  AWSSecretKey=WebSecretKey
-              mode: '000400'
-              owner: root
-              group: root
           packages:
             yum:
+              java-1.7.0-openjdk-devel: []
               tomcat-webapps: []
               tomcat-admin-webapps: []
           services:
@@ -62,25 +36,39 @@ Resources:
                 enabled: 'true'
                 ensureRunning: 'true'
     Properties:
-      ImageId: {Ref: ImageId}
-      InstanceType: {Ref: InstanceType}
-      KeyName: {Ref: KeyName}
+      ImageId: { Ref: ImageId }
+      InstanceType: { Ref: InstanceType }
+      KeyName: { Ref: KeyName }
       UserData:
         Fn::Base64:
           Fn::Replace:
-          - 'AWS::StackName': {Ref: 'AWS::StackName'}
-            'AWS::Region': {Ref: 'AWS::Region'}
+          - WAIT_HANDLE: { Ref: WaitHandle }
           - |
             #!/bin/bash -v
-            /opt/aws/bin/cfn-init -s AWS::StackName -r LaunchConfig --region AWS::Region
+            /opt/aws/bin/cfn-init
+            error_exit () { /opt/aws/bin/cfn-signal -e 1 -r "$1" 'WAIT_HANDLE'; exit 1; }
+            # allow access to the default Tomcat port
             iptables -I INPUT 1 -p tcp -m tcp --dport 8080 -j ACCEPT
+            # install and compile the test tomcat servlet
             appsrc="https://github.com/pshchelo/hello-world-servlet/archive/nodb.tar.gz"
             app=/var/lib/tomcat/webapps/hello
-            mkdir $app
+            mkdir -p $app
             curl -Lk $appsrc | tar xz -C $app --strip-components 1
-            yum -y install java-devel
             javac -cp /usr/share/tomcat/lib/tomcat-servlet-3.0-api.jar $app/WEB-INF/classes/HelloServlet.java
+            # restart Tomcat to activate the new servlet
             systemctl restart tomcat.service
+            # report success
+            /opt/aws/bin/cfn-signal -e 0 -r "LB server setup complete" "WAIT_HANDLE"
+
+  WaitHandle:
+    Type: AWS::CloudFormation::WaitConditionHandle
+
+  WaitCondition:
+    Type: AWS::CloudFormation::WaitCondition
+    DependsOn: Instance
+    Properties:
+      Handle: { Ref: WaitHandle }
+      Timeout: 1000
 
 Outputs:
   url:
