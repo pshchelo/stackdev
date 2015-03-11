@@ -4,6 +4,10 @@
   "Parameters" : {
     "KeyName" : {
       "Type" : "String"
+    },
+    "LbFlavor": {
+        "Type": "String",
+        "Default": "m1.small"
     }
   },
   "Resources": {
@@ -128,7 +132,7 @@
       },
       "Properties": {
         "ImageId": "Fedora-Cloud-Base-20141203-21.x86_64",
-        "InstanceType": "m1.small",
+        "InstanceType": { "Ref": "LbFlavor" },
         "KeyName": { "Ref": "KeyName" },
         "UserData": { "Fn::Base64": { "Fn::Join": ["", [
           "#!/bin/bash -v\n",

@@ -1,0 +1,37 @@
+heat_template_version: 2014-10-16
+
+description:  AWS Load Balancer balancing HTTP connections
+
+parameters:
+  
+  KeyName:
+    type: string
+    default: demo
+
+  LbFlavor:
+    type: string
+    default: m1.heat
+
+  port_lb:
+    type: string
+    default: '80'
+
+  port_app:
+    type: string
+    default: '8000'
+
+  AZ:
+    type: string
+    default: nova
+
+resources:
+
+  aws_lb:
+    type: AWS::ElasticLoadBalancing::LoadBalancer
+    properties:
+      AvailabilityZones:
+        - { get_param: AZ }
+      Listeners:
+        - LoadBalancerPort: { get_param: port_lb }
+          InstancePort: { get_param: port_app }
+          Protocol: HTTP
