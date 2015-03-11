@@ -82,3 +82,10 @@ LIBS_FROM_GIT=python-heatclient
 ### SAHARA ###
 #
 #enable_service sahara
+
+[[post-config|$CINDER_CONF]]
+[DEFAULT]
+volume_clear=none
+
+[lvmdriver-1]
+volume_clear=none
