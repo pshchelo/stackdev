@@ -1,0 +1,5 @@
+#!/bin/bash
+
+set -uex
+
+install-packages cronie haproxy socat python-psutil
