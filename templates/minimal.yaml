@@ -1,0 +1,7 @@
+heat_template_version: 2013-05-23
+resources:
+  random1:
+    type: OS::Heat::RandomString
+outputs:
+  remote_key:
+    value: {get_attr: [random1, value]} 
