@@ -86,3 +86,10 @@ SERVICE_TOKEN=tokentoken
 ### SAHARA ###
 #
 #enable_service sahara
+
+### POST_CONFIGS ###
+# fix to allow access to instance vnc console when accessing Horizon via tunnel
+#[[post-config|$NOVA_CONF]]
+#[DEFAULT]
+#novncproxy_base_url = http://172.18.200.23:6127/vnc_auto.html
+#xvpvncproxy_base_url = http://172.18.200.23:7127/console
