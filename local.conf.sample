@@ -33,6 +33,9 @@ SERVICE_TOKEN=tokentoken
 # Fedora 21 cloud image (e.g. for AWS LoadBalancer resource in Heat)
 #IMAGE_URLS+=",http://download.fedoraproject.org/pub/fedora/linux/releases/21/Cloud/Images/x86_64/Fedora-Cloud-Base-20141203-21.x86_64.qcow2"
 
+# Set libraries that will be installed from git and not PyPI
+#LIBS_FROM_GIT=python-heatclient
+
 ### CONFIGURE INSTALLED SERVICES ###
 #
 # Default set of components installed (as of DevStack Juno) is:
@@ -43,8 +46,9 @@ SERVICE_TOKEN=tokentoken
 # - Heat
 # - Horizon
 
-# Set libraries that will be installed from git and not PyPI
-LIBS_FROM_GIT=python-heatclient
+### CINDER ###
+# Do not securely rewrite cinder volumes on delete
+#CINDER_SECURE_DELETE=False
 
 ### HORIZON ###
 #
@@ -82,10 +86,3 @@ LIBS_FROM_GIT=python-heatclient
 ### SAHARA ###
 #
 #enable_service sahara
-
-[[post-config|$CINDER_CONF]]
-[DEFAULT]
-volume_clear=none
-
-[lvmdriver-1]
-volume_clear=none
