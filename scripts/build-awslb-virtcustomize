@@ -1,4 +1,5 @@
 #! /usr/bin/env sh
+# Use virt-customize to build AWS LOadbalancer image
 PKGS="haproxy,socat,cronie,python-psutil"
 cp "$1" "$1.orig"
 virt-customize -a $1 --update --install $PKGS
