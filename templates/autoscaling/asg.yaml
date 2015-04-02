@@ -9,23 +9,27 @@ description: |
   ssh cirros@floating-ip -i key-file "kill -9 \$(ps -ef | grep 'cat /dev/urandom' | grep -v grep | awk '{print \$1}')"
 
 parameters:
-  KeyName:
+  key_name:
     type: string
     default: demo
-  InstanceType:
+  flavor:
     type: string
     default: m1.nano
-  ImageId:
+  image:
     type: string
     default: cirros-0.3.2-x86_64-uec
-  SecurityGroup:
-    type: string
-    default: demo
-  Subnet:
-    type: string
-    default: private
 
 resources:
+
+  sec_group:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      rules:
+      - remote_ip_prefix: 0.0.0.0/0
+        protocol: tcp
+        port_range_min: 22
+        port_range_max: 22
+
   my_asg:
     type: OS::Heat::AutoScalingGroup
     properties:
@@ -33,13 +37,11 @@ resources:
         type: OS::Nova::Server
         properties:
           metadata: {"metering.stack": {get_param: "OS::stack_id"}}
-          key_name: { get_param: KeyName }
-          image: { get_param: ImageId }
-          flavor: { get_param: InstanceType }
+          key_name: { get_param: key_name }
+          image: { get_param: image }
+          flavor: { get_param: flavor }
           security_groups:
-          - get_param: SecurityGroup
-          networks:
-          - network: {get_param: Subnet}
+          - get_resource: sec_group
       min_size: 1
       max_size: 2
 
