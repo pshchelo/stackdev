@@ -1,6 +1,7 @@
 [[local|localrc]]
 
 ### NETWORK SETTINGS ###
+#
 #FLOATING_RANGE=192.168.122.112/28
 #FIXED_RANGE=10.0.0.1/24
 #FIXED_NETWORK_SIZE=256
@@ -9,6 +10,7 @@
 #HOST_IP=192.168.100.127
 
 ### SET PASSWORDS FOR SERVICES AND USERS ###
+#
 ADMIN_PASSWORD=admin
 MYSQL_PASSWORD=mysql
 RABBIT_PASSWORD=rabbit
@@ -16,25 +18,36 @@ SERVICE_PASSWORD=service
 SERVICE_TOKEN=tokentoken
 
 ### SET SOME INSTALL OPTIONS ###
+#
 # run already-installed devstack in offline mode
 #OFFLINE=True
 
 # refresh repos
 #RECLONE=yes
 
-# set the size of the stack volume backing file (in MB, default 10250M)
-#VOLUME_BACKING_FILE_SIZE=41000M
-
-# Add more images to Glance
-# cirros qcow2 image instead of UEC ones
-#IMAGE_URLS+=",http://download.cirros-cloud.net/0.3.3/cirros-0.3.3-x86_64-disk.img"
-# latest Ubuntu Trusty amd64 cloud image
-#IMAGE_URLS+=",https://cloud-images.ubuntu.com/releases/trusty/release/ubuntu-14.04-server-cloudimg-amd64-disk1.img"
-# Fedora 21 cloud image (e.g. for AWS LoadBalancer resource in Heat)
-#IMAGE_URLS+=",http://download.fedoraproject.org/pub/fedora/linux/releases/21/Cloud/Images/x86_64/Fedora-Cloud-Base-20141203-21.x86_64.qcow2"
+# always upgrade all Python dependencies
+#PIP_UPGRADE=True
 
 # Set libraries that will be installed from git and not PyPI
 #LIBS_FROM_GIT=python-heatclient
+
+# set the size of the stack volume backing file (in MB, default 10250M)
+#VOLUME_BACKING_FILE_SIZE=41000M
+
+### ADD MORE IMAGES TO GLANCE ###
+#
+# cirros qcow2 image instead of UEC ones
+#IMAGE_URLS+=",http://download.cirros-cloud.net/0.3.3/cirros-0.3.3-x86_64-disk.img"
+
+# Heat functional tests image (Fedora20 based)
+#IMAGE_URLS+=",http://tarballs.openstack.org/heat-test-image/fedora-heat-test-image.qcow2"
+
+# Fedora 21 cloud image (e.g. for AWS LoadBalancer resource in Heat)
+#IMAGE_URLS+=",http://download.fedoraproject.org/pub/fedora/linux/releases/21/Cloud/Images/x86_64/Fedora-Cloud-Base-20141203-21.x86_64.qcow2"
+
+# latest Ubuntu Trusty amd64 cloud image
+#IMAGE_URLS+=",https://cloud-images.ubuntu.com/releases/trusty/release/ubuntu-14.04-server-cloudimg-amd64-disk1.img"
+
 
 ### CONFIGURE INSTALLED SERVICES ###
 #
@@ -47,6 +60,7 @@ SERVICE_TOKEN=tokentoken
 # - Horizon
 
 ### CINDER ###
+#
 # Do not securely rewrite cinder volumes on delete
 #CINDER_SECURE_DELETE=False
 
@@ -87,9 +101,15 @@ SERVICE_TOKEN=tokentoken
 #
 #enable_service sahara
 
-### POST_CONFIGS ###
+### POST CONFIG STAGE SETTINGS ###
+#
 # fix to allow access to instance vnc console when accessing Horizon via tunnel
 #[[post-config|$NOVA_CONF]]
 #[DEFAULT]
 #novncproxy_base_url = http://172.18.200.23:6127/vnc_auto.html
 #xvpvncproxy_base_url = http://172.18.200.23:7127/console
+
+# decrease number of Heat engine workers, when too much for devstack
+#[[post-config|$HEAT_CONF]]
+#[DEFAULT]
+#num_engine_workers = 2
