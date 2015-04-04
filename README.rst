@@ -10,3 +10,11 @@ various Heat templates to play/test, see also https://github.com/openstack/heat-
 scripts
 -------
 helper scripts to setup the DevStack env
+
+heat_plugins
+------------
+experimantal or test-oriented Heat resource plugins
+
+dib_elements
+------------
+my elements for disk-image-builder
