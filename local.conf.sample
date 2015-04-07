@@ -56,8 +56,12 @@ SERVICE_TOKEN=tokentoken
 # - Keystone
 # - Glance
 # - Cinder with LVM backend
-# - Heat
 # - Horizon
+
+### HEAT ###
+#
+# enable Heat services
+#enable_service h-eng h-api h-api-cfn h-api-cw heat
 
 ### CINDER ###
 #
@@ -107,7 +111,6 @@ SERVICE_TOKEN=tokentoken
 #[[post-config|$NOVA_CONF]]
 #[DEFAULT]
 #novncproxy_base_url = http://172.18.200.23:6127/vnc_auto.html
-#xvpvncproxy_base_url = http://172.18.200.23:7127/console
 
 # decrease number of Heat engine workers, when too much for devstack
 #[[post-config|$HEAT_CONF]]
