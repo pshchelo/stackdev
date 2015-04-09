@@ -9,7 +9,7 @@ parameters:
     default: demo
   image:
     type: string
-    default: Fedora-x86_64-20-20140618-sda
+    default: fedora-heat-test-image
   availability_zone:
     type: string
     default: nova

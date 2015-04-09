@@ -12,7 +12,7 @@ parameters:
   image:
     type: string
     description: name of the image to use for the instance
-    default: Fedora-x86_64-20-20140618-sda 
+    default: fedora-heat-test-image 
   availability_zone:
     type: string
     description: The Availability Zone to launch the instance.

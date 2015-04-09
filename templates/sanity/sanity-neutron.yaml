@@ -9,17 +9,17 @@ parameters:
     type: number
     description: Number of reich servers to create
     default: 1
-  
+
   server_image:
     type: string
     description: Image name
-    default: Fedora-x86_64-20-20140618-sda
+    default: fedora-heat-test-image
 
   server_flavor:
     type: string
     description: Flavor
     default: m1.heat
-  
+
   server_key:
     type: string
     description: Keypair name
@@ -34,7 +34,7 @@ parameters:
     type: string
     description: Neutron network of Floating IPs (name or UUID)
     default: public
-  
+
   subnet_cidr:
     type: string
     description: IP range to create in subnet
@@ -49,7 +49,7 @@ resources:
 
   network:
     type: OS::Neutron::Net
-  
+
   subnet:
     type: OS::Neutron::Subnet
     properties:
@@ -100,7 +100,7 @@ resources:
   server_group:
     type: OS::Heat::ResourceGroup
     # to resolve dependency with Floating IPs
-    depends_on: router_interface 
+    depends_on: router_interface
     properties:
       count: { get_param: group_size }
       resource_def:

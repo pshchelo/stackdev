@@ -16,7 +16,7 @@ Parameters:
   ImageId:
     Description: the name or uuid of the image in glance
     Type: String
-    Default: Fedora-x86_64-20-20140618-sda
+    Default: fedora-heat-test-image
 
 Resources:
   

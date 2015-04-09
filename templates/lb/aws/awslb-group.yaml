@@ -14,7 +14,7 @@ parameters:
 
   image:
     type: string
-    default: Fedora-x86_64-20-20140618-sda
+    default: fedora-heat-test-image
 
   flavor:
     type: string
