@@ -11,7 +11,7 @@ parameters:
    default: m1.nano
   image:
     type: string
-    default: cirros-0.3.2-x86_64-uec
+    default: cirros
   port:
     type: number
     default: 80

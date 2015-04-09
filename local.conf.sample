@@ -36,7 +36,7 @@ SERVICE_TOKEN=tokentoken
 
 ### ADD MORE IMAGES TO GLANCE ###
 #
-# cirros qcow2 image instead of UEC ones
+# latest cirros qcow2 image instead of UEC ones
 #IMAGE_URLS+=",http://download.cirros-cloud.net/0.3.3/cirros-0.3.3-x86_64-disk.img"
 
 # Heat functional tests image (Fedora20 based)
