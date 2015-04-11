@@ -1,5 +1,11 @@
 SHELL=bash
 
+WAN_SET=$(sudo iptables -t nat -L | grep 'MASQUERADE.*all.*anywhere.*anywhere')
+DEMO_CREDS=. /opt/stack/devstack/accrc/demo/demo
+ADMIN_CREDS=. /opt/stack/devstack/accrc/admin/admin
+IS_NEUTRON=`keystone catalog | grep "Service: network"`
+
+
 help:
 	@echo 'Makefile for a fixing DevStack'
 	@echo ''
@@ -18,29 +24,27 @@ help:
 all: wan keypair dns secgroup cirros
 
 wan:
-	@done=$$(sudo iptables -t nat -L | grep 'MASQUERADE.*all.*anywhere.*anywhere'); \
-if [ -z "$$done" ]; then \
-    echo "Allowing WAN access for VMs";\
-    sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE; \
-fi
+	@if [ -z "$(WAN_SET)" ]; then \
+	    echo "Allowing WAN access for VMs";\
+	    sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE; \
+	fi
 	
 keypair:
 	@echo "Adding demo keypair..."; \
-. /opt/stack/devstack/accrc/demo/demo; \
+$(DEMO_CREDS); \
 nova keypair-add demo --pub_key $$HOME/.ssh/git_rsa.pub; \
 nova keypair-list
 
 cirros:
 	@echo "Renaming cirros image..."; \
-. /opt/stack/devstack/accrc/admin/admin; \
+$(ADMIN_CREDS); \
 name=$$(glance image-list | grep -o "cirros-.*-disk"); \
 glance image-update $$name --name cirros --property description=$$name
 
 dns:
 	@echo "Adding Google DNS to demo tenant subnet..."; \
-. /opt/stack/devstack/accrc/demo/demo; \
-is_neutron=$$(keystone catalog | grep "Service: network"); \
-if [ "$$is_neutron" ]; then \
+$(DEMO_CREDS); \
+if [ "$(IS_NEUTRON)" ]; then \
     dnsserver=8.8.8.8; \
     subnet=$$(neutron subnet-list | grep private-subnet | awk '{print $$2}'); \
     neutron subnet-update $$subnet --dns-nameserver $$dnsserver; \
@@ -48,10 +52,9 @@ if [ "$$is_neutron" ]; then \
 fi
 
 secgroup:
-	@echo "Adding ICMP and SSH to default security group..."; \
-. /opt/stack/devstack/accrc/demo/demo; \
-is_neutron=$$(keystone catalog | grep "Service: network"); \
-if [ "$$is_neutron" ]; then \
+	@echo "Adding ingress ICMP and SSH to default security group..."; \
+$(DEMO_CREDS); \
+if [ "$(IS_NEUTRON)" ]; then \
     neutron security-group-rule-list -f csv -c id -c security_group -c direction | grep 'default.*ingress' | awk -F "," '{print $$1}' | xargs -L1 neutron security-group-rule-delete; \
     neutron security-group-rule-create default --direction ingress --remote-ip-prefix "0.0.0.0/0" --ethertype IPv4 --protocol ICMP; \
     neutron security-group-rule-create default --direction ingress --remote-ip-prefix "0.0.0.0/0" --ethertype IPv4 --protocol TCP --port-range-min 22 --port-range-max 22; \
