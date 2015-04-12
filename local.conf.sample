@@ -62,6 +62,8 @@ SERVICE_TOKEN=tokentoken
 #
 # enable Heat services
 #enable_service h-eng h-api h-api-cfn h-api-cw heat
+# (ON REVIEW) Install image for Heat's integration tests
+HEAT_TEST_IMAGE=True
 
 ### CINDER ###
 #
