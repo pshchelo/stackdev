@@ -48,14 +48,19 @@ $(DEMO_CREDS); \
 nova keypair-add demo --pub_key $$HOME/.ssh/git_rsa.pub; \
 nova keypair-list
 
+# space in grep is important, now there are two subnets, ipv4 and ipv6
 dns:
-	@echo "Adding Google DNS to demo tenant subnet..."; \
+	@echo "Adding Google DNS to demo tenant private subnets..."; \
 $(DEMO_CREDS); \
 if [ "$(IS_NEUTRON)" ]; then \
-    dnsserver=8.8.8.8; \
-    subnet=$$(neutron subnet-list | grep private-subnet | awk '{print $$2}'); \
-    neutron subnet-update $$subnet --dns-nameserver $$dnsserver; \
-    neutron subnet-show $$subnet; \
+    dnsserver4=8.8.8.8; \
+    dnsserver6="2001:4860:4860::8888"; \
+    subnet4=$$(neutron subnet-list | grep " private-subnet" | awk '{print $$2}'); \
+    neutron subnet-update $$subnet4 --dns-nameserver $$dnsserver4; \
+    neutron subnet-show $$subnet4; \
+    subnet6=$$(neutron subnet-list | grep "ipv6-private-subnet" | awk '{print $$2}'); \
+    neutron subnet-update $$subnet6 --dns-nameserver $$dnsserver6; \
+    neutron subnet-show $$subnet6; \
 fi
 
 secgroup:
