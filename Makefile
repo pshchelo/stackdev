@@ -7,7 +7,7 @@ IS_NEUTRON=`keystone catalog | grep "Service: network"`
 DISKFMT=qcow2
 ADD_IMAGE=glance image-create --is-public True --disk-format $(DISKFMT) --container-format bare --copy-from
 
-CIRROS_VERSION=0.3.3
+CIRROS_VERSION=0.3.4
 CIRROS_IMAGE_NAME=cirros-$(CIRROS_VERSION)-x86_64-disk
 CIRROS_IMAGE_URL="http://download.cirros-cloud.net/$(CIRROS_VERSION)/$(CIRROS_IMAGE_NAME).img"
 

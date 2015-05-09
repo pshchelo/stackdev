@@ -37,7 +37,7 @@ SERVICE_TOKEN=tokentoken
 ### ADD MORE IMAGES TO GLANCE ###
 #
 # latest cirros qcow2 image instead of UEC ones
-#IMAGE_URLS+=",http://download.cirros-cloud.net/0.3.3/cirros-0.3.3-x86_64-disk.img"
+#IMAGE_URLS+=",http://download.cirros-cloud.net/0.3.4/cirros-0.3.4-x86_64-disk.img"
 
 # Heat functional tests image (Fedora20 based)
 #IMAGE_URLS+=",http://tarballs.openstack.org/heat-test-image/fedora-heat-test-image.qcow2"
@@ -62,8 +62,6 @@ SERVICE_TOKEN=tokentoken
 #
 # enable Heat services
 #enable_service h-eng h-api h-api-cfn h-api-cw heat
-# (ON REVIEW) Install image for Heat's integration tests
-HEAT_TEST_IMAGE=True
 
 ### CINDER ###
 #
