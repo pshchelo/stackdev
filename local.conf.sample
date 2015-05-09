@@ -65,8 +65,8 @@ SERVICE_TOKEN=tokentoken
 
 ### CINDER ###
 #
-# Do not securely rewrite cinder volumes on delete
-#CINDER_SECURE_DELETE=False
+# How to erase cinder volumes on delete [none, zero, shred]
+#CINDER_VOLUME_CLEAR=none
 
 ### HORIZON ###
 #
