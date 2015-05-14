@@ -1,0 +1,125 @@
+heat_template_version: '2013-05-23'
+
+parameters:
+
+  image:
+    type: string
+    default: cirros
+
+  flavor:
+    type: string
+    default: m1.nano
+
+  extnet:
+    type: string
+    default: public
+
+  routerid:
+    type: string
+    description: id of the tenant's router to the public net
+
+resources:
+
+  sec_group:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      rules:
+      - {port_range_max: null, port_range_min: null, protocol: icmp, remote_ip_prefix: 0.0.0.0/0}
+      - {port_range_max: 5432, port_range_min: 5432, protocol: tcp, remote_ip_prefix: 0.0.0.0/0}
+      - {port_range_max: 80, port_range_min: 80, protocol: tcp, remote_ip_prefix: 0.0.0.0/0}
+      - {port_range_max: 22, port_range_min: 22, protocol: tcp, remote_ip_prefix: 0.0.0.0/0}
+      - {port_range_max: 8080, port_range_min: 8080, protocol: tcp, remote_ip_prefix: 0.0.0.0/0}
+      - {port_range_max: 443, port_range_min: 443, protocol: tcp, remote_ip_prefix: 0.0.0.0/0}
+
+  net:
+    type: OS::Neutron::Net
+    properties: {name: test-net}
+
+  subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      cidr: 10.0.16.0/24
+      dns_nameservers: [8.8.8.8]
+      ip_version: 4
+      network: {get_resource: net}
+
+  ri:
+    type: OS::Neutron::RouterInterface
+    properties:
+      router_id: { get_param: routerid }
+      subnet: {get_resource: subnet}
+
+  port1:
+    type: OS::Neutron::Port
+    depends_on: []
+    properties:
+      fixed_ips:
+      - subnet: {get_resource: subnet}
+      network: {get_resource: net}
+      replacement_policy: AUTO
+      security_groups:
+      - {get_resource: sec_group}
+
+  server1:
+    type: OS::Nova::Server
+    depends_on: []
+    properties:
+      flavor: { get_param: flavor }
+      image: { get_param: image }
+      key_name: ''
+      networks:
+      - port: {get_resource: port1}
+
+  port2:
+    type: OS::Neutron::Port
+    properties:
+      fixed_ips:
+      - subnet: {get_resource: subnet}
+      network: {get_resource: net}
+      replacement_policy: AUTO
+      security_groups:
+      - {get_resource: sec_group}
+
+  server2:
+    type: OS::Nova::Server
+    properties:
+      flavor: { get_param: flavor }
+      image: { get_param: image }
+      key_name: ''
+      networks:
+      - port: {get_resource: port2}
+
+  port3:
+    type: OS::Neutron::Port
+    depends_on: []
+    properties:
+      fixed_ips:
+      - subnet: {get_resource: subnet}
+      network: {get_resource: net}
+      replacement_policy: AUTO
+      security_groups:
+      - {get_resource: sec_group}
+
+  format('fip-{0}-{1}'. $.id(), $instance.name):
+    type: OS::Neutron::FloatingIP
+    depends_on: []
+    properties:
+      floating_network: { get_param: extnet }
+      port_id: {get_resource: port3}
+
+  server3:
+    type: OS::Nova::Server
+    depends_on: []
+    properties:
+      flavor: { get_param: flavor }
+      image: { get_param: image }
+      key_name: ''
+      networks:
+      - port: {get_resource: port3}
+
+outputs:
+
+  server2-assigned-ips:
+    description: Network IPs assigned to server2 instance
+    value:
+      get_attr: [server2, networks]
