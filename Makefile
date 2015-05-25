@@ -2,7 +2,7 @@
 
 DEMO_CREDS=. /opt/stack/devstack/accrc/demo/demo
 ADMIN_CREDS=. /opt/stack/devstack/accrc/admin/admin
-IS_NEUTRON=`keystone catalog | grep "Service: network"`
+IS_NEUTRON=`openstack catalog list -f yaml | grep "Type: network"`
 
 DISKFMT=qcow2
 ADD_IMAGE=glance image-create --is-public True --disk-format $(DISKFMT) --container-format bare --copy-from
