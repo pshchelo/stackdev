@@ -3,10 +3,15 @@ heat_template_version: 2015-10-15
 description: |
   Test Heat autoscaling based on Ceilometer metering and alarms.
   VM is a standard minimal Cirros image.
-  Load vm with
-  ssh cirros@floating-ip -i key-file "cat /dev/urandom | gzip -9 > /dev/null &"
-  release load with
-  ssh cirros@floating-ip -i key-file "kill -9 \$(ps -ef | grep 'cat /dev/urandom' | grep -v grep | awk '{print \$1}')"
+
+  Get list of VMs IPs:
+    heat output-show <stack-name> ips
+
+  Load VM CPU with:
+    ssh cirros@IP -i key-file "cat /dev/urandom | gzip -9 > /dev/null &"
+
+  Release CPU load with:
+    ssh cirros@IP -i key-file "kill -9 \$(ps -ef | grep 'cat /dev/urandom' | grep -v grep | awk '{print \$1}')"
 
 parameters:
   key_name:
@@ -88,3 +93,8 @@ resources:
         - {get_attr: [scale_down_policy, alarm_url]}
       matching_metadata: {'metadata.user_metadata.stack': {get_param: "OS::stack_id"}}
       comparison_operator: lt
+
+outputs:
+  ips:
+    value: { get_attr: [ my_asg, outputs_list, networks, private, 1 ] }
+    description: IPv4 adresses of servers (as of recent DevStack)
