@@ -1,4 +1,4 @@
-heat_template_version: '2014-10-16'
+heat_template_version: 2015-10-15
 
 description: |
   Simplest webapp using netcat (custom fit for CirrOS).
