@@ -2,16 +2,7 @@ heat_template_version: 2015-10-15
 
 description: |
   Test Heat autoscaling based on Ceilometer metering and alarms.
-  VM is a standard minimal Cirros image.
-
-  Get list of VMs IPs:
-    heat output-show <stack-name> ips
-
-  Load VM CPU with:
-    ssh cirros@IP -i key-file "cat /dev/urandom | gzip -9 > /dev/null &"
-
-  Release CPU load with:
-    ssh cirros@IP -i key-file "kill -9 \$(ps -ef | grep 'cat /dev/urandom' | grep -v grep | awk '{print \$1}')"
+  CPU loading commands are optimized for the standard minimal Cirros image.
 
 parameters:
   key_name:
@@ -95,6 +86,23 @@ resources:
       comparison_operator: lt
 
 outputs:
-  ips:
-    value: { get_attr: [ my_asg, outputs_list, networks, private, 1 ] }
-    description: IPv4 adresses of servers (as of recent DevStack)
+  load_cpu:
+    description: |
+      command to use to load the CPU of Cirros-based VM,
+      modify location of the private key
+    value:
+      str_replace:
+        template: ssh cirros@IP -i KEY.pem "cat /dev/urandom | gzip -9 > /dev/null &"
+        params:
+          IP: { get_attr: [ my_asg, resource.0, networks, private, 0 ] }
+          KEY: { get_param: key_name }
+  release_cpu:
+    description: |
+      command to use to release the CPU load of Cirros-based VM,
+      modify location of the private key
+    value:
+      str_replace:
+        template: ssh cirros@IP -i KEY.pem "kill -9 \$(ps -ef | grep 'cat /dev/urandom' | grep -v grep | awk '{print \$1}')"
+        params:
+          IP: { get_attr: [ my_asg, resource.0, networks, private, 0 ] }
+          KEY: { get_param: key_name }
