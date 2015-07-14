@@ -1,7 +1,8 @@
 # Fixes to apply after DevStack's stack.sh run
 
-DEMO_CREDS=. /opt/stack/devstack/accrc/demo/demo
-ADMIN_CREDS=. /opt/stack/devstack/accrc/admin/admin
+SHELL=/bin/bash
+
+CREDS='/opt/stack/devstack/openrc'
 IS_NEUTRON=`openstack catalog list -f yaml | grep "Type: network"`
 
 DISKFMT=qcow2
@@ -44,14 +45,14 @@ wan:
 	
 keypair:
 	@echo "Adding demo keypair..."; \
-$(DEMO_CREDS); \
+source $(CREDS) demo demo; \
 nova keypair-add demo --pub_key $$HOME/.ssh/git_rsa.pub; \
 nova keypair-list
 
 # space in grep is important, now there are two subnets, ipv4 and ipv6
 dns:
 	@echo "Adding Google DNS to demo tenant private subnets..."; \
-$(DEMO_CREDS); \
+source $(CREDS) demo demo; \
 if [ "$(IS_NEUTRON)" ]; then \
     dnsserver4=8.8.8.8; \
     dnsserver6="2001:4860:4860::8888"; \
@@ -65,7 +66,7 @@ fi
 
 secgroup:
 	@echo "Adding ingress ICMP and SSH to default security group..."; \
-$(DEMO_CREDS); \
+source $(CREDS) demo demo; \
 if [ "$(IS_NEUTRON)" ]; then \
     neutron security-group-rule-list -f csv -c id -c security_group -c direction | grep 'default.*ingress' | awk -F "," '{print $$1}' | xargs -L1 neutron security-group-rule-delete; \
     neutron security-group-rule-create default --direction ingress --remote-ip-prefix "0.0.0.0/0" --ethertype IPv4 --protocol ICMP; \
@@ -74,23 +75,23 @@ fi
 
 cirros:
 	@echo "Renaming cirros image..."; \
-$(ADMIN_CREDS); \
+source $(CREDS) admin admin; \
 name=$$(glance image-list | grep -o "cirros-.*-disk"); \
 glance image-update $$name --name cirros --property description=$$name
 
 addcirros:
 	@echo "Uploading latest Cirros qcow image..."; \
-$(ADMIN_CREDS); \
+source $(CREDS) admin admin; \
 $(ADD_IMAGE) $(CIRROS_IMAGE_URL) --name cirros --property description="$(CIRROS_IMAGE_NAME)"
 
 heatimage:
 	@echo "Uploading Heat test image to glance";\
-$(ADMIN_CREDS);\
+source $(CREDS) admin admin; \
 $(ADD_IMAGE) $(HEAT_FUNC_IMAGE_URL) --name $(HEAT_FUNC_IMAGE_NAME)
 
 awslbimage:
 	@echo "Uploading Fedora 21 cloud image to glance";\
-$(ADMIN_CREDS);\
+source $(CREDS) admin admin; \
 $(ADD_IMAGE) $(AWS_LB_IMAGE_URL) --name $(AWS_LB_IMAGE_NAME)
 
 .PHONY: wan keypair dns secgroup cirros addcirros heatimage awslbimage 
