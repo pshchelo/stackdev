@@ -41,8 +41,10 @@ resources:
         str_replace:
           template: |
             #! /bin/sh -v
+            Body="$(cat /etc/hostname)"
+            Response="HTTP/1.1 200 OK\r\nContent-Length: ${#Body}\r\n\r\n$Body"
             wc_notify --data-binary '{"status": "SUCCESS"}'
-            while true ; do echo -e "HTTP/1.1 200 OK\r\n\r\n$(cat /etc/hostname)" | nc -llp PORT; done
+            while true ; do echo -e $Response | nc -llp PORT; done
           params:
             PORT: { get_param: port }
             wc_notify: { get_attr: [ handle, curl_cli ] }
