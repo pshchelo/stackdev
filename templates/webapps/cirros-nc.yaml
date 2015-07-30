@@ -1,0 +1,6 @@
+parameters:
+  key: demo
+  flavor: m1.nano
+  image: cirros
+resource_registry:
+  "Test::Web::App": netcat.yaml

@@ -1,0 +1,113 @@
+heat_template_version: 2015-10-15
+
+description: |
+  Test server with WebApp on it.
+  Actual webapp is defined in environment as Test::Web::App resource.
+
+parameters:
+  key:
+    type: string
+  flavor:
+   type: string
+  image:
+    type: string
+  app_port:
+    type: number
+    default: 80
+  extnet:
+    type: string
+    default: public
+  subnet_cidr:
+    type: string
+    description: IP range to create in subnet
+    default: '10.0.2.0/24'
+
+resources:
+
+  secgroup:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      rules:
+        - direction: ingress
+          ethertype: IPv4
+          protocol: tcp
+          port_range_max: { get_param: app_port }
+          port_range_min: { get_param: app_port }
+          remote_ip_prefix: '0.0.0.0/0'
+        - direction: ingress
+          ethertype: IPv4
+          protocol: tcp
+          port_range_max: 22
+          port_range_min: 22
+          remote_ip_prefix: '0.0.0.0/0'
+
+  network:
+    type: OS::Neutron::Net
+    properties:
+      name: webappnet
+
+  subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      cidr: { get_param: subnet_cidr }
+      network: { get_resource: network }
+
+  router:
+    type: OS::Neutron::Router
+    properties:
+      external_gateway_info:
+        network: { get_param: extnet }
+
+  router_interface:
+    type: OS::Neutron::RouterInterface
+    properties:
+      router: { get_resource: router }
+      subnet: { get_resource: subnet }
+
+  port:
+    type: OS::Neutron::Port
+    properties:
+      replacement_policy: AUTO
+      network: { get_resource: network }
+      fixed_ips:
+        - subnet: {get_resource: subnet }
+      security_groups:
+        - { get_resource: secgroup }
+
+  config:
+    type: Test::Web::App
+    properties:
+      curl_cli: { get_attr: [handle, curl_cli] }
+      port: { get_param: app_port }
+
+  server:
+    type: OS::Nova::Server
+    properties:
+      key_name: { get_param: key }
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      networks:
+        - port: { get_resource: port }
+      user_data_format: RAW
+      user_data: { get_resource: config }
+
+  handle:
+    type: OS::Heat::WaitConditionHandle
+
+  waiter:
+    type: OS::Heat::WaitCondition
+    depends_on: server
+    properties:
+      count: 1
+      timeout: 600
+      handle: { get_resource: handle }
+
+outputs:
+  webapp:
+    description: URL of the webapp
+    value:
+      str_replace:
+        template: http://SERVER_IP:PORT
+        params:
+          SERVER_IP: { get_attr: [ server, first_address ] }
+          PORT: { get_param: app_port }

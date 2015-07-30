@@ -1,0 +1,7 @@
+parameters:
+  key: demo
+  flavor: m1.heat
+  image: fedora-heat-test-image
+
+resource_registry:
+  "Test::Web::App": python.yaml
