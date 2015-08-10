@@ -1,0 +1,76 @@
+#! /usr/bin/env bash
+# common functions and paths
+TOP_DIR=$(cd $(dirname "$0") && pwd)
+CREDS=$TOP_DIR/openrc
+source $TOP_DIR/functions
+source $TOP_DIR/stackrc
+#DEST=${DEST:-/opt/stack}
+
+allow_wan() {
+    WAN_SET=$(sudo iptables -t nat -L | grep "MASQUERADE.*all.*anywhere.*anywhere")
+    if [ -z "$WAN_SET" ]; then
+        echo "Allowing WAN access for VMs"
+        sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+    fi
+}
+
+add_keypair() {
+    echo "Adding demo keypair..."
+    source $CREDS demo demo
+    nova keypair-add demo --pub_key $HOME/.ssh/git_rsa.pub
+    nova keypair-list
+}
+
+add_dns() {
+    if is_service_enabled neutron; then
+        echo "Adding Google DNS to demo tenant private subnets..."
+        source $CREDS demo demo
+        dnsserver4=8.8.8.8
+        subnet4=$(neutron subnet-list | grep " private-subnet" | awk '{print $2}')
+        neutron subnet-update $subnet4 --dns-nameserver $dnsserver4
+        neutron subnet-show $subnet4
+        # as of after-Kilo devstack creates two subnets, IPv4 and IPv6
+        # FIXME: change this to !='stable/kilo" after Liberty release
+        # and EOL of stable/juno
+        if [ ${NEUTRON_BRANCH} == "master" ]; then
+            dnsserver6="2001:4860:4860::8888"
+            subnet6=$(neutron subnet-list | grep "ipv6-private-subnet" | awk '{print $2}')
+            neutron subnet-update $subnet6 --dns-nameserver $dnsserver6
+            neutron subnet-show $subnet6
+        fi
+    fi
+}
+
+secgroup() {
+    if is_service_enabled neutron; then
+        echo "Adding ingress ICMP and SSH to default security group..."
+        source $CREDS demo demo
+        neutron security-group-rule-list -f csv -c id -c security_group -c direction | grep 'default.*ingress' | awk -F "," '{print $1}' | xargs -L1 neutron security-group-rule-delete
+        neutron security-group-rule-create default --direction ingress --remote-ip-prefix "0.0.0.0/0" --ethertype IPv4 --protocol ICMP
+        neutron security-group-rule-create default --direction ingress --remote-ip-prefix "0.0.0.0/0" --ethertype IPv4 --protocol TCP --port-range-min 22 --port-range-max 22
+    fi
+}
+
+rename_cirros() {
+    echo "Renaming cirros image..."
+    source $CREDS admin admin
+    name=$(glance image-list | grep -o "cirros-.*-disk")
+    glance image-update $name --name cirros --property description=$name
+}
+
+add_awslb_image() {
+    echo "Uploading Fedora 21 cloud image to glance"
+    source $CREDS admin admin
+    DISKFMT=qcow2
+    AWS_LB_IMAGE_NAME=Fedora-Cloud-Base-20141203-21.x86_64
+    AWS_LB_IMAGE_URL="http://download.fedoraproject.org/pub/fedora/linux/releases/21/Cloud/Images/x86_64/$(AWS_LB_IMAGE_NAME).$(DISKFMT)"
+    glance image-create --is-public True --disk-format $(DISKFMT) --container-format bare --copy-from $(AWS_LB_IMAGE_URL) --name $(AWS_LB_IMAGE_NAME)
+}
+
+# execute desired functions
+allow_wan
+add_keypair
+add_dns
+secgroup
+rename_cirros
+#add_awslb_image
