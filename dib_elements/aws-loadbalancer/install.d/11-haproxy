@@ -1,0 +1,18 @@
+#!/bin/bash
+
+set -uex
+
+set -o pipefail
+
+[ -d /var/lib/haproxy ] || install -d -D -m 0755 -o root -g root /var/lib/haproxy
+
+# Allow haproxy to proxy any port if SELinux is in enforcing mode
+# https://bugs.launchpad.net/tripleo/+bug/1339938
+if [[ -x /usr/sbin/semanage ]]; then
+    setsebool haproxy_connect_any 1
+fi
+
+# haproxy service has to be explicitly enabled in /etc/default/haproxy on ubuntu/debian systems
+if [ -f /etc/default/haproxy ]; then
+    sed -i -e 's/ENABLED=0/ENABLED=1/' /etc/default/haproxy
+fi

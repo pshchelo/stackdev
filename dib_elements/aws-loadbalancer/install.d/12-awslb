@@ -1,0 +1,6 @@
+#!/bin/bash
+
+set -uex
+
+# Monkey-patch heat-cfntools (LP bug #1408045)
+sed -i "s/tmp\/\.haproxy-stats/var\/lib\/haproxy\/stats/" /bin/cfn-push-stats
