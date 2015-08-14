@@ -11,6 +11,7 @@ class StuckCreate(resource.Resource):
         return
 
     def check_create_complete(self, data):
+        self.client('nova').servers.list()
         return False
 
     def handle_delete(self):
