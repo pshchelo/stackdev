@@ -1,0 +1,8 @@
+parameters:
+  key: demo
+  flavor: m1.heat
+  image: fedora-heat-test-image
+  app_port: 8080
+
+resource_registry:
+  "Test::Web::App": tomcat.yaml

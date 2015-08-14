@@ -1,0 +1,40 @@
+heat_template_version: 2015-10-15
+
+description: |
+  Simplest webapp using netcat (custom fit for CirrOS).
+
+parameters:
+  curl_cli:
+    type: string
+  port:
+    type: number
+
+resources:
+  config:
+    type: OS::Heat::SoftwareConfig
+    properties:
+      group: ungrouped
+      config:
+        str_replace:
+          template: |
+            #! /bin/sh -v
+            yum -y install java-1.7.0-openjdk-devel tomcat-webapps tomcat-admin-webapps
+            # allow access to the default Tomcat port
+            iptables -I INPUT 1 -p tcp -m tcp --dport 8080 -j ACCEPT
+            # install and compile the test tomcat servlet
+            appsrc="https://github.com/pshchelo/hello-world-servlet/archive/nodb.tar.gz"
+            app=/var/lib/tomcat/webapps/hello
+            mkdir -p $app
+            curl -Lk $appsrc | tar xz -C $app --strip-components 1
+            javac -cp /usr/share/tomcat/lib/tomcat-servlet-3.0-api.jar $app/WEB-INF/classes/HelloServlet.java
+            # restart Tomcat to activate the new servlet
+            systemctl restart tomcat.service
+            # report success
+            wc_notify --data-binary '{"status": "SUCCESS"}'
+          params:
+            wc_notify: { get_param: curl_cli }
+
+outputs:
+  OS::stack_id:
+    value: { get_resource: config }
+
