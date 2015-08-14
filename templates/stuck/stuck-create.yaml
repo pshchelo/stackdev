@@ -1,0 +1,5 @@
+heat_template_version: 2015-10-15
+
+resources:
+  first:
+    type: OS::Test::StuckCreate

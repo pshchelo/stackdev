@@ -1,0 +1,7 @@
+heat_template_version: 2015-10-15
+resources:
+  flavor:
+    type: OS::Nova::Flavor
+    properties:
+      ram: 100500
+      vcpus: 100500

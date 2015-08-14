@@ -1,0 +1,18 @@
+heat_template_version: 2015-10-15
+
+parameters:
+  image:
+    type: string
+    default: cirros
+
+  flavor:
+    type: string
+    default: m1.nano
+
+resources:
+  server:
+    type: OS::Nova::Server
+    properties:
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: demo
