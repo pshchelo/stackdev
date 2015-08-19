@@ -9,8 +9,10 @@ source $TOP_DIR/stackrc
 allow_wan() {
     WAN_SET=$(sudo iptables -t nat -L | grep "MASQUERADE.*all.*anywhere.*anywhere")
     if [ -z "$WAN_SET" ]; then
-        echo "Allowing WAN access for VMs"
+        echo "Allowing WAN access for VMs..."
         sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+    else
+        echo "WAN access is already allowed."
     fi
 }
 
@@ -41,6 +43,23 @@ add_dns() {
     fi
 }
 
+add_heat_net() {
+    if is_service_enabled neutron; then
+        echo "Adding subnet for heat tests..."
+        source $CREDS admin admin
+        PUB_SUBNET_ID=`neutron subnet-list | grep ' public-subnet ' | awk '{split($0,a,"|"); print a[2]}'`
+        ROUTER_GW_IP=`neutron port-list -c fixed_ips -c device_owner | grep router_gateway | awk -F '"' -v subnet_id="${PUB_SUBNET_ID//[[:space:]]/}" '$4 == subnet_id { print $8; }'`
+
+        # create a heat specific private network (default 'private' network has ipv6 subnet)
+        source $CREDS demo demo
+        HEAT_PRIVATE_SUBNET_CIDR=10.0.5.0/24
+        neutron net-create heat-net
+        neutron subnet-create --name heat-subnet heat-net $HEAT_PRIVATE_SUBNET_CIDR
+        neutron router-interface-add router1 heat-subnet
+        sudo route add -net $HEAT_PRIVATE_SUBNET_CIDR gw $ROUTER_GW_IP
+    fi
+
+}
 secgroup() {
     if is_service_enabled neutron; then
         echo "Adding ingress ICMP and SSH to default security group..."
@@ -67,10 +86,57 @@ add_awslb_image() {
     glance image-create --is-public True --disk-format $(DISKFMT) --container-format bare --copy-from $(AWS_LB_IMAGE_URL) --name $(AWS_LB_IMAGE_NAME)
 }
 
-# execute desired functions
-allow_wan
-add_keypair
-add_dns
-secgroup
-rename_cirros
-#add_awslb_image
+run_default() {
+    allow_wan
+    add_keypair
+    add_dns
+    add_heat_net
+    secgroup
+    rename_cirros
+}
+
+while [[ $# > 0 ]]; do
+    key="$1"
+    case $key in
+        -h|--help)
+            echo -e "Supported options: wan key dns secgroup heatnet cirros awslb\nDefault - all the above except awslb"
+            exit 0
+        ;;
+        wan)
+            allow_wan
+            shift # past argument
+        ;;
+        key)
+            add_keypair
+            shift # past argument
+        ;;
+        dns)
+            add_dns
+            shift # past argument
+        ;;
+        secgroup)
+            secgroup
+            shift
+        ;;
+        heatnet)
+            add_heat_net
+            shift
+        ;;
+        cirros)
+            rename_cirros
+            shift
+        ;;
+        awslb)
+            add_awslb_image
+        ;;
+        *)
+            echo -e "Unregognized option $key\nRun with -h to see available options"
+            exit 1
+        ;;
+    esac
+    shift # past argument or value
+done
+
+if [ $# -eq 0 ]; then
+    run_default
+fi
