@@ -21,11 +21,12 @@ resources:
             Body=$(cat /etc/hostname)
             Response="HTTP/1.1 200 OK\r\nContent-Length: ${#Body}\r\n\r\n$Body"
             echo $Response
-            echo "while true ; do echo -e \"${Response}\" | nc -llp PORT; done" > /bin/ncserve
-            chmod +x /bin/ncserve
-            #(sudo ncserve > /dev/null 2>&1 &) &
             wc_notify --data-binary '{"status": "SUCCESS"}'
-            nohup ./bin/ncserve > /dev/null 2>&1 &
+            while true ; do echo -e $Response | nc -llp PORT; done
+            #echo "while true ; do echo -e \"${Response}\" | nc -llp PORT; done" > /bin/ncserve
+            #chmod +x /bin/ncserve
+            #(sudo ncserve > /dev/null 2>&1 &) &
+            #nohup ./bin/ncserve > /dev/null 2>&1 &
           params:
             wc_notify: { get_param: curl_cli }
             PORT: { get_param: port }
