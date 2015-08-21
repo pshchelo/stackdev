@@ -17,10 +17,12 @@ allow_wan() {
 }
 
 add_keypair() {
-    echo "Adding demo keypair..."
-    source $CREDS demo demo
-    nova keypair-add demo --pub_key $HOME/.ssh/git_rsa.pub
-    nova keypair-list
+    if is_service_enabled nova; then
+        echo "Adding demo keypair..."
+        source $CREDS demo demo
+        nova keypair-add demo --pub_key $HOME/.ssh/git_rsa.pub
+        nova keypair-list
+    fi
 }
 
 add_dns() {
@@ -44,7 +46,7 @@ add_dns() {
 }
 
 add_heat_net() {
-    if is_service_enabled neutron; then
+    if is_service_enabled neutron && is_service_enabled heat; then
         echo "Adding subnet for heat tests..."
         source $CREDS admin admin
         PUB_SUBNET_ID=`neutron subnet-list | grep ' public-subnet ' | awk '{split($0,a,"|"); print a[2]}'`
@@ -57,6 +59,8 @@ add_heat_net() {
         neutron subnet-create --name heat-subnet heat-net $HEAT_PRIVATE_SUBNET_CIDR
         neutron router-interface-add router1 heat-subnet
         sudo route add -net $HEAT_PRIVATE_SUBNET_CIDR gw $ROUTER_GW_IP
+    else
+        echo "either Heat or Neutron are not enabled"
     fi
 
 }
@@ -71,19 +75,23 @@ secgroup() {
 }
 
 rename_cirros() {
-    echo "Renaming cirros image..."
-    source $CREDS admin admin
-    name=$(glance image-list | grep -o "cirros-.*-disk")
-    glance image-update $name --name cirros --property description=$name
+    if is_service_enabled glance; then
+        echo "Renaming cirros image..."
+        source $CREDS admin admin
+        name=$(glance image-list | grep -o "cirros-.*-disk")
+        glance image-update $name --name cirros --property description=$name
+    fi
 }
 
 add_awslb_image() {
-    echo "Uploading Fedora 21 cloud image to glance"
-    source $CREDS admin admin
-    DISKFMT=qcow2
-    AWS_LB_IMAGE_NAME=Fedora-Cloud-Base-20141203-21.x86_64
-    AWS_LB_IMAGE_URL="http://download.fedoraproject.org/pub/fedora/linux/releases/21/Cloud/Images/x86_64/$(AWS_LB_IMAGE_NAME).$(DISKFMT)"
-    glance image-create --is-public True --disk-format $(DISKFMT) --container-format bare --copy-from $(AWS_LB_IMAGE_URL) --name $(AWS_LB_IMAGE_NAME)
+    if is_service_enabled glance; then
+        echo "Uploading Fedora 21 cloud image to glance"
+        source $CREDS admin admin
+        DISKFMT=qcow2
+        AWS_LB_IMAGE_NAME=Fedora-Cloud-Base-20141203-21.x86_64
+        AWS_LB_IMAGE_URL="http://download.fedoraproject.org/pub/fedora/linux/releases/21/Cloud/Images/x86_64/$(AWS_LB_IMAGE_NAME).$(DISKFMT)"
+        glance image-create --is-public True --disk-format $(DISKFMT) --container-format bare --copy-from $(AWS_LB_IMAGE_URL) --name $(AWS_LB_IMAGE_NAME)
+    fi
 }
 
 run_default() {
@@ -94,6 +102,11 @@ run_default() {
     secgroup
     rename_cirros
 }
+
+if [ $# -eq 0 ]; then
+    run_default
+    exit 0
+fi
 
 while [[ $# > 0 ]]; do
     key="$1"
@@ -136,7 +149,3 @@ while [[ $# > 0 ]]; do
     esac
     shift # past argument or value
 done
-
-if [ $# -eq 0 ]; then
-    run_default
-fi
