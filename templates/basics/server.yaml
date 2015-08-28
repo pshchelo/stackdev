@@ -9,10 +9,25 @@ parameters:
     type: string
     default: m1.nano
 
+  net:
+    type: string
+    default: private
+
 resources:
+
   server:
     type: OS::Nova::Server
     properties:
       image: { get_param: image }
       flavor: { get_param: flavor }
       key_name: demo
+      networks:
+        - network: {get_param: net}
+
+outputs:
+  networks:
+    value: { get_attr: [server, networks ] }
+  addresses:
+    value: { get_attr: [server, addresses ] }
+  ip:
+    value: { get_attr: [server, networks, {get_param: net }, 0 ] }
