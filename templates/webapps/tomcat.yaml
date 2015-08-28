@@ -1,13 +1,14 @@
 heat_template_version: 2015-10-15
 
 description: |
-  Simplest webapp using netcat (custom fit for CirrOS).
+  Tomcat servlet webapp.
 
 parameters:
   curl_cli:
     type: string
   port:
     type: number
+    description: Ignored here, default 8080 Tomcat port is always used
 
 resources:
   config:
