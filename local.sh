@@ -78,8 +78,8 @@ rename_cirros() {
     if is_service_enabled glance; then
         echo "Renaming cirros image..."
         source $CREDS admin admin
-        name=$(glance image-list | grep -o "cirros-.*-disk")
-        glance image-update $name --name cirros --property description=$name
+        IFS=';' read -a image_line <<< $(glance image-list | grep "cirros-.*-disk" | awk '{print $2";"$4'})
+        glance image-update ${image_line[0]} --name cirros --property description=${image_line[1]}
     fi
 }
 
