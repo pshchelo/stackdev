@@ -4,4 +4,6 @@ resources:
   first:
     type: OS::Test::StuckUpdate
     properties:
-      data: new
+      value: new
+      action_wait_secs:
+        update: -1

@@ -116,5 +116,3 @@ SERVICE_TOKEN=tokentoken
 #[DEFAULT]
 # decrease number of Heat engine workers, when too much for devstack
 #num_engine_workers = 2
-# use my testing resource plugins
-#plugin_dirs = /home/pshchelo/stackdev/heat_plugins

@@ -4,9 +4,13 @@ resources:
   first:
     type: OS::Test::StuckUpdate
     properties:
-      data: old
+      value: old
+      action_wait_secs:
+        update: -1
 
   second:
     type: OS::Test::StuckUpdate
     properties:
-      data: old
+      value: old
+      action_wait_secs:
+        update: -1

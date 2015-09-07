@@ -2,4 +2,7 @@ heat_template_version: 2015-10-15
 
 resources:
   first:
-    type: OS::Test::StuckCreate
+    type: OS::Heat::TestResource
+    properties:
+      action_wait_secs:
+        create: -1
