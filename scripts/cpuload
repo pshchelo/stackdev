@@ -1,0 +1,20 @@
+#! /bin/sh
+PID_FILE=load.pid
+if [ "$1" == "-r" ];then 
+    if [ ! -f "$PID_FILE" ]; then
+        echo "Nothig to release"
+        exit 1
+    fi
+    cat $PID_FILE | xargs kill
+    rm -f $PID_FILE
+    exit 0
+fi
+if [ -f "$PID_FILE" ]; then
+    echo "Already loading"
+    exit 1
+fi
+NUM_CPU=$(grep -c ^processor /proc/cpuinfo 2>/dev/null || sysctl -n hw.ncpu)
+for in in $( seq $NUM_CPU ); do
+    cat /dev/urandom >> /dev/null 2>&1 &
+    echo $! >> $PID_FILE
+done
