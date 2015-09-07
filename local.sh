@@ -88,8 +88,8 @@ add_awslb_image() {
         echo "Uploading Fedora 21 cloud image to glance"
         source $CREDS admin admin
         AWS_LB_IMAGE_NAME=Fedora-Cloud-Base-20141203-21.x86_64
-        AWS_LB_IMAGE_URL="http://download.fedoraproject.org/pub/fedora/linux/releases/21/Cloud/Images/x86_64/$(AWS_LB_IMAGE_NAME).qcow2"
-        curl ${AWS_LB_IMAGE_URL} | glance image-create --is-public True --disk-format qcow2  --container-format bare --name $(AWS_LB_IMAGE_NAME)
+        AWS_LB_IMAGE_URL="http://download.fedoraproject.org/pub/fedora/linux/releases/21/Cloud/Images/x86_64/${AWS_LB_IMAGE_NAME}.qcow2"
+        curl -L ${AWS_LB_IMAGE_URL} | glance image-create --visibility public --disk-format qcow2  --container-format bare --name ${AWS_LB_IMAGE_NAME}
     fi
 }
 
