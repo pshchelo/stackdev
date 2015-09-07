@@ -2,7 +2,9 @@ heat_template_version: 2015-10-15
 
 description: |
   Test Heat autoscaling based on Ceilometer metering and alarms.
-  CPU loading commands are optimized for the standard minimal Cirros image.
+  Shell script used to (un)load CPU is located in the same repo.
+  Execute these commands on the instance via SSH:
+  "cpuload" to load CPU, "cpuload -r" to release the CPU load.
 
 parameters:
   key_name:
@@ -14,8 +16,24 @@ parameters:
   image:
     type: string
     default: cirros
+  net:
+    type: string
+    default: heat-net
 
 resources:
+
+  loader:
+    type: OS::Heat::SoftwareConfig
+    properties:
+      group: ungrouped
+      config:
+        str_replace:
+          template: |
+            #!/bin/sh -x
+            echo 'SCRIPT' > /bin/cpuload
+            chmod 777 /bin/cpuload
+          params:
+            SCRIPT: {get_file: "../../scripts/cpuload"}
 
   sec_group:
     type: OS::Neutron::SecurityGroup
@@ -29,6 +47,8 @@ resources:
   my_asg:
     type: OS::Heat::AutoScalingGroup
     properties:
+      min_size: 1
+      max_size: 2
       resource:
         type: OS::Nova::Server
         properties:
@@ -36,10 +56,12 @@ resources:
           key_name: { get_param: key_name }
           image: { get_param: image }
           flavor: { get_param: flavor }
+          networks:
+            - network: { get_param: net }
           security_groups:
           - get_resource: sec_group
-      min_size: 1
-      max_size: 2
+          user_data_format: RAW
+          user_data: { get_resource: loader }
 
   scale_up_policy:
     type: OS::Heat::ScalingPolicy
@@ -68,7 +90,7 @@ resources:
       threshold: 50
       alarm_actions:
         - {get_attr: [scale_up_policy, alarm_url]}
-      matching_metadata: {'metadata.user_metadata.stack': {get_param: "OS::stack_id"}}
+      matching_metadata: {"metadata.user_metadata.stack": {get_param: "OS::stack_id"}}
       comparison_operator: gt
 
   cpu_alarm_low:
@@ -82,27 +104,10 @@ resources:
       threshold: 15
       alarm_actions:
         - {get_attr: [scale_down_policy, alarm_url]}
-      matching_metadata: {'metadata.user_metadata.stack': {get_param: "OS::stack_id"}}
+      matching_metadata: {"metadata.user_metadata.stack": {get_param: "OS::stack_id"}}
       comparison_operator: lt
 
 outputs:
-  load_cpu:
-    description: |
-      command to use to load the CPU of Cirros-based VM,
-      modify location of the private key
-    value:
-      str_replace:
-        template: ssh cirros@IP -i KEY.pem "cat /dev/urandom | gzip -9 > /dev/null &"
-        params:
-          IP: { get_attr: [ my_asg, resource.0, networks, private, 0 ] }
-          KEY: { get_param: key_name }
-  release_cpu:
-    description: |
-      command to use to release the CPU load of Cirros-based VM,
-      modify location of the private key
-    value:
-      str_replace:
-        template: ssh cirros@IP -i KEY.pem "kill -9 \$(ps -ef | grep 'cat /dev/urandom' | grep -v grep | awk '{print \$1}')"
-        params:
-          IP: { get_attr: [ my_asg, resource.0, networks, private, 0 ] }
-          KEY: { get_param: key_name }
+  server_ip:
+    description: IP address of the server, use to execute commands via SSH
+    value: { get_attr: [ my_asg, resource.0, networks, private, 0 ] }
