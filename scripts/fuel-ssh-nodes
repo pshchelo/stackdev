@@ -1,0 +1,118 @@
+#!/usr/bin/env bash
+#
+# Usage:
+# fuel-ssh-nodes [-e|--env N] [-c|--cmd COMMAND] ROLE
+#
+# creates a tmux session with windows that SSH'ed to all nodes of provided role
+# (of a given Fuel environment)
+# window 0 is left on Fuel master node
+# other windows are named node-<node-id>
+#
+# tmux session is named [eN-]<role>
+# if tmux session with this name already exists - simply attaches to it
+# 
+# optionally executes a command in all connected nodes and stays connected
+# (has meaning only when creating a new session)
+#
+# also creates ~/.tmux.conf and sets some mouse options
+# if such file does not exist
+
+read -r -d '' helpmsg <<- EOM
+Usage:
+$0 [-e|--env N] [-c|--cmd COMMAND] ROLE
+EOM
+
+if [ -z $(which tmux) ]; then
+    echo "Needs tmux installed."
+    echo "$helpmsg"
+    exit 1
+fi
+
+if [ -z $(which fuel) ]; then
+    echo "Requires fuel client installed"
+    echo "$helpmsg"
+    exit 1
+fi
+
+tmux_conf=~/.tmux.conf
+
+env=""
+envcmd=""
+sshcmd=""
+while [[ $# > 1 ]]; do
+    key="$1"
+    case $key in
+        -e|--env)       
+            env=$2
+            envcmd="--env $env"
+            shift
+        ;;
+        -c|--cmd)
+            sshcmd="$2; bash"
+            shift
+        ;;
+        *)
+            echo "Unknown option $key"
+            echo "$helpmsg"
+            exit 1
+        ;;
+    esac
+shift
+done
+
+if [[ -n $1 ]]; then
+    role=$1
+    sessionname="${role}"
+    if [ $env ]; then
+        sessionname="e${env}-${sessionname}"
+    fi
+else
+    echo "Role must be specified"
+    echo "$helpmsg"
+    exit 1
+fi
+                
+
+tmux_attach() {
+    tmux attach -t "${sessionname}"
+}
+
+tmux_new() {
+    nodes=($(fuel node list $envcmd | grep $role | awk '{print $1}'))
+    if [ ${#nodes[@]} -eq 0 ]; then
+        echo "No suitable nodes found"
+        exit 1
+    fi
+    tmux new-session -s "${sessionname}" -d
+    tmux rename-window -t "${sessionname}:0" "fuel"
+    for node in ${nodes[@]}; do
+        tmux new-window -d -n "node-${node}" -t "${sessionname}" "ssh -t node-${node} '$sshcmd'"
+    done
+
+    tmux attach -t "${sessionname}"
+}
+
+tmux_set_options() {
+    if [ ! -f $tmux_conf ]; then
+        echo "creating tmux config..."
+        cat > $tmux_conf << EOF
+set-window-option -g mode-mouse on
+set -g mode-mouse on
+set -g mouse-resize-pane on
+set -g mouse-select-pane on
+set -g mouse-select-window on
+EOF
+    fi
+}
+
+main() {
+    tmux_set_options
+    exists=$(tmux list-sessions 2>/dev/null | grep "${sessionname}")
+    if [ -z "${exists}" ]; then
+        tmux_new
+    else
+        tmux_attach
+    fi
+}
+
+main
