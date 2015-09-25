@@ -1,20 +1,65 @@
 #! /bin/sh
-PID_FILE=load.pid
-if [ "$1" == "-r" ];then 
-    if [ ! -f "$PID_FILE" ]; then
-        echo "Nothig to release"
+PID_FILE=/tmp/cpuload.pid
+
+set_status() {
+    if [ -f "$PID_FILE" ]; then
+        inprogress=true
+    else
+        inprogress=false
+    fi
+}
+
+print_status() {
+    local _load_on=$1
+    if $_load_on; then
+        echo "CPU load in progress"
+    else
+        echo "CPU load is not running"
+    fi
+}
+
+cpu_load() {
+    set_status
+    if $inprogress; then
+        print_status $inprogress
+        exit 1
+    else
+        NUM_CPU=$(grep -c ^processor /proc/cpuinfo 2>/dev/null || sysctl -n hw.ncpu)
+        echo "Starting CPU load"
+        for in in $( seq $NUM_CPU ); do
+            cat /dev/urandom >> /dev/null 2>&1 &
+            echo $! >> $PID_FILE
+        done
+        exit 0
+    fi
+}
+
+cpu_release() {
+    set_status
+    if $inprogress; then
+        echo "Releasing CPU load"
+        cat $PID_FILE | xargs kill
+        rm -f $PID_FILE
+        exit 0
+    else
+        print_status $inprogress
         exit 1
     fi
-    cat $PID_FILE | xargs kill
-    rm -f $PID_FILE
-    exit 0
-fi
-if [ -f "$PID_FILE" ]; then
-    echo "Already loading"
-    exit 1
-fi
-NUM_CPU=$(grep -c ^processor /proc/cpuinfo 2>/dev/null || sysctl -n hw.ncpu)
-for in in $( seq $NUM_CPU ); do
-    cat /dev/urandom >> /dev/null 2>&1 &
-    echo $! >> $PID_FILE
-done
+}
+
+case $1 in
+    -s)
+        set_status
+        print_status $inprogress
+        exit 0
+    ;;
+    -r)
+        cpu_release 
+    ;;
+    -i)
+        echo $(hostname)
+    ;;
+    *)
+        cpu_load
+    ;;
+esac
