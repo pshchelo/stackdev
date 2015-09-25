@@ -111,3 +111,9 @@ outputs:
   server_ip:
     description: IP address of the server, use to execute commands via SSH
     value: { get_attr: [ my_asg, resource.0, networks, private, 0 ] }
+  scaleup:
+    description: POST to this webhook to trigger scaling up manually
+    value: {get_attr: [scale_up_policy, alarm_url]}
+  scaledn:
+    description: POST to this webhook to trigger scaling down manually
+    value: {get_attr: [scale_down_policy, alarm_url]}
