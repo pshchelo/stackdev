@@ -1,0 +1,27 @@
+heat_template_version: 2015-10-15
+
+parameters:
+  key:
+    type: string
+    default: demo
+
+resources:
+  first:
+    type: OS::Heat::TestResource
+    properties:
+      value: { get_param: key}
+      client_name: nova
+      entity_name: keypairs
+      action_wait_secs:
+        create: 4200
+
+  second:
+    type: OS::Heat::TestResource
+    depends_on: first
+    properties:
+      value: { get_param: key}
+      client_name: nova
+      entity_name: keypairs
+      action_wait_secs:
+        create: 4200
+
