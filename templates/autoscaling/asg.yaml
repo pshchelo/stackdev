@@ -33,7 +33,7 @@ resources:
             echo 'SCRIPT' > /bin/cpuload
             chmod 777 /bin/cpuload
           params:
-            SCRIPT: {get_file: "../../scripts/cpuload"}
+            SCRIPT: {get_file: "https://raw.githubusercontent.com/pshchelo/stackdev/master/scripts/cpuload"}
 
   sec_group:
     type: OS::Neutron::SecurityGroup
