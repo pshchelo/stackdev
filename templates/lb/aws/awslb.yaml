@@ -3,7 +3,7 @@ heat_template_version: 2015-10-15
 description:  AWS Load Balancer balancing HTTP connections
 
 parameters:
-  
+
   KeyName:
     type: string
     default: demo
@@ -11,6 +11,10 @@ parameters:
   LbFlavor:
     type: string
     default: m1.heat
+
+  SubnetId:
+    type: string
+    default: ae7462e1-c116-4aef-a416-0d512a43cd7d
 
   port_lb:
     type: string
@@ -35,3 +39,7 @@ resources:
         - LoadBalancerPort: { get_param: port_lb }
           InstancePort: { get_param: port_app }
           Protocol: HTTP
+
+outputs:
+  instance:
+    value: { get_resource: aws_lb }
