@@ -1,0 +1,35 @@
+heat_template_version: 2015-10-15
+
+parameters:
+  subnet:
+    type: string
+    description: Subnet for Pool
+    default: heat-subnet
+  lb_port:
+    type: number
+    description: port of load balancer
+    default: 80
+  app_port:
+    type: number
+    description: port of pool members to balance to
+    default: 8080
+
+resources:
+  lb:
+    type: OS::Neutron::LoadBalancer
+    properties:
+      pool_id: { get_resource: pool }
+      protocol_port: { get_param: lb_port }
+
+  pool:
+    type: OS::Neutron::Pool
+    properties:
+      lb_method: ROUND_ROBIN
+      protocol: TCP
+      subnet: { get_param: subnet }
+      vip:
+        protocol_port: { get_param: app_port }
+
+outputs:
+  lb_id:
+    value: { get_resource: lb }
