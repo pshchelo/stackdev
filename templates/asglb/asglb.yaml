@@ -6,48 +6,61 @@ description: |
   Instances must be running some webserver on a given app_port
   producing HTTP response that is different between servers
   but stable over time for given server.
-  Auto-scaling is driven by Ceilometer alarms.
+  Auto-scaling is driven by Ceilometer alarms besed on CPU utilization.
   Both HTTP and SSH access are load-balanced.
 
 parameters:
   flavor:
     type: string
+    description: Nova flavor to launch instances with
     default: m1.nano
   image:
     type: string
+    description: Glance image to launch instances from
     default: cirros
   username:
     type: string
+    description: default user name on the image used (for SSH access)
     default: cirros
   key_name:
     type: string
+    description: Nova keypair name to put on the instances (for SSH access)
     default: demo
   net:
     type: string
+    description: Neutron network to launch instances in
     default: heat-net
   subnet:
     type: string
+    description: Neutron subnet to launch instances in
     default: heat-subnet
   public_net:
     type: string
+    description: Network from where Floating IPs are assigned
     default: public
   app_port:
     type: number
+    description: port on which the web app will run on instances
     default: 8080
   app_lb_port:
     type: number
+    description: port on which the load-balanced webapp must be accessed
     default: 80
   timeout:
     type: number
+    description: Time to allow instances to finish provisioning
     default: 600
   min_asg_size:
     type: number
+    description: minimal number of instances in auto-scaling group
     default: 1
   max_asg_size:
     type: number
+    description: maximal number of instances in auto-scaling group
     default: 3
   launch_asg_size:
     type: number
+    description: number of instances in auto-scaling group to create at launch time
     default: 2
 
 resources:

@@ -77,10 +77,11 @@ TODO
 
   - expose the private key via template output
 
-- add descriptions to parameters
-- put constraints on parameters
+- put custom constraints on parameters
 - move default parameter values to environment
 - improve passing the security groups in
 - split config to cpuload script config and webapp config
 
   - might not work on Cirros if it will require multi-part MIME
+
+- prettify this README
