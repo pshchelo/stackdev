@@ -9,7 +9,10 @@ appropriate HTTP links instead (e.g. use raw links from this repo on GitHub).
 
 Create the stack
 ================
-Launch with:
+
+Download all files in this folder locally.
+
+Launch Heat stack with:
 
     heat stack-create asglb -f asglb.yaml -e env_asglb.yaml [-P <parameters>]
 
@@ -50,10 +53,10 @@ SSH access is also load-balanced in a round-robin fashion.
 VMs are preloaded with ``cpuload`` script that can be executed via SSH
 as follows:
 
-    ``cpuluad`` - load all CPU cores
-    ``cpuload -r`` - release the CPU load
-    ``cpuload -s`` - status of CPU load (on/off)
-    ``cpuload -i`` - identify the host by hostname
+- ``cpuluad`` - load all CPU cores
+- ``cpuload -r`` - release the CPU load
+- ``cpuload -s`` - status of CPU load (on/off)
+- ``cpuload -i`` - identify the host by hostname
 
 Use it to load/release load on CPU and test the auto-scaling via Ceilometer.
 
@@ -71,10 +74,13 @@ TODO
 
 - create network and subnet on the fly
 - create nova key on the fly
+
   - expose the private key via template output
+
 - add descriptions to parameters
 - put constraints on parameters
 - move default parameter values to environment
 - improve passing the security groups in
 - split config to cpuload script config and webapp config
+
   - might not work on Cirros if it will require multi-part MIME
