@@ -50,7 +50,7 @@ SERVICE_TOKEN=tokentoken
 disable_all_services
 
 ### BASIC INFRA ###
-#enable_service dstat mysql rabbit 
+#enable_service dstat mysql rabbit
 
 ### TEMPEST ###
 #enable_service tempest
@@ -74,7 +74,7 @@ disable_all_services
 #IMAGE_URLS+=",https://cloud-images.ubuntu.com/releases/trusty/release/ubuntu-14.04-server-cloudimg-amd64-disk1.img"
 
 ### HEAT ###
-#enable_service h-eng h-api h-api-cfn h-api-cw heat
+#enable_service heat h-eng h-api h-api-cfn h-api-cw
 #HEAT_ENABLE_ADOPT_ABANDON=True
 
 ### CINDER ###
