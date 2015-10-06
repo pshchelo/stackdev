@@ -1,94 +1,107 @@
 [[local|localrc]]
 
-### NETWORK SETTINGS ###
-#
-#FLOATING_RANGE=192.168.122.112/28
-#FIXED_RANGE=10.0.0.1/24
-#FIXED_NETWORK_SIZE=256
-#FLAT_INTERFACE=eth0
-#EXT_GW_IP=192.168.122.1
-#HOST_IP=192.168.100.127
-
-### SET PASSWORDS FOR SERVICES AND USERS ###
-#
+###########
+# PASSWORDS
+###########
 ADMIN_PASSWORD=admin
 MYSQL_PASSWORD=mysql
 RABBIT_PASSWORD=rabbit
 SERVICE_PASSWORD=service
 SERVICE_TOKEN=tokentoken
 
-### SET SOME INSTALL OPTIONS ###
+
+##################
+# NETWORK SETTINGS
+##################
+# By default, DevStack creates a 10.0.0.0/24 network for instances.
+# If this overlaps with the hosts network, you may adjust with the
+# following.
+#NETWORK_GATEWAY=10.1.0.1
+#FIXED_RANGE=10.1.0.0/24
+#FIXED_NETWORK_SIZE=256
 #
+#FLOATING_RANGE=192.168.122.112/28
+#FLAT_INTERFACE=eth0
+#EXT_GW_IP=192.168.122.1
+#HOST_IP=192.168.100.127
+
+
+##########
+# PACKAGES
+##########
 # run already-installed devstack in offline mode
 #OFFLINE=True
-
 # refresh repos
 #RECLONE=yes
-
 # always upgrade all Python dependencies
 #PIP_UPGRADE=True
-
 # Set libraries that will be installed from git and not PyPI
 #LIBS_FROM_GIT=python-heatclient
+#LIBS_FROM_GIT=python-ironicclient
 
-# set the size of the stack volume backing file (in MB, default 10250M)
-#VOLUME_BACKING_FILE_SIZE=41000M
 
-### ADD MORE IMAGES TO GLANCE ###
-#
+##########
+# SERVICES
+##########
+
+### DISABLE EVERYTHING ###
+disable_all_services
+
+### BASIC INFRA ###
+#enable_service dstat mysql rabbit 
+
+### TEMPEST ###
+#enable_service tempest
+
+### KEYSTONE ###
+#enable_service key
+# disable Keystone V2 completely
+#ENABLE_IDENTITY_V2=False
+
+### GLANCE ###
+#enable_service glance g-api g-reg
+# specify what images to download
+#DOWNLOAD_DEFAULT_IMAGES=False
 # latest cirros qcow2 image instead of UEC ones
 #IMAGE_URLS+=",http://download.cirros-cloud.net/0.3.4/cirros-0.3.4-x86_64-disk.img"
-
 # Heat functional tests image (Fedora20 based)
 #IMAGE_URLS+=",http://tarballs.openstack.org/heat-test-image/fedora-heat-test-image.qcow2"
-
 # Fedora 21 cloud image (e.g. for AWS LoadBalancer resource in Heat)
 #IMAGE_URLS+=",http://download.fedoraproject.org/pub/fedora/linux/releases/21/Cloud/Images/x86_64/Fedora-Cloud-Base-20141203-21.x86_64.qcow2"
-
 # latest Ubuntu Trusty amd64 cloud image
 #IMAGE_URLS+=",https://cloud-images.ubuntu.com/releases/trusty/release/ubuntu-14.04-server-cloudimg-amd64-disk1.img"
 
-
-### CONFIGURE INSTALLED SERVICES ###
-#
-# Default set of components installed (as of DevStack Juno) is:
-# - Nova with Nova-network
-# - Keystone
-# - Glance
-# - Cinder with LVM backend
-# - Horizon
-
 ### HEAT ###
-#
-# enable Heat services
 #enable_service h-eng h-api h-api-cfn h-api-cw heat
 
 ### CINDER ###
-#
+#enable_service cinder c-sch c-api c-vol
 # How to erase cinder volumes on delete [none, zero, shred]
 #CINDER_VOLUME_CLEAR=none
+# set the size of the stack volume backing file (in MB, default 10250M)
+#VOLUME_BACKING_FILE_SIZE=41000M
 
 ### HORIZON ###
-#
-# disable Horizon (Dashboard)
-#disable_service horizon
+#enable_service horizon
+
+### NOVA ###
+#enable_service nova n-api n-crt n-cpu n-cond n-sch n-cauth
+#enable_service n-novnc
+# Use Nova-network - mutually exclusive with Neutron
+#enable_service n-net
 
 ### NEUTRON ###
-#
-# disable Nova-network and enable Neutron
-#disable_service n-net
-#enable_service q-svc q-agt q-dhcp q-l3 q-meta q-metering q-lbaas neutron
+#enable_service neutron q-svc q-agt q-dhcp q-l3 q-meta q-metering
+#enable_service q-lbaas
 
 ### CEILOMETER ###
-#
-# metering services
-#enable_service ceilometer-acompute ceilometer-acentral ceilometer-anotification ceilometer-collector
-# alarming services
-#enable_service ceilometer-alarm-evaluator,ceilometer-alarm-notifier
-# api services
-#enable_service ceilometer-api
+#enable_plugin ceilometer git://git.openstack.org/openstack/ceilometer
 # set shorter sample collection interval (default is 600)
 #CEILOMETER_PIPELINE_INTERVAL=60
+# For compatibility with <=stable/kilo
+#enable_service ceilometer-acompute ceilometer-acentral ceilometer-anotification ceilometer-collector
+#enable_service ceilometer-alarm-evaluator,ceilometer-alarm-notifier
+#enable_service ceilometer-api
 
 ### SWIFT ###
 #
@@ -96,14 +109,37 @@ SERVICE_TOKEN=tokentoken
 # set swift hash - the hash below is result of
 # echo "SWIFT_HASH" | md5sum | awk '{print $1}'
 #SWIFT_HASH=096d08da4f8d4cce3a724c5f6c18f055
+# Enable Swift TempUrls
+#SWIFT_ENABLE_TEMPURLS=True
+#SWIFT_TEMPURL_KEY=tempurl
 
 ### TROVE ###
 #
-#enable_service trove,tr-api,tr-tmgr,tr-cond
+#enable_service trove tr-api tr-tmgr tr-cond
 
 ### SAHARA ###
 #
 #enable_service sahara
+
+### IRONIC ###
+#enable_service ironic ir-api ir-cond
+VIRT_DRIVER=ironic
+# Create 3 virtual machines to pose as Ironic's baremetal nodes.
+#IRONIC_VM_COUNT=3
+#IRONIC_VM_SSH_PORT=22
+#IRONIC_BAREMETAL_BASIC_OPS=True
+# The parameters below represent the minimum possible values to create
+# functional nodes.
+#IRONIC_VM_SPECS_RAM=1024
+#IRONIC_VM_SPECS_DISK=10
+# Size of the ephemeral partition in GB. Use 0 for no ephemeral partition.
+#IRONIC_VM_EPHEMERAL_DISK=0
+# Configure available drivers
+#IRONIC_ENABLED_DRIVERS=fake,agent_ssh,agent_ipmitool
+#IRONIC_DEPLOY_DRIVER=agent_ssh
+# To build your own IPA ramdisk from source, set this to True
+#IRONIC_BUILD_DEPLOY_RAMDISK=False
+
 
 ### POST CONFIG STAGE SETTINGS ###
 #
