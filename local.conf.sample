@@ -16,14 +16,16 @@ SERVICE_TOKEN=tokentoken
 # By default, DevStack creates a 10.0.0.0/24 network for instances.
 # If this overlaps with the hosts network, you may adjust with the
 # following.
+#HOST_IP=192.168.100.127
 #NETWORK_GATEWAY=10.1.0.1
 #FIXED_RANGE=10.1.0.0/24
 #FIXED_NETWORK_SIZE=256
-#
+
 #FLOATING_RANGE=192.168.122.112/28
 #FLAT_INTERFACE=eth0
 #EXT_GW_IP=192.168.122.1
-#HOST_IP=192.168.100.127
+
+#MULTI_HOST=True
 
 
 ##########
@@ -73,6 +75,7 @@ disable_all_services
 
 ### HEAT ###
 #enable_service h-eng h-api h-api-cfn h-api-cw heat
+#HEAT_ENABLE_ADOPT_ABANDON=True
 
 ### CINDER ###
 #enable_service cinder c-sch c-api c-vol
@@ -123,7 +126,7 @@ disable_all_services
 
 ### IRONIC ###
 #enable_service ironic ir-api ir-cond
-VIRT_DRIVER=ironic
+#VIRT_DRIVER=ironic
 # Create 3 virtual machines to pose as Ironic's baremetal nodes.
 #IRONIC_VM_COUNT=3
 #IRONIC_VM_SSH_PORT=22
@@ -150,5 +153,7 @@ VIRT_DRIVER=ironic
 
 #[[post-config|$HEAT_CONF]]
 #[DEFAULT]
+# enable Convergence engine
+#convergence_engine=true
 # decrease number of Heat engine workers, when too much for devstack
 #num_engine_workers = 2
