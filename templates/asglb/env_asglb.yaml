@@ -1,0 +1,3 @@
+resource_registry:
+  "OS::Test::NeutronAppServer": app_server_neutron.yaml
+  "OS::Test::WebAppConfig": netcat-webapp.yaml

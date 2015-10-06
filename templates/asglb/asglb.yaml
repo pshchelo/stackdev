@@ -1,0 +1,205 @@
+heat_template_version: 2015-10-15
+
+description: |
+  Template which tests Neutron load balancing requests to members of
+  Heat AutoScalingGroup.
+  Instances must be running some webserver on a given app_port
+  producing HTTP response that is different between servers
+  but stable over time for given server.
+  Auto-scaling is driven by Ceilometer alarms.
+  Both HTTP and SSH access are load-balanced.
+
+parameters:
+  flavor:
+    type: string
+    default: m1.nano
+  image:
+    type: string
+    default: cirros
+  username:
+    type: string
+    default: cirros
+  key_name:
+    type: string
+    default: demo
+  net:
+    type: string
+    default: heat-net
+  subnet:
+    type: string
+    default: heat-subnet
+  public_net:
+    type: string
+    default: public
+  app_port:
+    type: number
+    default: 8080
+  app_lb_port:
+    type: number
+    default: 80
+  timeout:
+    type: number
+    default: 600
+  min_asg_size:
+    type: number
+    default: 1
+  max_asg_size:
+    type: number
+    default: 3
+  launch_asg_size:
+    type: number
+    default: 2
+
+resources:
+
+  app_sec_group:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      rules:
+      - remote_ip_prefix: 0.0.0.0/0
+        protocol: tcp
+        port_range_min: { get_param: app_port }
+        port_range_max: { get_param: app_port }
+
+  ssh_sec_group:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      rules:
+      - remote_ip_prefix: 0.0.0.0/0
+        protocol: tcp
+        port_range_min: 22
+        port_range_max: 22
+
+  asg:
+    type: OS::Heat::AutoScalingGroup
+    properties:
+      desired_capacity: { get_param: launch_asg_size }
+      max_size: { get_param: max_asg_size }
+      min_size: { get_param: min_asg_size }
+      resource:
+        type: OS::Test::NeutronAppServer
+        properties:
+          mdata: {"metering.stack": {get_param: "OS::stack_id"}}
+          image: { get_param: image }
+          flavor: { get_param: flavor }
+          key_name: { get_param: key_name }
+          net: { get_param: net}
+          app_sec_group: { get_resource: app_sec_group }
+          ssh_sec_group: { get_resource: ssh_sec_group }
+          app_port: { get_param: app_port }
+          app_pool_id: { get_resource: app_pool }
+          ssh_pool_id: { get_resource: ssh_pool }
+          timeout: { get_param: timeout }
+
+  scale_up:
+    type: OS::Heat::ScalingPolicy
+    properties:
+      adjustment_type: change_in_capacity
+      auto_scaling_group_id: { get_resource: asg }
+      scaling_adjustment: 1
+
+  scale_down:
+    type: OS::Heat::ScalingPolicy
+    properties:
+      adjustment_type: change_in_capacity
+      auto_scaling_group_id: { get_resource: asg }
+      scaling_adjustment: -1
+
+  cpu_alarm_high:
+    type: OS::Ceilometer::Alarm
+    properties:
+      description: Scale-up if the average CPU > 50% for 1 minute
+      meter_name: cpu_util
+      statistic: avg
+      period: 60
+      evaluation_periods: 1
+      threshold: 50
+      alarm_actions:
+        - {get_attr: [scale_up, alarm_url]}
+      matching_metadata: {"metadata.user_metadata.stack": {get_param: "OS::stack_id"}}
+      comparison_operator: gt
+
+  cpu_alarm_low:
+    type: OS::Ceilometer::Alarm
+    properties:
+      description: Scale-down if the average CPU < 15% for 1 minute
+      meter_name: cpu_util
+      statistic: avg
+      period: 60
+      evaluation_periods: 1
+      threshold: 15
+      alarm_actions:
+        - {get_attr: [scale_down, alarm_url]}
+      matching_metadata: {"metadata.user_metadata.stack": {get_param: "OS::stack_id"}}
+      comparison_operator: lt
+
+  app_health_monitor:
+    type: OS::Neutron::HealthMonitor
+    properties:
+      delay: 3
+      type: HTTP
+      timeout: 3
+      max_retries: 3
+
+  app_pool:
+    type: OS::Neutron::Pool
+    properties:
+      lb_method: ROUND_ROBIN
+      protocol: HTTP
+      subnet: { get_param: subnet }
+      monitors:
+      - { get_resource: app_health_monitor }
+      vip:
+        protocol_port: { get_param: app_lb_port }
+
+  app_floating_ip:
+     type: OS::Neutron::FloatingIP
+     properties:
+       floating_network: { get_param: public_net }
+       port_id:
+         { get_attr: [app_pool, vip, 'port_id'] }
+
+  ssh_pool:
+    type: OS::Neutron::Pool
+    properties:
+      lb_method: ROUND_ROBIN
+      protocol: TCP
+      subnet: { get_param: subnet }
+      vip:
+        protocol_port: 22
+
+  ssh_floating_ip:
+     type: OS::Neutron::FloatingIP
+     properties:
+       floating_network: { get_param: public_net }
+       port_id:
+         { get_attr: [ssh_pool, vip, 'port_id'] }
+
+outputs:
+
+  app_lb_url:
+    description: URL of the loadbalanced app
+    value:
+      str_replace:
+        template: http://IP_ADDRESS:PORT
+        params:
+          IP_ADDRESS: { get_attr: [ app_floating_ip, floating_ip_address ] }
+          PORT: { get_param: app_lb_port }
+
+  ssh_lb_url:
+    description: command for the loadbalanced SSH access
+    value:
+      str_replace:
+        template: ssh -i KEY.pem USER@IP_ADDRESS
+        params:
+          IP_ADDRESS: { get_attr: [ ssh_floating_ip, floating_ip_address ] }
+          KEY: { get_param: key_name }
+          USER: { get_param: username }
+
+  scale_up_hook:
+    description: POST to this URL for manual scale up
+    value: {get_attr: [scale_up, alarm_url]}
+
+  scale_down_hook:
+    description: POST to this URL for manual scale up
+    value: {get_attr: [scale_down, alarm_url]}

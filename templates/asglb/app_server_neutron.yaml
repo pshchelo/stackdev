@@ -1,0 +1,77 @@
+heat_template_version: 2015-10-15
+
+description: |
+  App server that is a member of Neutron Pool.
+
+parameters:
+  mdata:
+    type: json
+  image:
+    type: string
+  flavor:
+    type: string
+  key_name:
+    type: string
+  net:
+    type: string
+  app_sec_group:
+    type: string
+  ssh_sec_group:
+    type: string
+  app_pool_id:
+    type: string
+  ssh_pool_id:
+    type: string
+  app_port:
+    type: number
+  timeout:
+    type: number
+
+resources:
+
+  config:
+    type: OS::Test::WebAppConfig
+    properties:
+      app_port: { get_param: app_port }
+      wc_curl_cli: { get_attr: [ handle, curl_cli ] }
+
+  server:
+    type: OS::Nova::Server
+    properties:
+      metadata: { get_param: mdata }
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
+      networks:
+        - network: { get_param: net }
+      security_groups:
+        - { get_param: app_sec_group }
+        - { get_param: ssh_sec_group }
+      user_data_format: RAW
+      user_data: { get_resource: config }
+
+  handle:
+    type: OS::Heat::WaitConditionHandle
+
+  waiter:
+    type: OS::Heat::WaitCondition
+    depends_on: server
+    properties:
+      timeout: { get_param: timeout }
+      handle: { get_resource: handle }
+
+  app_pool_member:
+    type: OS::Neutron::PoolMember
+    depends_on: waiter
+    properties:
+      address: { get_attr: [ server, networks, { get_param: net }, 0 ] }
+      pool_id: { get_param: app_pool_id }
+      protocol_port: { get_param: app_port }
+
+  ssh_pool_member:
+    type: OS::Neutron::PoolMember
+    depends_on: waiter
+    properties:
+      address: { get_attr: [ server, networks, { get_param: net }, 0 ] }
+      pool_id: { get_param: ssh_pool_id }
+      protocol_port: 22
