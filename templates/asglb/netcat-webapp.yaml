@@ -35,7 +35,7 @@ resources:
             wc_notify --data-binary '{"status": "SUCCESS"}'
             while true ; do echo -e $Response | nc -llp PORT; done
           params:
-            SCRIPT: {get_file: "https://raw.githubusercontent.com/pshchelo/stackdev/master/scripts/cpuload"}
+            SCRIPT: { get_file: "../../scripts/cpuload" }
             PORT: { get_param: app_port }
             wc_notify: { get_param: wc_curl_cli }
 
