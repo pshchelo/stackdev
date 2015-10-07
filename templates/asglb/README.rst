@@ -4,8 +4,14 @@ AutoScaling WebApp using Ceilometer and Neutron Load Balancing
 
 Current version will not work from OpenStack Dashboard (Horizon)
 as Horizon can not parse environment declarations as local files.
-Upload all files to web and modify ``env_asglb.yaml`` to point to
-appropriate HTTP links instead (e.g. use raw links from this repo on GitHub).
+Upload all files to web and modify ``env_asglb.yaml``  and
+``netcat-webapp.yaml`` to point to appropriate HTTP links instead
+(e.g. use raw links from this repo on GitHub).
+
+**Note** this will not work as-is on Heat ≤ Juno version.
+Reason - absence of special handling of ``OS::stack_id`` pseudo-parameter
+as attribute. But with some editing/replacing resources in template it is
+possible to make it work on Heat ≤ Juno.
 
 Create the stack
 ================
@@ -27,8 +33,8 @@ Get the URL of the HTTP webapp:
 Curl it to show hostname. Repeat to see the host name alternating.
 
 If not taking any specific actions and depending on settings for size of
-auto-scaling group in the template ``asglb.yaml`` some instances might
-disappear as Ceilometer detects low CPU activity and
+auto-scaling group in the template ``asglb.yaml`` after a certain time some
+instances might disappear as Ceilometer detects low CPU activity and
 auto scaling down kicks in.
 
 Manual scaling up/down
@@ -41,6 +47,8 @@ Show the URLs of the scaling hooks:
 ``curl -X POST`` to these to force manual scale up or down.
 Check by accessing the webapp and observe some hostname added/removed
 when repeatedly accessing.
+Again, Ceilometer might bring the number of instances back per
+actual alarm state.
 
 Auto-scaling via Ceilometer
 ===========================
@@ -60,14 +68,7 @@ as follows:
 
 Use it to load/release load on CPU and test the auto-scaling via Ceilometer.
 
-The script is taken from ``scripts/cpuload`` file from this very repo
-via direct link
-
-   https://raw.githubusercontent.com/pshchelo/stackdev/master/scripts/cpuload
-
-If you do not have access to WWW from where you launch the stack,
-download this file locally and modify ``netcat-webapp.yaml`` template to
-point to it via ``get_file`` template function.
+The script is taken from ``scripts/cpuload`` file from this very repo.
 
 TODO
 ====
