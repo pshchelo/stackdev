@@ -48,7 +48,7 @@ parameters:
     default: 80
   timeout:
     type: number
-    description: Time to allow instances to finish provisioning
+    description: Time to allow instances to finish provisioning in seconds
     default: 600
   min_asg_size:
     type: number
@@ -62,6 +62,10 @@ parameters:
     type: number
     description: number of instances in auto-scaling group to create at launch time
     default: 2
+  cooldown:
+    type: number
+    description: autoscaling cooldown timeout in seconds
+    default: 60
 
 resources:
 
@@ -89,6 +93,7 @@ resources:
       desired_capacity: { get_param: launch_asg_size }
       max_size: { get_param: max_asg_size }
       min_size: { get_param: min_asg_size }
+      cooldown: { get_param: cooldown }
       resource:
         type: OS::Test::NeutronAppServer
         properties:
@@ -127,6 +132,7 @@ resources:
       period: 60
       evaluation_periods: 1
       threshold: 50
+      repeat_actions: true
       alarm_actions:
         - {get_attr: [scale_up, alarm_url]}
       matching_metadata: {"metadata.user_metadata.stack": {get_param: "OS::stack_id"}}
@@ -141,6 +147,7 @@ resources:
       period: 60
       evaluation_periods: 1
       threshold: 15
+      repeat_actions: true
       alarm_actions:
         - {get_attr: [scale_down, alarm_url]}
       matching_metadata: {"metadata.user_metadata.stack": {get_param: "OS::stack_id"}}
