@@ -38,8 +38,9 @@ SERVICE_TOKEN=tokentoken
 # always upgrade all Python dependencies
 #PIP_UPGRADE=True
 # Set libraries that will be installed from git and not PyPI
-#LIBS_FROM_GIT=python-heatclient
-#LIBS_FROM_GIT=python-ironicclient
+LIBS_FROM_GIT=python-openstackclient
+#LIBS_FROM_GIT+=,python-heatclient
+#LIBS_FROM_GIT+=,python-ironicclient
 
 
 ##########
