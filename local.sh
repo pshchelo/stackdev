@@ -38,15 +38,17 @@ add_dns() {
         subnet4=`neutron subnet-list -f value | grep private-subnet | grep -v ipv6-private-subnet | awk '{print $1}'`
         neutron subnet-update $subnet4 --dns-nameserver $dnsserver4
         neutron subnet-show $subnet4
-        subnet6=`neutron subnet-list -f value grep ipv6-private-subnet | awk '{print $1}'`
-        # FIXME: use if-clause to execute below when subnet6 is defined
-        dnsserver6="2001:4860:4860::8888"
-        neutron subnet-update $subnet6 --dns-nameserver $dnsserver6
-        neutron subnet-show $subnet6
+        subnet6=`neutron subnet-list -f value | grep ipv6-private-subnet | awk '{print $1}'`
+        if [ -n "${subnet6}" ]; then
+            dnsserver6="2001:4860:4860::8888"
+            neutron subnet-update $subnet6 --dns-nameserver $dnsserver6
+            neutron subnet-show $subnet6
+        fi
     fi
 }
 
 add_heat_net() {
+    #FIXME: check does not seem to work reliably
     if is_service_enabled neutron heat; then
         echo "Adding subnet for heat tests..."
         # NOTE: openstackclient has no support for neutron subnet, port and routers CLI for now,
@@ -63,8 +65,8 @@ add_heat_net() {
         neutron router-interface-add router1 heat-subnet
         sudo route add -net $HEAT_PRIVATE_SUBNET_CIDR gw $ROUTER_GW_IP
     fi
-
 }
+
 secgroup() {
     if is_service_enabled neutron; then
         echo "Adding ingress ICMP and SSH to default security group..."
@@ -79,21 +81,18 @@ secgroup() {
 rename_cirros() {
     if is_service_enabled glance; then
         echo "Renaming cirros image..."
-        # FIXME: use openstackclient for image modifications
-        source $CREDS admin admin
-        IFS=';' read -a image_line <<< $(glance image-list | grep "cirros-.*-disk" | awk '{print $2";"$4'})
-        glance image-update ${image_line[0]} --name cirros --property description=${image_line[1]}
+        read -r -a image <<< `${OSCLI_ADMIN} image list -f value -c ID -c Name | grep "cirros-.*-disk"`
+        ${OSCLI_ADMIN} image set ${image[0]} --name cirros --property description=${image[1]}
+        ${OSCLI_ADMIN} image show ${image[0]}
     fi
 }
 
 add_awslb_image() {
-    if is_service_enabled glance; then
+    if is_service_enabled glance heat; then
         echo "Uploading Fedora 21 cloud image to glance"
-        # FIXME: use openstackclient for image upload
-        source $CREDS admin admin
         AWS_LB_IMAGE_NAME=Fedora-Cloud-Base-20141203-21.x86_64
         AWS_LB_IMAGE_URL="http://download.fedoraproject.org/pub/fedora/linux/releases/21/Cloud/Images/x86_64/${AWS_LB_IMAGE_NAME}.qcow2"
-        curl -L ${AWS_LB_IMAGE_URL} | glance image-create --visibility public --disk-format qcow2  --container-format bare --name ${AWS_LB_IMAGE_NAME}
+        curl -L ${AWS_LB_IMAGE_URL} | ${OSCLI_ADMIN} image create --public --disk-format qcow2  --container-format bare ${AWS_LB_IMAGE_NAME}
     fi
 }
 
