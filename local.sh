@@ -2,16 +2,17 @@
 CREDS=/opt/stack/devstack/openrc
 OSCLI="openstack --os-cloud devstack"
 OSCLI_ADMIN="openstack --os-cloud devstack-admin"
+CATALOG=`${OSCLI_ADMIN} catalog list -f value -c Name`
 
-is_service_enabled() {
+function has_services {
     services=$@
     for service in ${services}; do
-        ${OSCLI_ADMIN} catalog show ${service} | grep -q ${service} || return 1
+        grep -q ${service} <<<${CATALOG} || return 1
     done
     return 0
 }
 
-allow_wan() {
+function allow_wan {
     WAN_SET=`sudo iptables -t nat -L | grep "MASQUERADE.*all.*anywhere.*anywhere"`
     if [ -z "$WAN_SET" ]; then
         echo "Allowing WAN access for VMs..."
@@ -21,15 +22,15 @@ allow_wan() {
     fi
 }
 
-add_keypair() {
-    if is_service_enabled nova; then
+function add_keypair {
+    if has_services nova; then
         echo "Adding demo keypair..."
         ${OSCLI} keypair create demo --public-key $HOME/.ssh/git_rsa.pub
     fi
 }
 
-add_dns() {
-    if is_service_enabled neutron; then
+function add_dns {
+    if has_services neutron; then
         echo "Adding Google DNS to demo tenant private subnets..."
         # NOTE: openstackclient has no support for neutron subnet CLI for now,
         #       resorting to neutronclient
@@ -47,9 +48,9 @@ add_dns() {
     fi
 }
 
-add_heat_net() {
+function add_heat_net {
     #FIXME: check does not seem to work reliably
-    if is_service_enabled neutron heat; then
+    if has_services heat neutron; then
         echo "Adding subnet for heat tests..."
         # NOTE: openstackclient has no support for neutron subnet, port and routers CLI for now,
         #       resorting to neutronclient
@@ -67,8 +68,8 @@ add_heat_net() {
     fi
 }
 
-secgroup() {
-    if is_service_enabled neutron; then
+function secgroup {
+    if has_services neutron; then
         echo "Adding ingress ICMP and SSH to default security group..."
         # FIXME: use openstackclient for secgroup modifications
         source $CREDS demo demo
@@ -78,8 +79,8 @@ secgroup() {
     fi
 }
 
-rename_cirros() {
-    if is_service_enabled glance; then
+function rename_cirros {
+    if has_services glance; then
         echo "Renaming cirros image..."
         read -r -a image <<< `${OSCLI_ADMIN} image list -f value -c ID -c Name | grep "cirros-.*-disk"`
         ${OSCLI_ADMIN} image set ${image[0]} --name cirros --property description=${image[1]}
@@ -87,8 +88,8 @@ rename_cirros() {
     fi
 }
 
-add_awslb_image() {
-    if is_service_enabled glance heat; then
+function add_awslb_image {
+    if has_services heat glance; then
         echo "Uploading Fedora 21 cloud image to glance"
         AWS_LB_IMAGE_NAME=Fedora-Cloud-Base-20141203-21.x86_64
         AWS_LB_IMAGE_URL="http://download.fedoraproject.org/pub/fedora/linux/releases/21/Cloud/Images/x86_64/${AWS_LB_IMAGE_NAME}.qcow2"
@@ -96,7 +97,7 @@ add_awslb_image() {
     fi
 }
 
-run_default() {
+function run_default {
     allow_wan
     add_keypair
     add_dns
