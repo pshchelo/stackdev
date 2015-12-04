@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+source /opt/stack/devstack/openrc admin admin
+ironic node-set-maintenance $1 off
+ironic node-set-provision-state $1 manage
+ironic node-set-provision-state $1 provide
+ironic node-show $1 --fields uuid name instance_uuid power_state provision_state maintenance
