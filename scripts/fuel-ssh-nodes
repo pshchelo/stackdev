@@ -72,21 +72,18 @@ else
     exit 1
 fi
                 
-
-tmux_attach() {
-    tmux attach -t "${sessionname}"
-}
-
 tmux_new() {
     nodes=($(fuel node list $envcmd | grep $role | awk '{print $1}'))
     if [ ${#nodes[@]} -eq 0 ]; then
         echo "No suitable nodes found"
         exit 1
     fi
-    tmux new-session -s "${sessionname}" -d
-    tmux rename-window -t "${sessionname}:0" "fuel"
-    for node in ${nodes[@]}; do
-        tmux new-window -d -n "node-${node}" -t "${sessionname}" "ssh -t node-${node} '$sshcmd'"
+
+    # open first window already ssh-ed to first applicable node
+    tmux new-session -s "${sessionname}" -n node-"${nodes[0]}" -d  "ssh -t node-${nodes[0]} '$sshcmd'"
+    # open new windows ssh-ed to remaining nodes (from second to last)
+    for node in ${nodes[@]:1}; do
+        tmux new-window -t "${sessionname}" -n node-"${node}" -d  "ssh -t node-${node} '$sshcmd'"
     done
 
     tmux attach -t "${sessionname}"
@@ -107,12 +104,7 @@ EOF
 
 main() {
     tmux_set_options
-    exists=$(tmux list-sessions 2>/dev/null | grep "${sessionname}")
-    if [ -z "${exists}" ]; then
-        tmux_new
-    else
-        tmux_attach
-    fi
+    tmux has-session -t "${sessionname}" 2>/dev/null && tmux attach -t "${sessionname}" || tmux_new
 }
 
 main
