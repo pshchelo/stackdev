@@ -144,6 +144,8 @@ disable_all_services
 # To build your own IPA ramdisk from source, set this to True
 #IRONIC_BUILD_DEPLOY_RAMDISK=False
 
+### IRONIC-INSPECTOR ###
+#enable_plugin ironic-inspector git://git.openstack.org/openstack/ironic-inspector
 
 ### POST CONFIG STAGE SETTINGS ###
 #
