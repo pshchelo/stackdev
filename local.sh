@@ -101,7 +101,6 @@ function run_default {
     allow_wan
     add_keypair
     add_dns
-    add_heat_net
     secgroup
     rename_cirros
 }
