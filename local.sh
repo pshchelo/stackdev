@@ -49,7 +49,6 @@ function add_dns {
 }
 
 function add_heat_net {
-    #FIXME: check does not seem to work reliably
     if has_services heat neutron; then
         echo "Adding subnet for heat tests..."
         # NOTE: openstackclient has no support for neutron subnet, port and routers CLI for now,
@@ -70,12 +69,13 @@ function add_heat_net {
 
 function secgroup {
     if has_services neutron; then
-        echo "Adding ingress ICMP and SSH to default security group..."
-        # FIXME: use openstackclient for secgroup modifications
-        source $CREDS demo demo
-        neutron security-group-rule-list -f csv -c id -c security_group -c direction | grep 'default.*ingress' | awk -F "," '{print $1}' | xargs -L1 neutron security-group-rule-delete
-        neutron security-group-rule-create default --direction ingress --remote-ip-prefix "0.0.0.0/0" --ethertype IPv4 --protocol ICMP
-        neutron security-group-rule-create default --direction ingress --remote-ip-prefix "0.0.0.0/0" --ethertype IPv4 --protocol TCP --port-range-min 22 --port-range-max 22
+        echo "Adding ingress ICMP and SSH to default security group of demo user..."
+        # NOTE: openstackclient currently manages secgroups via nova client,
+        #       which understands only ingress rules,
+        #       and this is exactly what I need 
+        ${OSCLI} security group rule list default -f value -c ID | xargs -L1 ${OSCLI} security group rule delete
+        ${OSCLI} security group rule create default --proto icmp --src-ip "0.0.0.0/0"
+        ${OSCLI} security group rule create default --proto tcp --src-ip "0.0.0.0/0" --dst-port 22
     fi
 }
 
@@ -101,8 +101,8 @@ function run_default {
     allow_wan
     add_keypair
     add_dns
-    secgroup
     rename_cirros
+    secgroup
 }
 
 if [ $# -eq 0 ]; then
