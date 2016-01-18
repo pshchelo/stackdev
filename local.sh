@@ -83,8 +83,10 @@ function rename_cirros {
     if has_services glance; then
         echo "Renaming cirros image..."
         read -r -a image <<< `${OSCLI_ADMIN} image list -f value -c ID -c Name | grep "cirros-.*-disk"`
-        ${OSCLI_ADMIN} image set ${image[0]} --name cirros --property description=${image[1]}
-        ${OSCLI_ADMIN} image show ${image[0]}
+        if [ -n "image[0]" ]; then
+            ${OSCLI_ADMIN} image set ${image[0]} --name cirros --property description=${image[1]}
+            ${OSCLI_ADMIN} image show ${image[0]}
+        fi
     fi
 }
 
