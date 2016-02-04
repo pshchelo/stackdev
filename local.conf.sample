@@ -13,17 +13,24 @@ SERVICE_TOKEN=tokentoken
 ##################
 # NETWORK SETTINGS
 ##################
+#HOST_IP=192.168.100.11
 # By default, DevStack creates a 10.0.0.0/24 network for instances.
 # If this overlaps with the hosts network, you may adjust with the
 # following.
-#HOST_IP=192.168.100.127
 #NETWORK_GATEWAY=10.1.0.1
 #FIXED_RANGE=10.1.0.0/24
 #FIXED_NETWORK_SIZE=256
-
-#FLOATING_RANGE=192.168.122.112/28
 #FLAT_INTERFACE=eth0
-#EXT_GW_IP=192.168.122.1
+
+# Floating network settings
+#FLOATING_RANGE=192.168.100.0/24
+#PUBLIC_NETWORK_GATEWAY=192.168.100.1
+#Q_FLOATING_ALLOCATION_POOL=start=192.168.100.20,end=192.168.100.30
+#PUBLIC_INTERFACE=eth0
+#Q_USE_PROVIDERNET_FOR_PUBLIC=True
+#OVS_PHYSICAL_BRIDGE=br-ex
+#PUBLIC_BRIDGE=br-ex
+#OVS_BRIDGE_MAPPINGS=public:br-ex
 
 #MULTI_HOST=True
 
