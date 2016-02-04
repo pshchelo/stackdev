@@ -137,7 +137,6 @@ disable_all_services
 # Example how to deploy from Gerrit change
 #enable_plugin ironic https://review.openstack.org/openstack/ironic refs/changes/82/236982/15
 
-#enable_service ironic ir-api ir-cond
 #VIRT_DRIVER=ironic
 # Create 3 virtual machines to pose as Ironic's baremetal nodes.
 #IRONIC_VM_COUNT=3
