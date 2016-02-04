@@ -72,8 +72,8 @@ disable_all_services
 #enable_service glance g-api g-reg
 # specify what images to download
 #DOWNLOAD_DEFAULT_IMAGES=False
-# latest cirros qcow2 image instead of UEC ones
-#IMAGE_URLS+=",http://download.cirros-cloud.net/0.3.4/cirros-0.3.4-x86_64-disk.img"
+# qcow2 Cirros image instead of UEC ones
+#IMAGE_URLS="http://download.cirros-cloud.net/0.3.4/cirros-0.3.4-x86_64-disk.img"
 # Heat functional tests image (Fedora20 based)
 #IMAGE_URLS+=",http://tarballs.openstack.org/heat-test-image/fedora-heat-test-image.qcow2"
 # Fedora 21 cloud image (e.g. for AWS LoadBalancer resource in Heat)
