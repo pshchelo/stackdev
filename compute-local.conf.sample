@@ -1,0 +1,26 @@
+[[local|localrc]]
+#OFFLINE=True
+RECLONE=yes
+PIP_UPGRADE=True
+
+ADMIN_PASSWORD=admin
+MYSQL_PASSWORD=mysql
+RABBIT_PASSWORD=rabbit
+SERVICE_PASSWORD=service
+SERVICE_TOKEN=tokentoken
+
+MULTI_HOST=True
+HOST_IP=192.168.100.12
+SERVICE_HOST=192.168.100.11
+MYSQL_HOST=$SERVICE_HOST
+RABBIT_HOST=$SERVICE_HOST
+GLANCE_HOSTPORT=$SERVICE_HOST:9292
+PUBLIC_INTERFACE=eth0
+
+disable_all_services
+enable_service dstat rabbit
+enable_service n-cpu
+enable_service q-agt
+enable_plugin ceilometer git://git.openstack.org/openstack/ceilometer
+disable_service ceilometer-acentral ceilometer-aipmi ceilometer-anotification ceilometer-collector ceilometer-api
+CEILOMETER_PIPELINE_INTERVAL=60
