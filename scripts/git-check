@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+cd $1
+echo "Git Status:"
+git status
+echo -e "\nGit branches"
+git branch
+echo -e "\nGit stashes"
+git stash list
