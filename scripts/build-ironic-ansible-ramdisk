@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+# generate a keypair to use with the image
+ANSIBLE_DEPLOY_KEY="ansible_deploy"
+echo -e 'n\n' | ssh-keygen -q -t rsa -P '' -f $ANSIBLE_DEPLOY_KEY
+
+# add ironic-ansible element path
+export ELEMENTS_PATH=$ANSIBLE_DEPLOY_ELEMENT_DIR
+
+# set a dev user with "ansible" name, access with SSH public key
+# and no login password, with default shell (sh=>dash on Debian-like)
+export DIB_DEV_USER_USERNAME="ansible"
+export DIB_DEV_USER_PWDLESS_SUDO="yes"
+export DIB_DEV_USER_AUTHORIZED_KEYS=$ANSIBLE_DEPLOY_KEY.pub
+
+disk-image-create -o ir-ansible-deploy ubuntu-minimal ironic-ansible

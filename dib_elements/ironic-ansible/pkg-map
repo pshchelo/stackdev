@@ -1,0 +1,10 @@
+{
+  "family": {
+    "redhat": {
+      "qemu-utils": "qemu-img"
+    }
+  },
+  "default": {
+    "qemu-utils": "qemu-utils"
+  }
+}
