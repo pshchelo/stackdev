@@ -100,6 +100,7 @@ function add_awslb_image {
 }
 
 function run_default {
+    sudo -H pip uninstall -y flake8-docstrings
     allow_wan
     add_keypair
     add_dns
