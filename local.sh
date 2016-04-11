@@ -26,6 +26,8 @@ function add_keypair {
     if has_services nova; then
         echo "Adding demo keypair..."
         ${OSCLI} keypair create demo --public-key $HOME/.ssh/git_rsa.pub
+    else
+        echo "Nova is not installed, skip adding keypair"
     fi
 }
 
@@ -45,6 +47,8 @@ function add_dns {
             neutron subnet-update $subnet6 --dns-nameserver $dnsserver6
             neutron subnet-show $subnet6
         fi
+    else
+        echo "Neutron is not installed, skip adding DNS."
     fi
 }
 
@@ -64,6 +68,8 @@ function add_heat_net {
         neutron subnet-create --name heat-subnet heat-net $HEAT_PRIVATE_SUBNET_CIDR
         neutron router-interface-add router1 heat-subnet
         sudo route add -net $HEAT_PRIVATE_SUBNET_CIDR gw $ROUTER_GW_IP
+    else
+        echo "Heat or Neutron not installed, skip adding Heat test network."
     fi
 }
 
@@ -76,6 +82,8 @@ function secgroup {
         ${OSCLI} security group rule list default -f value -c ID | xargs -L1 ${OSCLI} security group rule delete
         ${OSCLI} security group rule create default --proto icmp --src-ip "0.0.0.0/0"
         ${OSCLI} security group rule create default --proto tcp --src-ip "0.0.0.0/0" --dst-port 22
+    else
+        echo "Neutron is not installed, skip modifying default security groups."
     fi
 }
 
@@ -87,6 +95,8 @@ function rename_cirros {
             ${OSCLI_ADMIN} image set ${image[0]} --name cirros --property description=${image[1]}
             ${OSCLI_ADMIN} image show ${image[0]}
         fi
+    else:
+        echo "Glance is not installed, skip renaming Cirros image."
     fi
 }
 
@@ -96,6 +106,8 @@ function add_awslb_image {
         AWS_LB_IMAGE_NAME=Fedora-Cloud-Base-20141203-21.x86_64
         AWS_LB_IMAGE_URL="http://download.fedoraproject.org/pub/fedora/linux/releases/21/Cloud/Images/x86_64/${AWS_LB_IMAGE_NAME}.qcow2"
         curl -L ${AWS_LB_IMAGE_URL} | ${OSCLI_ADMIN} image create --public --disk-format qcow2  --container-format bare ${AWS_LB_IMAGE_NAME}
+    else
+        echo "Heat or Glance not installed, skip adding base image for AWS LoadBalancer."
     fi
 }
 
