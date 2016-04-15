@@ -1,0 +1,12 @@
+*.gz
+*.zip
+*.tar.gz
+build
+final
+*.vmlinuz
+vmlinuz64
+*.iso
+*.tcz*
+squashfs-root
+syslinux*
+newiso

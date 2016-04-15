@@ -1,0 +1,8 @@
+---
+- hosts: all
+  gather_facts: no
+  tasks:
+  - name: install Python
+    raw: tce-load -wi python
+  - name: symlink Python to standard location
+    raw: sudo ln -s /usr/local/bin/python /usr/bin/python
