@@ -1,14 +1,15 @@
-=========================================
+#########################################
 Irsible - Tiny Core Ironic Ansible Deploy
-=========================================
+#########################################
 
 .. WARNING::
     This is experimental! Build tested on Ubuntu Server 14.04
 
 Inspired by code from ``ironic-python-agent/imagebuild/tinyipa``
 
+
 Build script requirements
--------------------------
+=========================
 For the main build script:
 
 * wget
@@ -22,8 +23,9 @@ For building an ISO you'll also need:
 
 * genisoimage
 
-Instructions:
--------------
+
+Bild Instructions:
+==================
 To create a new ramdisk, run::
 
     make
@@ -41,6 +43,7 @@ This will create two new files once completed:
 
 These are your two files to upload to Glance for use with Ironic.
 
+
 Building an ISO from a previous make run:
 -----------------------------------------
 Once you've built irsible it is possible to pack it into an ISO if required.
@@ -52,11 +55,13 @@ This will create one new file once completed:
 
 * irsible.iso
 
+
 To build a fresh ramdisk and build an iso from it:
 --------------------------------------------------
 Run::
 
     make all
+
 
 To clean up the whole build environment run:
 --------------------------------------------
@@ -72,30 +77,39 @@ or::
 
     make clean_build clean_final
 
-SSH access
-----------
+
+Advanced options
+================
+
+
+SSH access keys
+---------------
 
 The user with configured SSH access is ``tc`` (default user in TinyCore).
 
 By default the key ``$HOME/.ssh/id_rsa.pub`` is put in ``tc`` user's
-``authrozed_keys``. To supply another public key, set this variable in the shell
-before building the image::
+``authrozed_keys``. To supply another public key, set this variable
+in the shell before building the image::
 
     export IRSIBLE_SSH_KEY=<path-to-the-public-key>
 
-Bootstrapping for use with Ansible
-----------------------------------
+Creating a bare-minimal image
+-----------------------------
 
-Current version only installs, configures and starts SSHd on the image.
-To effectively use Ansible you must install Python on the image as well::
+By default the build process will also install Python into the image,
+so that is becomes usable with Ansible right away.
+If you want to create a very bare-minimal image to have it smaller and
+install everything at run-time, set this variable in the shell
+before building the image::
 
-    tce-load -wis python
+    export IRSIBLE_FOR_ANSIBLE=false
 
-On TinnyCore the installed Python is located as ``/usr/local/bin/python``.
-To use Ansible without setting the custom ``anible_python_interpreter``
-in the inventory create a symlink to the location expected by Ansible::
+To use such image with Ansible, you will have to install Python and symlink
+it to a location expected by Ansible
+(or set this variable in your Ansible inventory)::
 
-    sudo ln -s /usr/local/bin/python /usr/bin/python
+    ansible_python_interpeter=/usr/local/bin/python
 
-The provided ``bootstrap.yaml`` Ansible playbook will do the two steps
-above for you. Include it in your playbooks when working with this image.
+The provided ``bootstrap.yaml`` Ansible playbook will do these steps for you.
+You can include it in your playbooks when working with this image.
+

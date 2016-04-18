@@ -2,6 +2,7 @@
 
 set -ex
 IRSIBLE_SSH_KEY=${IRSIBLE_SSH_KEY:-$HOME/.ssh/id_rsa.pub}
+IRSIBLE_FOR_ANSIBLE=${IRSIBLE_FOR_ANSIBLE:-true}
 WORKDIR=$(readlink -f $0 | xargs dirname)
 FINALDIR="$WORKDIR/final"
 
@@ -41,18 +42,25 @@ echo "tc" | $CHROOT_CMD tee -a /etc/sysconfig/tcuser
 # Mount /proc for chroot commands
 sudo mount --bind /proc $FINALDIR/proc
 
-# Install and configure OpenSSH daemon
-$TC_CHROOT_CMD tce-load -wi openssh.tcz
+# Install and configure bare minimum for SSH access
+$TC_CHROOT_CMD tce-load -wi openssh
+# Configure OpsnSSH
 $CHROOT_CMD cp /usr/local/etc/ssh/sshd_config.orig /usr/local/etc/ssh/sshd_config
 echo "PasswordAuthentication no" | $CHROOT_CMD tee -a /usr/local/etc/ssh/sshd_config
-
-# setup user
+# setup user and SSH keys
 $CHROOT_CMD mkdir -p /home/tc
 $CHROOT_CMD chown -R tc.staff /home/tc
 $TC_CHROOT_CMD mkdir -p /home/tc/.ssh
 sudo cp $IRSIBLE_SSH_KEY $FINALDIR/home/tc/.ssh/authorized_keys
 $CHROOT_CMD chown tc.staff /home/tc/.ssh/authorized_keys
 $TC_CHROOT_CMD chmod 600 /home/tc/.ssh/authorized_keys 
+
+if [ "$IRSIBLE_FOR_ANSIBLE" = true ]; then
+    # install Python
+    $TC_CHROOT_CMD tce-load -wi python
+    # Symlink Python to place expected by Ansible by default
+    $CHROOT_CMD ln -s /usr/local/bin/python /usr/bin/python
+fi
 
 # Unmount /proc and clean up everything
 sudo umount $FINALDIR/proc
