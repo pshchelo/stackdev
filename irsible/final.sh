@@ -3,6 +3,12 @@
 set -ex
 IRSIBLE_SSH_KEY=${IRSIBLE_SSH_KEY:-$HOME/.ssh/id_rsa.pub}
 IRSIBLE_FOR_ANSIBLE=${IRSIBLE_FOR_ANSIBLE:-true}
+IRSIBLE_FOR_IRONIC=${IRSIBLE_FOR_IRONIC:-true}
+
+if [ "$IRSIBLE_FOR_ANSIBLE" = false ]; then
+    IRSIBLE_FOR_IRONIC=false
+fi
+
 WORKDIR=$(readlink -f $0 | xargs dirname)
 FINALDIR="$WORKDIR/final"
 
@@ -41,6 +47,9 @@ echo "tc" | $CHROOT_CMD tee -a /etc/sysconfig/tcuser
 
 # Mount /proc for chroot commands
 sudo mount --bind /proc $FINALDIR/proc
+# Fake uname to get correct dependencies
+mkdir $FINALDIR/tmp/overides                                                                                                                                                                                    
+cp $WORKDIR/build_files/fakeuname $FINALDIR/tmp/overides/uname
 
 # Install and configure bare minimum for SSH access
 $TC_CHROOT_CMD tce-load -wi openssh
@@ -60,6 +69,12 @@ if [ "$IRSIBLE_FOR_ANSIBLE" = true ]; then
     $TC_CHROOT_CMD tce-load -wi python
     # Symlink Python to place expected by Ansible by default
     $CHROOT_CMD ln -s /usr/local/bin/python /usr/bin/python
+    if [ "$IRSIBLE_FOR_IRONIC" = true ]; then
+        # install other packages
+        while read line; do
+            $TC_CHROOT_CMD tce-load -wi $line
+        done < $WORKDIR/build_files/finalreqs.lst
+    fi
 fi
 
 # Unmount /proc and clean up everything
@@ -70,6 +85,7 @@ sudo rm -rf $FINALDIR/usr/local/tce.installed
 sudo mv $FINALDIR/etc/resolv.conf.old $FINALDIR/etc/resolv.conf
 sudo rm $FINALDIR/etc/sysconfig/tcuser
 sudo rm $FINALDIR/etc/sysconfig/tcedir
+sudo rm -rf $FINALDIR/tmp/overides
 
 # Copy bootlocal.sh to opt
 sudo cp "$WORKDIR/build_files/bootlocal.sh" "$FINALDIR/opt/."
