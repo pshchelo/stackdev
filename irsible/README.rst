@@ -81,18 +81,6 @@ or::
 Advanced options
 ================
 
-Note on image size
-    Current version for Ironic's ansible-deploy is somewhat bloated
-    (gzipped initrd is about 50M) mostly due to installing full qemu package
-    from repos and all the extra dependencies it brings.
-
-    Nevertheless, 256M of RAM should be enough to download and convert
-    a qcow2 image of Cirros.
-
-    Next versions will have only ``qemu-utils`` built from sources
-    (as ``tinyipa`` already does).
-
-
 SSH access keys
 ---------------
 
@@ -128,7 +116,7 @@ Creating minimal image for Ansible
 ----------------------------------
 
 By default build script creates an image suitable for Ironic's ansible-deploy
-driver, which includes installing bunch of TC packages.
+driver, which includes installing (and building) some TC packages.
 If you just want to build a minimal Ansible "slave", set this variable in the
 shell before building the image::
 
@@ -145,6 +133,8 @@ Note for Ansible users
     and many standard GNU tools -
     do not rely on them in your Ansible playbooks.
 
-    On the other hand those can be installed run-time with ``tce-load -wi``,
-    package names are ``bash``, ``coreutils`` and ``util-linux``.
+    On the other hand those can be installed at run-time with
+    ``tce-load -wi coreutils util-linux bash``,
+    so you can easily extend the ``bootstrap.yaml`` playbook.
+
     http://tinycorelinux.net/faq.html#compatibility

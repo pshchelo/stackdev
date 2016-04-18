@@ -1,4 +1,4 @@
-.PHONY: default all deps build final iso clean clean_build clean_final clean_iso
+.PHONY: default all deps build final iso clean clean_cache clean_build clean_final clean_iso
 
 default: deps build final
 
@@ -16,13 +16,15 @@ final:
 iso:
 	./build-iso.sh
 
-clean: clean_build clean_final clean_iso
+clean: clean_cache clean_build clean_final clean_iso
+
+clean_cache:
+	rm -f build_files/corepure64.gz
+	rm -f build_files/vmlinuz64
 
 clean_build:
 	sudo -v
 	sudo rm -rf build
-	rm -f build_files/corepure64.gz
-	rm -f build_files/vmlinuz64
 	rm -f build_files/*.tcz
 	rm -f build_files/*.tcz.*
 

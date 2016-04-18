@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PACKAGES="wget python-pip unzip sudo gawk squashfs-tools"
+PACKAGES="wget unzip sudo gawk squashfs-tools"
 
 echo "Installing dependencies:"
 

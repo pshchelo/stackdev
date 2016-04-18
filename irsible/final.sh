@@ -74,6 +74,9 @@ if [ "$IRSIBLE_FOR_ANSIBLE" = true ]; then
         while read line; do
             $TC_CHROOT_CMD tce-load -wi $line
         done < $WORKDIR/build_files/finalreqs.lst
+        # install compiled qemu-utils
+        cp $WORKDIR/build_files/qemu-utils.* $FINALDIR/tmp/builtin/optional
+        echo "qemu-utils.tcz" | $TC_CHROOT_CMD tee -a /tmp/builtin/onboot.lst
     fi
 fi
 
