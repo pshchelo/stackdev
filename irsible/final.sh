@@ -54,7 +54,7 @@ cp $WORKDIR/build_files/fakeuname $FINALDIR/tmp/overides/uname
 # Install and configure bare minimum for SSH access
 $TC_CHROOT_CMD tce-load -wi openssh
 # Configure OpsnSSH
-$CHROOT_CMD cp /usr/local/etc/ssh/sshd_config.orig /usr/local/etc/ssh/sshd_config
+$CHROOT_CMD cp /usr/local/etc/ssh/sshd_config_example /usr/local/etc/ssh/sshd_config
 echo "PasswordAuthentication no" | $CHROOT_CMD tee -a /usr/local/etc/ssh/sshd_config
 # setup user and SSH keys
 $CHROOT_CMD mkdir -p /home/tc
