@@ -7,13 +7,25 @@ Irsible - Tiny Core Ironic Ansible Deploy
 
 Inspired by code from ``ironic-python-agent/imagebuild/tinyipa``
 
+Included packages
+=================
+
+* python
+* parted
+* util-linux
+* qemu-utils (build from 2.5.1 source)
+
+Current version takes about 73MB of RAM when booted.
+
+Thus with this bootstrap image and Ironic's ansible-deploy driver
+128MB for a virtual baremetal instance is enough to download
+a standard Cirros qcow image into RAM and convert it to disk.
 
 Build script requirements
 =========================
 For the main build script:
 
 * wget
-* pip
 * unzip
 * sudo
 * awk
@@ -84,7 +96,6 @@ Advanced options
 SSH access keys
 ---------------
 
-The user with configured SSH access is ``tc`` (default user in TinyCore).
 
 By default the key ``$HOME/.ssh/id_rsa.pub`` is put in ``tc`` user's
 ``authrozed_keys``. To supply another public key, set this variable
@@ -125,16 +136,28 @@ shell before building the image::
 Note
     This variable is ignored if ``IRSIBLE_FOR_ANSIBLE`` is set to ``false``.
 
-Note for Ansible users
-    This image is very stripped down.
+Using with Ansible
+==================
 
-    It obviously lacks any standard package manager like ``apt`` or ``yum``,
-    but is also powered by `busybox`, lacks ``bash``
-    and many standard GNU tools -
-    do not rely on them in your Ansible playbooks.
+The user with configured SSH access is ``tc`` (default user in TinyCore),
+use this username in your playbooks.
 
-    On the other hand those can be installed at run-time with
-    ``tce-load -wi coreutils util-linux bash``,
-    so you can easily extend the ``bootstrap.yaml`` playbook.
+This user already has password-less sudo permissions.
 
-    http://tinycorelinux.net/faq.html#compatibility
+This image is very stripped down
+(especially minimal variants as described above):
+
+* lacks any standard package manager like ``apt`` or ``yum``
+* powered by `busybox`
+* lacks ``bash`` and many standard GNU tools
+
+Do not rely on those in your Ansible playbooks when working with this image.
+
+On the other hand those can be installed at run-time with
+::
+
+    tce-load -wi coreutils util-linux bash
+
+so you can easily extend the ``bootstrap.yaml`` playbook. See this link for
+more info on GNU/Linux compatibility:
+http://tinycorelinux.net/faq.html#compatibility
