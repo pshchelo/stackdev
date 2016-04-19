@@ -95,7 +95,7 @@ function rename_cirros {
             ${OSCLI_ADMIN} image set ${image[0]} --name cirros --property description=${image[1]}
             ${OSCLI_ADMIN} image show ${image[0]}
         fi
-    else:
+    else
         echo "Glance is not installed, skip renaming Cirros image."
     fi
 }
