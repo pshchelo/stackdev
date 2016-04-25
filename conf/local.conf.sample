@@ -13,8 +13,8 @@ SERVICE_TOKEN=tokentoken
 ##################
 # NETWORK SETTINGS
 ##################
-MULTI_HOST=True
-HOST_IP=192.168.100.11
+#MULTI_HOST=True
+#HOST_IP=192.168.100.11
 # By default, DevStack creates a 10.0.0.0/24 network for instances.
 # If this overlaps with the hosts network, you may adjust with the
 # following.
@@ -24,14 +24,14 @@ HOST_IP=192.168.100.11
 #FLAT_INTERFACE=eth0
 
 # Floating network settings
-FLOATING_RANGE=192.168.100.0/24
-PUBLIC_NETWORK_GATEWAY=192.168.100.1
-Q_FLOATING_ALLOCATION_POOL=start=192.168.100.20,end=192.168.100.39
-PUBLIC_INTERFACE=eth0
-Q_USE_PROVIDERNET_FOR_PUBLIC=True
-OVS_PHYSICAL_BRIDGE=br-ex
-PUBLIC_BRIDGE=br-ex
-OVS_BRIDGE_MAPPINGS=public:br-ex
+#FLOATING_RANGE=192.168.100.0/24
+#PUBLIC_NETWORK_GATEWAY=192.168.100.1
+#Q_FLOATING_ALLOCATION_POOL=start=192.168.100.20,end=192.168.100.39
+#PUBLIC_INTERFACE=eth0
+#Q_USE_PROVIDERNET_FOR_PUBLIC=True
+#OVS_PHYSICAL_BRIDGE=br-ex
+#PUBLIC_BRIDGE=br-ex
+#OVS_BRIDGE_MAPPINGS=public:br-ex
 
 ##########
 # PACKAGES
@@ -43,9 +43,9 @@ OVS_BRIDGE_MAPPINGS=public:br-ex
 # always upgrade all Python dependencies
 #PIP_UPGRADE=True
 # Set libraries that will be installed from git and not PyPI
-LIBS_FROM_GIT=python-openstackclient
-LIBS_FROM_GIT+=,python-heatclient
-LIBS_FROM_GIT+=,python-ironicclient
+#LIBS_FROM_GIT=python-openstackclient
+#LIBS_FROM_GIT+=,python-heatclient
+#LIBS_FROM_GIT+=,ironic-lib,python-ironicclient
 
 
 ##########
@@ -69,45 +69,52 @@ enable_service key
 ### GLANCE ###
 enable_service glance g-api g-reg
 # specify what images to download
-DOWNLOAD_DEFAULT_IMAGES=False
+#DOWNLOAD_DEFAULT_IMAGES=False
 # latest cirros qcow2 image
-IMAGE_URLS="http://download.cirros-cloud.net/0.3.4/cirros-0.3.4-x86_64-disk.img"
+#IMAGE_URLS="http://download.cirros-cloud.net/0.3.4/cirros-0.3.4-x86_64-disk.img"
+#IMAGE_URLS+=",http://download.cirros-cloud.net/0.3.4/cirros-0.3.4-x86_64-rootfs.img.gz"
 # Heat functional tests image (Fedora20 based)
-IMAGE_URLS+=",http://tarballs.openstack.org/heat-test-image/fedora-heat-test-image.qcow2"
+#IMAGE_URLS+=",http://tarballs.openstack.org/heat-test-image/fedora-heat-test-image.qcow2"
 # Fedora 21 cloud image (e.g. for AWS LoadBalancer resource in Heat)
 #IMAGE_URLS+=",http://download.fedoraproject.org/pub/fedora/linux/releases/21/Cloud/Images/x86_64/Fedora-Cloud-Base-20141203-21.x86_64.qcow2"
 # latest Ubuntu Trusty amd64 cloud image
 #IMAGE_URLS+=",https://cloud-images.ubuntu.com/releases/trusty/release/ubuntu-14.04-server-cloudimg-amd64-disk1.img"
 
 ### HEAT ###
-enable_service heat h-eng h-api h-api-cfn h-api-cw
+#enable_service heat h-eng h-api h-api-cfn h-api-cw
 HEAT_ENABLE_ADOPT_ABANDON=True
 
 ### CINDER ###
-# For Multi-node - c-vol is on compute
-enable_service cinder c-sch c-api
 # For All-in-one
 #enable_service cinder c-sch c-api c-vol
+# For Multi-node - c-vol is on compute
+#enable_service cinder c-sch c-api
 # How to erase cinder volumes on delete [none, zero, shred]
 CINDER_VOLUME_CLEAR=none
 # set the size of the stack volume backing file (in MB, default 10250M)
 #VOLUME_BACKING_FILE_SIZE=41000M
 
 ### HORIZON ###
-enable_service horizon
+#enable_service horizon
 
 ### NOVA ###
 enable_service nova n-api n-crt n-cpu n-cond n-sch n-cauth
-enable_service n-novnc
+#enable_service n-novnc
 # Use Nova-network - mutually exclusive with Neutron
 #enable_service n-net
+# Set nova-compute to use ironic virt-driver
+#VIRT_DRIVER=ironic
 
 ### NEUTRON ###
-enable_service neutron q-svc q-agt q-dhcp q-l3 q-meta q-metering
-enable_service q-lbaas
+#enable_service neutron q-svc q-agt q-dhcp q-l3 q-meta q-metering
+#enable_service q-lbaas
+### NEUTRON PLUGINS ###
+#enable_plugin networking-generic-switch git://git.openstack.org/openstack/networking-generic-switch
+Q_PLUGIN_EXTRA_CONF_PATH=/etc/neutron/plugins/ml2
+Q_PLUGIN_EXTRA_CONF_FILES['generic_switch']=ml2_conf_genericswitch.ini
 
 ### CEILOMETER ###
-enable_plugin ceilometer git://git.openstack.org/openstack/ceilometer
+#enable_plugin ceilometer git://git.openstack.org/openstack/ceilometer
 # set shorter sample collection interval (default is 600)
 CEILOMETER_PIPELINE_INTERVAL=60
 # For compatibility with <=stable/kilo
@@ -134,15 +141,15 @@ SWIFT_TEMPURL_KEY=tempurl
 #enable_service sahara
 
 ### IRONIC ###
-enable_plugin ironic git://git.openstack.org/openstack/ironic
+#enable_plugin ironic git://git.openstack.org/openstack/ironic
 # Example how to deploy from Gerrit change
-#enable_plugin ironic https://review.openstack.org/openstack/ironic refs/changes/82/236982/15
+#enable_plugin ironic https://review.openstack.org/openstack/ironic refs/changes/82/236982/23
 
-VIRT_DRIVER=ironic
+IRONIC_IS_HARDWARE=False
+IRONIC_BAREMETAL_BASIC_OPS=True
 # Create 3 virtual machines to pose as Ironic's baremetal nodes.
 IRONIC_VM_COUNT=3
 IRONIC_VM_SSH_PORT=22
-IRONIC_BAREMETAL_BASIC_OPS=True
 # The parameters below represent the minimum possible values to create
 # functional nodes.
 IRONIC_VM_SPECS_RAM=1024
@@ -150,26 +157,26 @@ IRONIC_VM_SPECS_DISK=10
 # Size of the ephemeral partition in GB. Use 0 for no ephemeral partition.
 IRONIC_VM_EPHEMERAL_DISK=0
 # Configure available drivers
-IRONIC_ENABLED_DRIVERS=fake,agent_ssh,agent_ipmitool
-IRONIC_DEPLOY_DRIVER=agent_ssh
+IRONIC_ENABLED_DRIVERS=fake,agent_ipmitool
+IRONIC_DEPLOY_DRIVER=agent_ipmitool
 # To build your own IPA ramdisk from source, set this to True
 IRONIC_BUILD_DEPLOY_RAMDISK=False
 
 ### IRONIC-INSPECTOR ###
-enable_plugin ironic-inspector git://git.openstack.org/openstack/ironic-inspector
-IRONIC_INSPECTOR_RAMDISK_ELEMENT=ironic-agent                                                                                                                                                                  
+#enable_plugin ironic-inspector git://git.openstack.org/openstack/ironic-inspector
 IRONIC_INSPECTOR_BUILD_RAMDISK=False
+IRONIC_INSPECTOR_RAMDISK_ELEMENT=ironic-agent                                                                                                                                                                  
 
 ### POST CONFIG STAGE SETTINGS ###
 #
 # fix to allow access to instance vnc console when accessing Horizon via tunnel
 [[post-config|$NOVA_CONF]]
 [DEFAULT]
-novncproxy_base_url = http://172.18.200.23:6127/vnc_auto.html
+#novncproxy_base_url = http://172.18.200.23:6127/vnc_auto.html
 
 [[post-config|$HEAT_CONF]]
 [DEFAULT]
 # enable Convergence engine
-convergence_engine=true
+#convergence_engine=true
 # decrease number of Heat engine workers, when too much for devstack
 #num_engine_workers = 2
