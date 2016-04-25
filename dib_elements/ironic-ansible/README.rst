@@ -19,6 +19,7 @@ Simplest example::
 
     export DIB_DEV_USER_USERNAME=ansible
     export DIB_DEV_USER_PWDLESS_SUDO=yes
+    export DIB_DEV_USER_AUTHORIZED_KEYS=<path-to-the-private-key>
     disk-image-create -o ir-ansible-deploy ubuntu-minimal ironic-ansible
 
 Apart from setting the user, this element:
