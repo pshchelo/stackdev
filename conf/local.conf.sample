@@ -1,5 +1,13 @@
 [[local|localrc]]
 
+# As it is, this config will install a very minimal 
+# OpenStack development system consisting of following services:
+# - Identity (Keystone)
+# - Image (Glance)
+# - Compute (Nova) with legacy nova-network.
+#
+# tempest and dstat are also enabled to help with testing
+
 ###########
 # PASSWORDS
 ###########
@@ -49,10 +57,9 @@ SERVICE_TOKEN=tokentoken
 #RECLONE=yes
 # always upgrade all Python dependencies
 #PIP_UPGRADE=True
-# Set libraries that will be installed from git and not PyPI
+# Set libraries that will be installed from git and not PyPI,
+# others are added in services sections
 #LIBS_FROM_GIT=python-openstackclient
-#LIBS_FROM_GIT+=,python-heatclient
-#LIBS_FROM_GIT+=,ironic-lib,python-ironicclient
 
 
 ##########
@@ -91,7 +98,7 @@ enable_service glance g-api g-reg
 enable_service nova n-api n-crt n-cpu n-cond n-sch n-cauth
 #enable_service n-novnc
 # Use Nova-network - mutually exclusive with Neutron
-#enable_service n-net
+enable_service n-net
 # Set nova-compute to use ironic virt-driver
 #VIRT_DRIVER=ironic
 
@@ -100,8 +107,8 @@ enable_service nova n-api n-crt n-cpu n-cond n-sch n-cauth
 #enable_service q-lbaas
 ### NEUTRON PLUGINS ###
 #enable_plugin networking-generic-switch git://git.openstack.org/openstack/networking-generic-switch
-Q_PLUGIN_EXTRA_CONF_PATH=/etc/neutron/plugins/ml2
-Q_PLUGIN_EXTRA_CONF_FILES['generic_switch']=ml2_conf_genericswitch.ini
+#Q_PLUGIN_EXTRA_CONF_PATH=/etc/neutron/plugins/ml2
+#Q_PLUGIN_EXTRA_CONF_FILES['generic_switch']=ml2_conf_genericswitch.ini
 
 ### CINDER ###
 # For All-in-one
@@ -109,7 +116,7 @@ Q_PLUGIN_EXTRA_CONF_FILES['generic_switch']=ml2_conf_genericswitch.ini
 # For Multi-node - c-vol is on compute
 #enable_service cinder c-sch c-api
 # How to erase cinder volumes on delete [none, zero, shred]
-CINDER_VOLUME_CLEAR=none
+#CINDER_VOLUME_CLEAR=none
 # set the size of the stack volume backing file (in MB, default 10250M)
 #VOLUME_BACKING_FILE_SIZE=41000M
 
@@ -117,53 +124,58 @@ CINDER_VOLUME_CLEAR=none
 #enable_service horizon
 
 ### SWIFT ###
-enable_service s-proxy s-object s-container s-account
+#enable_service s-proxy s-object s-container s-account
 # set swift hash - the hash below is result of
 # echo "SWIFT_HASH" | md5sum | awk '{print $1}'
-SWIFT_HASH=096d08da4f8d4cce3a724c5f6c18f055
+#SWIFT_HASH=096d08da4f8d4cce3a724c5f6c18f055
 # Enable Swift TempUrls
-SWIFT_ENABLE_TEMPURLS=True
-SWIFT_TEMPURL_KEY=tempurl
+#SWIFT_ENABLE_TEMPURLS=True
+#SWIFT_TEMPURL_KEY=tempurl
 
 ### HEAT ###
 #enable_service heat h-eng h-api h-api-cfn h-api-cw
-HEAT_ENABLE_ADOPT_ABANDON=True
+#HEAT_ENABLE_ADOPT_ABANDON=True
+#LIBS_FROM_GIT+=,python-heatclient
 
 ### CEILOMETER ###
 #enable_plugin ceilometer git://git.openstack.org/openstack/ceilometer
 # set shorter sample collection interval (default is 600)
-CEILOMETER_PIPELINE_INTERVAL=60
+#CEILOMETER_PIPELINE_INTERVAL=60
 # For compatibility with <=stable/kilo
 #enable_service ceilometer-acompute ceilometer-acentral ceilometer-anotification ceilometer-collector
 #enable_service ceilometer-alarm-evaluator,ceilometer-alarm-notifier
 #enable_service ceilometer-api
 
+### AODH ###
+#enable_plugin aodh https://git.openstack.org/openstack/aodh
+
 ### IRONIC ###
 #enable_plugin ironic git://git.openstack.org/openstack/ironic
 # Example how to deploy from Gerrit change
 #enable_plugin ironic https://review.openstack.org/openstack/ironic refs/changes/82/236982/23
+#LIBS_FROM_GIT+=,ironic-lib,python-ironicclient
 
-IRONIC_IS_HARDWARE=False
-IRONIC_BAREMETAL_BASIC_OPS=True
+#IRONIC_IS_HARDWARE=False
+#IRONIC_BAREMETAL_BASIC_OPS=True
 # Create 3 virtual machines to pose as Ironic's baremetal nodes.
-IRONIC_VM_COUNT=3
-IRONIC_VM_SSH_PORT=22
+#IRONIC_VM_COUNT=3
+#IRONIC_VM_SSH_PORT=22
 # The parameters below represent the minimum possible values to create
 # functional nodes.
-IRONIC_VM_SPECS_RAM=1024
-IRONIC_VM_SPECS_DISK=10
+#IRONIC_VM_SPECS_RAM=1024
+#IRONIC_VM_SPECS_DISK=10
 # Size of the ephemeral partition in GB. Use 0 for no ephemeral partition.
-IRONIC_VM_EPHEMERAL_DISK=0
+#IRONIC_VM_EPHEMERAL_DISK=0
 # Configure available drivers
-IRONIC_ENABLED_DRIVERS=fake,agent_ipmitool
-IRONIC_DEPLOY_DRIVER=agent_ipmitool
+#IRONIC_ENABLED_DRIVERS=fake,agent_ipmitool
+#IRONIC_DEPLOY_DRIVER=agent_ipmitool
 # To build your own IPA ramdisk from source, set this to True
-IRONIC_BUILD_DEPLOY_RAMDISK=False
+#IRONIC_BUILD_DEPLOY_RAMDISK=False
 
 ### IRONIC-INSPECTOR ###
 #enable_plugin ironic-inspector git://git.openstack.org/openstack/ironic-inspector
-IRONIC_INSPECTOR_BUILD_RAMDISK=False
-IRONIC_INSPECTOR_RAMDISK_ELEMENT=ironic-agent                                                                                                                                                                  
+#IRONIC_INSPECTOR_BUILD_RAMDISK=False
+#IRONIC_INSPECTOR_RAMDISK_ELEMENT=ironic-agent                                                                                                                                                                  
 
 ### TROVE ###
 #enable_service trove tr-api tr-tmgr tr-cond
