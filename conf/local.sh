@@ -2,6 +2,8 @@
 CREDS=/opt/stack/devstack/openrc
 OSCLI="openstack --os-cloud devstack"
 OSCLI_ADMIN="openstack --os-cloud devstack-admin"
+NCLI="neutron --os-cloud devstack"
+NCLI_ADMIN="neutron --os-cloud devstack-admin"
 CATALOG=`${OSCLI_ADMIN} catalog list -f value -c Name`
 
 function has_services {
@@ -36,16 +38,16 @@ function add_dns {
         echo "Adding Google DNS to demo tenant private subnets..."
         # NOTE: openstackclient has no support for neutron subnet CLI for now,
         #       resorting to neutronclient
-        source $CREDS demo demo
+        #source $CREDS demo demo
         dnsserver4=8.8.8.8
-        subnet4=`neutron subnet-list -f value | grep private-subnet | grep -v ipv6-private-subnet | awk '{print $1}'`
-        neutron subnet-update $subnet4 --dns-nameserver $dnsserver4
-        neutron subnet-show $subnet4
-        subnet6=`neutron subnet-list -f value | grep ipv6-private-subnet | awk '{print $1}'`
+        subnet4=$($NCLI subnet-list -f value | grep private-subnet | grep -v ipv6-private-subnet | awk '{print $1}')
+        $NCLI subnet-update $subnet4 --dns-nameserver $dnsserver4
+        $NCLI subnet-show $subnet4
+        subnet6=$($NCLI subnet-list -f value | grep ipv6-private-subnet | awk '{print $1}')
         if [ -n "${subnet6}" ]; then
             dnsserver6="2001:4860:4860::8888"
-            neutron subnet-update $subnet6 --dns-nameserver $dnsserver6
-            neutron subnet-show $subnet6
+            $NCLI subnet-update $subnet6 --dns-nameserver $dnsserver6
+            $NCLI subnet-show $subnet6
         fi
     else
         echo "Neutron is not installed, skip adding DNS."
@@ -57,16 +59,16 @@ function add_heat_net {
         echo "Adding subnet for heat tests..."
         # NOTE: openstackclient has no support for neutron subnet, port and routers CLI for now,
         #       resorting to neutronclient
-        source $CREDS admin admin
-        PUB_SUBNET_ID=`neutron subnet-list | grep ' public-subnet ' | awk '{split($0,a,"|"); print a[2]}'`
-        ROUTER_GW_IP=`neutron port-list -c fixed_ips -c device_owner | grep router_gateway | awk -F '"' -v subnet_id="${PUB_SUBNET_ID//[[:space:]]/}" '$4 == subnet_id { print $8; }'`
+        #source $CREDS admin admin
+        PUB_SUBNET_ID=$($NCLI_ADMIN subnet-list | grep ' public-subnet ' | awk '{split($0,a,"|"); print a[2]}')
+        ROUTER_GW_IP=$($NCLI_ADMIN port-list -c fixed_ips -c device_owner | grep router_gateway | awk -F '"' -v subnet_id="${PUB_SUBNET_ID//[[:space:]]/}" '$4 == subnet_id { print $8; }')
 
         # create a heat specific private network (default 'private' network has ipv6 subnet)
-        source $CREDS demo demo
+        #source $CREDS demo demo
         HEAT_PRIVATE_SUBNET_CIDR=10.0.5.0/24
-        neutron net-create heat-net
-        neutron subnet-create --name heat-subnet heat-net $HEAT_PRIVATE_SUBNET_CIDR
-        neutron router-interface-add router1 heat-subnet
+        $NCLI net-create heat-net
+        $NCLI subnet-create --name heat-subnet heat-net $HEAT_PRIVATE_SUBNET_CIDR
+        $NCLI router-interface-add router1 heat-subnet
         sudo route add -net $HEAT_PRIVATE_SUBNET_CIDR gw $ROUTER_GW_IP
     else
         echo "Heat or Neutron not installed, skip adding Heat test network."
@@ -115,9 +117,10 @@ function run_default {
     sudo -H pip uninstall -y flake8-docstrings
     allow_wan
     add_keypair
-    add_dns
     rename_cirros
     secgroup
+    add_dns
+    add_heat_net
 }
 
 if [ $# -eq 0 ]; then
