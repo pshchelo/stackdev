@@ -19,9 +19,6 @@ parameters:
   net:
     type: string
     default: heat-net
-  port:
-    type: number
-    default: 80
 
 resources:
 
@@ -35,14 +32,8 @@ resources:
             #!/bin/sh -x
             echo 'SCRIPT' > /bin/cpuload
             chmod 777 /bin/cpuload
-            Body=$(cat /etc/hostname)
-            Response="HTTP/1.1 200 OK\r\nContent-Length: ${#Body}\r\n\r\n$Body"
-            echo $Response
-            wc_notify --data-binary '{"status": "SUCCESS"}'
-            while true ; do echo -e $Response | nc -llp PORT; done
           params:
             SCRIPT: {get_file: "../../scripts/cpuload"}
-            PORT: { get_param: port }
 
   sec_group:
     type: OS::Neutron::SecurityGroup
@@ -52,10 +43,6 @@ resources:
         protocol: tcp
         port_range_min: 22
         port_range_max: 22
-      - remote_ip_prefix: 0.0.0.0/0
-        protocol: tcp
-        port_range_min: { get_param: port }
-        port_range_max: { get_param: port }
 
   my_asg:
     type: OS::Heat::AutoScalingGroup
