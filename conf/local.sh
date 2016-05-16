@@ -11,6 +11,10 @@ function has_services {
     return 0
 }
 
+function clean_pkgs {
+    sudo -H pip uninstall -y flake8-docstrings
+}
+
 function allow_wan {
     WAN_SET=`sudo iptables -t nat -L | grep "MASQUERADE.*all.*anywhere.*anywhere"`
     if [ -z "$WAN_SET" ]; then
@@ -108,7 +112,7 @@ function add_awslb_image {
 }
 
 function run_default {
-    sudo -H pip uninstall -y flake8-docstrings
+    clean_pkgs
     allow_wan
     add_keypair
     rename_cirros
@@ -126,8 +130,12 @@ while [[ $# > 0 ]]; do
     key="$1"
     case $key in
         -h|--help)
-            echo -e "Supported options: wan key dns secgroup heatnet cirros awslb\nDefault - all the above except awslb"
+            echo -e "Supported options: clean wan key dns secgroup heatnet cirros awslb\nDefault - all the above except awslb"
             exit 0
+        ;;
+        clean)
+            clean_pkgs
+            shift # past argument
         ;;
         wan)
             allow_wan
