@@ -159,7 +159,6 @@ enable_service n-net
 #IRONIC_BAREMETAL_BASIC_OPS=True
 # Create 3 virtual machines to pose as Ironic's baremetal nodes.
 #IRONIC_VM_COUNT=3
-#IRONIC_VM_SSH_PORT=22
 # The parameters below represent the minimum possible values to create
 # functional nodes.
 #IRONIC_VM_SPECS_RAM=1024
@@ -169,6 +168,8 @@ enable_service n-net
 # Configure available drivers
 #IRONIC_ENABLED_DRIVERS=fake,agent_ipmitool
 #IRONIC_DEPLOY_DRIVER=agent_ipmitool
+# Set the SSH port to connect for *_ssh and *_libvirt drivers
+#IRONIC_VM_SSH_PORT=22
 # To build your own IPA ramdisk from source, set this to True
 #IRONIC_BUILD_DEPLOY_RAMDISK=False
 
