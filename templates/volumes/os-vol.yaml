@@ -7,17 +7,10 @@ parameters:
     type: number
     description: size of the volume
     default: 1
-  number:
-    type: number
-    description: number of volumes to create
-    default: 1
 
 resources:
-  volumes:
-    type: OS::Heat::ResourceGroup
+  volume:
+    type: OS::Cinder::Volume
+    #deletion_policy: Snapshot
     properties:
-      count: { get_param: number }
-      resource_def:
-        type: OS::Cinder::Volume
-        properties:
-          size: { get_param: size }
+      size: { get_param: size }

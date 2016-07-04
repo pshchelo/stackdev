@@ -1,0 +1,23 @@
+heat_template_version: 2015-10-15
+
+description: Create native OS volume
+
+parameters:
+  size:
+    type: number
+    description: size of the volume
+    default: 1
+  number:
+    type: number
+    description: number of volumes to create
+    default: 1
+
+resources:
+  volumes:
+    type: OS::Heat::ResourceGroup
+    properties:
+      count: { get_param: number }
+      resource_def:
+        type: OS::Cinder::Volume
+        properties:
+          size: { get_param: size }
