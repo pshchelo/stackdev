@@ -1,8 +1,17 @@
 #!/usr/bin/env bash
-cd $1
-echo "Git Status:"
-git status
-echo -e "\nGit branches"
-git branch
-echo -e "\nGit stashes"
-git stash list
+pwd=${PWD}
+dirs=$(ls -d */)
+for d in $dirs
+do
+    if [ -d "$pwd/$d/.git" ]; then
+        echo -e "\n======="
+        echo "$pwd/$d"
+        cd $pwd/$d
+        echo "Git Status:"
+        git status
+        echo -e "\nGit branches"
+        git branch
+        echo -e "\nGit stashes"
+        git stash list
+    fi
+done
