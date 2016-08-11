@@ -16,7 +16,6 @@ ADMIN_PASSWORD=admin
 MYSQL_PASSWORD=mysql
 RABBIT_PASSWORD=rabbit
 SERVICE_PASSWORD=service
-SERVICE_TOKEN=tokentoken
 
 
 ##################
