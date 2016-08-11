@@ -159,10 +159,11 @@ enable_service n-net
 #IRONIC_BAREMETAL_BASIC_OPS=True
 # Create 3 virtual machines to pose as Ironic's baremetal nodes.
 #IRONIC_VM_COUNT=3
-# The parameters below represent the minimum possible values to create
-# functional nodes.
-#IRONIC_VM_SPECS_RAM=1024
-#IRONIC_VM_SPECS_DISK=10
+# Hardware properties of virtual BM nodes to be crated.
+# For CoreOS-based IPA bootsrtap image required RAM is 1024MB.
+# For IPA in general, required disk is > 4GB.
+#IRONIC_VM_SPECS_RAM=512
+#IRONIC_VM_SPECS_DISK=5
 # Size of the ephemeral partition in GB. Use 0 for no ephemeral partition.
 #IRONIC_VM_EPHEMERAL_DISK=0
 # Configure available drivers
@@ -170,8 +171,18 @@ enable_service n-net
 #IRONIC_DEPLOY_DRIVER=agent_ipmitool
 # Set the SSH port to connect for *_ssh and *_libvirt drivers
 #IRONIC_VM_SSH_PORT=22
-# To build your own IPA ramdisk from source, set this to True
+# Type of bootstrap image to build and use.
+# Available values are dib, coreos (deprecated), tinyipa (default)
+#IRONIC_RAMDISK_TYPE = coreos
+# To build your own IPA ramdisk from source, set this to True (default)
 #IRONIC_BUILD_DEPLOY_RAMDISK=False
+# Enable iPXE in favor of PXE (default True)
+#IRONIC_IPXE_ENABLED=False
+
+### IRONIC STAGING DRIVERS ###
+#enable_plugin ironic_staging_drivers git://git.openstack.org/openstack/ironic_staging_drivers
+# Ansible deploy driver
+#enable_plugin ironic_staging_drivers https://review.openstack.org/openstack/ironic_staging_drivers refs/changes/74/325974/9
 
 ### IRONIC-INSPECTOR ###
 #enable_plugin ironic-inspector git://git.openstack.org/openstack/ironic-inspector
