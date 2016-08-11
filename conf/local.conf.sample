@@ -37,11 +37,11 @@ SERVICE_PASSWORD=service
 # lives as provider network for floating IPs.
 # This enables accessing VMs created inside DevStack from hypervisor
 # that runs this DevStack VM.
+#PUBLIC_INTERFACE=eth0 # trusty
+#PUBLIC_INTERFACE=ens3 # xenial
 #FLOATING_RANGE=192.168.100.0/24
 #PUBLIC_NETWORK_GATEWAY=192.168.100.1
 #Q_FLOATING_ALLOCATION_POOL=start=192.168.100.240,end=192.168.100.249
-#PUBLIC_INTERFACE=eth0 # trusty
-#PUBLIC_INTERFACE=ens3 # xenial
 #Q_USE_PROVIDERNET_FOR_PUBLIC=True
 #OVS_PHYSICAL_BRIDGE=br-ex
 #PUBLIC_BRIDGE=br-ex
@@ -141,10 +141,6 @@ enable_service n-net
 #enable_plugin ceilometer git://git.openstack.org/openstack/ceilometer
 # set shorter sample collection interval (default is 600)
 #CEILOMETER_PIPELINE_INTERVAL=60
-# For compatibility with <=stable/kilo
-#enable_service ceilometer-acompute ceilometer-acentral ceilometer-anotification ceilometer-collector
-#enable_service ceilometer-alarm-evaluator,ceilometer-alarm-notifier
-#enable_service ceilometer-api
 
 ### AODH ###
 #enable_plugin aodh https://git.openstack.org/openstack/aodh
