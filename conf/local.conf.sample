@@ -8,6 +8,8 @@
 #
 # tempest and dstat are also enabled to help with testing
 
+DEST=/home/pshchelo/stack
+
 ###########
 # PASSWORDS
 ###########
