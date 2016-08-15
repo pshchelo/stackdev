@@ -178,9 +178,9 @@ enable_service n-net
 #IRONIC_IPXE_ENABLED=False
 
 ### IRONIC STAGING DRIVERS ###
-#enable_plugin ironic_staging_drivers git://git.openstack.org/openstack/ironic_staging_drivers
+#enable_plugin ironic_staging_drivers git://git.openstack.org/openstack/ironic-staging-drivers
 # Ansible deploy driver
-#enable_plugin ironic_staging_drivers https://review.openstack.org/openstack/ironic_staging_drivers refs/changes/74/325974/9
+#enable_plugin ironic_staging_drivers https://review.openstack.org/openstack/ironic-staging-drivers refs/changes/74/325974/9
 
 ### IRONIC-INSPECTOR ###
 #enable_plugin ironic-inspector git://git.openstack.org/openstack/ironic-inspector
