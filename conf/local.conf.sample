@@ -9,6 +9,10 @@
 # tempest and dstat are also enabled to help with testing
 
 DEST=/home/pshchelo/stack
+# for <= stable/mitaka
+#DATA_DIR=/home/pshchelo/stack/data
+#SERVICE_DIR=/home/pshchelo/stack/status
+#SUBUNIT_OUTPUT=/home/pshchelo/stack/devstack.subunit
 
 ###########
 # PASSWORDS
@@ -150,7 +154,7 @@ enable_service n-net
 ### IRONIC ###
 #enable_plugin ironic git://git.openstack.org/openstack/ironic
 # Example how to deploy from Gerrit change
-#enable_plugin ironic https://review.openstack.org/openstack/ironic refs/changes/82/236982/23
+#enable_plugin ironic git://git.openstack.org/openstack/ironic refs/changes/60/344160/6
 #LIBS_FROM_GIT+=,ironic-lib,python-ironicclient
 
 #IRONIC_IS_HARDWARE=False
@@ -176,11 +180,13 @@ enable_service n-net
 #IRONIC_BUILD_DEPLOY_RAMDISK=False
 # Enable iPXE in favor of PXE (default True)
 #IRONIC_IPXE_ENABLED=False
+# Nodes download deploy images from Swift (default False) NOT MERGED refs/changes/60/344160/6
+#IRONIC_IPXE_USE_SWIFT=True
 
 ### IRONIC STAGING DRIVERS ###
-#enable_plugin ironic_staging_drivers git://git.openstack.org/openstack/ironic-staging-drivers
+#enable_plugin ironic-staging-drivers git://git.openstack.org/openstack/ironic-staging-drivers
 # Ansible deploy driver
-#enable_plugin ironic_staging_drivers https://review.openstack.org/openstack/ironic-staging-drivers refs/changes/74/325974/9
+#enable_plugin ironic-staging-drivers git://git.openstack.org/openstack/ironic-staging-drivers refs/changes/74/325974/15
 
 ### IRONIC-INSPECTOR ###
 #enable_plugin ironic-inspector git://git.openstack.org/openstack/ironic-inspector
