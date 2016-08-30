@@ -152,9 +152,8 @@ enable_service n-net
 #enable_plugin aodh https://git.openstack.org/openstack/aodh
 
 ### IRONIC ###
-#enable_plugin ironic git://git.openstack.org/openstack/ironic
-# Example how to deploy from Gerrit change
-#enable_plugin ironic git://git.openstack.org/openstack/ironic refs/changes/60/344160/6
+# Uncomment last part to deploy from Gerrit change (example)
+enable_plugin ironic git://git.openstack.org/openstack/ironic #refs/changes/60/344160/6
 #LIBS_FROM_GIT+=,ironic-lib,python-ironicclient
 
 #IRONIC_IS_HARDWARE=False
@@ -184,9 +183,8 @@ enable_service n-net
 #IRONIC_IPXE_USE_SWIFT=True
 
 ### IRONIC STAGING DRIVERS ###
-#enable_plugin ironic-staging-drivers git://git.openstack.org/openstack/ironic-staging-drivers
-# Ansible deploy driver
-#enable_plugin ironic-staging-drivers git://git.openstack.org/openstack/ironic-staging-drivers refs/changes/74/325974/15
+# Uncomment last part to deploy from Gerrit change (example)
+enable_plugin ironic-staging-drivers git://git.openstack.org/openstack/ironic-staging-drivers #refs/changes/74/325974/15
 
 ### IRONIC-INSPECTOR ###
 #enable_plugin ironic-inspector git://git.openstack.org/openstack/ironic-inspector
