@@ -4,7 +4,8 @@
 # OpenStack development system consisting of following services:
 # - Identity (Keystone)
 # - Image (Glance)
-# - Compute (Nova) with legacy nova-network.
+# - Compute (Nova)
+# - Networking (Neutron)
 #
 # tempest and dstat are also enabled to help with testing
 
@@ -104,12 +105,12 @@ enable_service glance g-api g-reg
 enable_service nova n-api n-crt n-cpu n-cond n-sch n-cauth
 #enable_service n-novnc
 # Use Nova-network - mutually exclusive with Neutron
-enable_service n-net
+#enable_service n-net
 # Set nova-compute to use ironic virt-driver
 #VIRT_DRIVER=ironic
 
 ### NEUTRON ###
-#enable_service neutron q-svc q-agt q-dhcp q-l3 q-meta q-metering
+enable_service neutron q-svc q-agt q-dhcp q-l3 q-meta q-metering
 #enable_service q-lbaas
 ### NEUTRON PLUGINS ###
 #enable_plugin networking-generic-switch git://git.openstack.org/openstack/networking-generic-switch
