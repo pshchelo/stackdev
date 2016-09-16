@@ -54,6 +54,18 @@ SERVICE_PASSWORD=service
 #PUBLIC_BRIDGE=br-ex
 #OVS_BRIDGE_MAPPINGS=public:br-ex
 
+# Some pieces for Ironic's multi-tenancy
+#OVS_PHYSICAL_BRIDGE=brbm
+#PHYSICAL_NETWORK=mynetwork
+#IRONIC_PROVISION_NETWORK_NAME=ironic-provision
+#IRONIC_PROVISION_SUBNET_PREFIX=10.0.5.0/24
+#IRONIC_PROVISION_SUBNET_GATEWAY=10.0.5.1
+#
+#Q_PLUGIN=ml2
+#ENABLE_TENANT_VLANS=True
+#Q_ML2_TENANT_NETWORK_TYPE=vlan
+#TENANT_VLAN_RANGE=100:150
+
 ##########
 # PACKAGES
 ##########
@@ -183,6 +195,10 @@ enable_service neutron q-svc q-agt q-dhcp q-l3 q-meta q-metering
 # Nodes download deploy images from Swift (default False) NOT MERGED refs/changes/60/344160/6
 #IRONIC_IPXE_USE_SWIFT=True
 
+# Ironic's multi-tenancy
+#IRONIC_USE_LINK_LOCAL=True
+#IRONIC_ENABLED_NETWORK_INTERFACES=flat,neutron
+#IRONIC_NETWORK_INTERFACE=neutron
 ### IRONIC STAGING DRIVERS ###
 # Uncomment last part to deploy from Gerrit change (example)
 #enable_plugin ironic-staging-drivers git://git.openstack.org/openstack/ironic-staging-drivers #refs/changes/74/325974/15
