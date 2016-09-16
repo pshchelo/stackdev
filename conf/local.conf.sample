@@ -154,7 +154,7 @@ enable_service neutron q-svc q-agt q-dhcp q-l3 q-meta q-metering
 
 ### IRONIC ###
 # Uncomment last part to deploy from Gerrit change (example)
-enable_plugin ironic git://git.openstack.org/openstack/ironic #refs/changes/60/344160/6
+#enable_plugin ironic git://git.openstack.org/openstack/ironic #refs/changes/60/344160/6
 #LIBS_FROM_GIT+=,ironic-lib,python-ironicclient
 
 #IRONIC_IS_HARDWARE=False
@@ -185,7 +185,7 @@ enable_plugin ironic git://git.openstack.org/openstack/ironic #refs/changes/60/3
 
 ### IRONIC STAGING DRIVERS ###
 # Uncomment last part to deploy from Gerrit change (example)
-enable_plugin ironic-staging-drivers git://git.openstack.org/openstack/ironic-staging-drivers #refs/changes/74/325974/15
+#enable_plugin ironic-staging-drivers git://git.openstack.org/openstack/ironic-staging-drivers #refs/changes/74/325974/15
 
 ### IRONIC-INSPECTOR ###
 #enable_plugin ironic-inspector git://git.openstack.org/openstack/ironic-inspector
