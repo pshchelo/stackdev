@@ -1,0 +1,48 @@
+heat_template_version: 2015-10-15
+
+parameters:
+  image:
+    type: string
+    default: cirros
+
+  flavor:
+    type: string
+    default: baremetal
+
+  net:
+    type: string
+    default: private
+
+  subnet:
+    type: string
+    default: private-subnet
+
+  key:
+    type: string
+    default: demo
+
+resources:
+
+  port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: net}
+      fixed_ips:
+        - subnet: { get_param: subnet }
+
+  server:
+    type: OS::Nova::Server
+    properties:
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key}
+      networks:
+        - port: {get_resource: port}
+
+outputs:
+  networks:
+    value: { get_attr: [server, networks ] }
+  addresses:
+    value: { get_attr: [server, addresses ] }
+  ip:
+    value: { get_attr: [server, networks, {get_param: net }, 0 ] }
