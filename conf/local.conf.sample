@@ -9,8 +9,8 @@
 #
 # tempest and dstat are also enabled to help with testing
 
-DEST=/home/pshchelo/stack
-# for <= stable/mitaka
+# How to set custom DEST instead of default /opt/stack
+#DEST=/home/pshchelo/stack
 #DATA_DIR=/home/pshchelo/stack/data
 #SERVICE_DIR=/home/pshchelo/stack/status
 #SUBUNIT_OUTPUT=/home/pshchelo/stack/devstack.subunit
