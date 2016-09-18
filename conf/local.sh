@@ -28,7 +28,7 @@ function allow_wan {
 function add_keypair {
     if has_services nova; then
         echo "Adding demo keypair..."
-        openstack ${DEMO} keypair create demo --public-key $HOME/.ssh/git_rsa.pub
+        openstack ${DEMO} keypair create demo --public-key $HOME/.ssh/id_rsa.pub
     else
         echo "Nova is not installed, skip adding keypair"
     fi
