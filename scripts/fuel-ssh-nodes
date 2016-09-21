@@ -5,17 +5,19 @@
 #
 # creates a tmux session with windows that SSH'ed to all nodes of provided role
 # (of a given Fuel environment)
-# window 0 is left on Fuel master node
-# other windows are named node-<node-id>
+# windows are named node-<node-id>
 #
 # tmux session is named [eN-]<role>
+# 
+# when ROLE is "fuel", simply opens a new session "fuel" with single window
+#
 # if tmux session with this name already exists - simply attaches to it
 # 
 # optionally executes a command in all connected nodes and stays connected
 # (has meaning only when creating a new session)
 #
-# also creates ~/.tmux.conf and sets some mouse options
-# if such file does not exist
+# Also if tmux is not installed, installs it and creates ~/.tmux.conf
+# with some mouse options set if such file does not exist
 
 read -r -d '' helpmsg <<- EOM
 Usage:
@@ -67,24 +69,30 @@ if [[ -n $1 ]]; then
         sessionname="e${env}-${sessionname}"
     fi
 else
-    echo "Role must be specified"
-    echo "$helpmsg"
-    exit 1
+    role="fuel"
+    sessionname="fuel"
 fi
                 
 tmux_new() {
-    nodes=($(fuel node list $envcmd | grep $role | awk '{print $1}'))
-    if [ ${#nodes[@]} -eq 0 ]; then
-        echo "No suitable nodes found"
-        exit 1
-    fi
+    if [ ${role} = "fuel" ]; then
+        sessionname="fuel"
+        tmux new-session -s ${sessionname} -d -n "fuel"
+    else
+        nodes=($(fuel node list ${envcmd} | grep ${role} | awk '{print $1}' | sort))
+        if [ ${#nodes[@]} -eq 0 ]; then
+            echo "No suitable nodes found"
+            exit 1
+        fi
 
-    # open first window already ssh-ed to first applicable node
-    tmux new-session -s "${sessionname}" -n node-"${nodes[0]}" -d  "ssh -t node-${nodes[0]} '$sshcmd'"
-    # open new windows ssh-ed to remaining nodes (from second to last)
-    for node in ${nodes[@]:1}; do
-        tmux new-window -t "${sessionname}" -n node-"${node}" -d  "ssh -t node-${node} '$sshcmd'"
-    done
+        # open first window already ssh-ed to first applicable node
+        tmux new-session -s "${sessionname}" -n node-"${nodes[0]}" -d  "ssh -t node-${nodes[0]} '$sshcmd'"
+        # re-apply first window title (does not set it sometimes)
+        tmux rename-window -t "${sessionname}:^" node-"${nodes[0]}"
+        # open new windows ssh-ed to remaining nodes (from second to last)
+        for node in ${nodes[@]:1}; do
+            tmux new-window -t "${sessionname}" -n node-"${node}" -d  "ssh -t node-${node} '$sshcmd'"
+        done
+    fi
 
     tmux attach -t "${sessionname}"
 }
