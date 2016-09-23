@@ -3,6 +3,11 @@ DEMO="--os-cloud devstack"
 ADMIN="--os-cloud devstack-admin"
 CATALOG=`openstack ${ADMIN} catalog list -f value -c Name`
 
+# sanitize env from OS_* vars
+for v in `env | grep ^OS_ | awk -F = '{print($1)}'`; do
+    unset $v
+done
+
 function has_services {
     services=$@
     for service in ${services}; do
