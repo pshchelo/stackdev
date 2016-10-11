@@ -4,9 +4,11 @@ ADMIN="--os-cloud devstack-admin"
 CATALOG=`openstack ${ADMIN} catalog list -f value -c Name`
 
 # sanitize env from OS_* vars
-for v in `env | grep ^OS_ | awk -F = '{print($1)}'`; do
-    unset $v
-done
+function reset_os_vars {
+    for v in `env | grep ^OS_ | awk -F = '{print($1)}'`; do
+        unset $v
+    done
+}
 
 function has_services {
     services=$@
@@ -117,10 +119,10 @@ function add_awslb_image {
 }
 
 function run_default {
+    reset_os_vars
     clean_pkgs
     allow_wan
     add_keypair
-    rename_cirros
     secgroup
     add_dns
     add_heat_net
