@@ -1,6 +1,6 @@
 [[local|localrc]]
 
-# As it is, this config will install a very minimal 
+# As it is, this config will install a very minimal
 # OpenStack development system consisting of following services:
 # - Identity (Keystone)
 # - Image (Glance)
@@ -206,7 +206,7 @@ enable_service neutron q-svc q-agt q-dhcp q-l3 q-meta q-metering
 ### IRONIC-INSPECTOR ###
 #enable_plugin ironic-inspector git://git.openstack.org/openstack/ironic-inspector
 #IRONIC_INSPECTOR_BUILD_RAMDISK=False
-#IRONIC_INSPECTOR_RAMDISK_ELEMENT=ironic-agent                                                                                                                                                                  
+#IRONIC_INSPECTOR_RAMDISK_ELEMENT=ironic-agent
 
 ### TROVE ###
 #enable_service trove tr-api tr-tmgr tr-cond
