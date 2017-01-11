@@ -57,10 +57,6 @@ SERVICE_PASSWORD=service
 # Some pieces for Ironic's multi-tenancy
 #OVS_PHYSICAL_BRIDGE=brbm
 #PHYSICAL_NETWORK=mynetwork
-#IRONIC_PROVISION_NETWORK_NAME=ironic-provision
-#IRONIC_PROVISION_SUBNET_PREFIX=10.0.5.0/24
-#IRONIC_PROVISION_SUBNET_GATEWAY=10.0.5.1
-#
 #Q_PLUGIN=ml2
 #ENABLE_TENANT_VLANS=True
 #Q_ML2_TENANT_NETWORK_TYPE=vlan
@@ -120,12 +116,15 @@ enable_service nova n-api n-crt n-cpu n-cond n-sch n-cauth
 #enable_service n-net
 # Set nova-compute to use ironic virt-driver
 #VIRT_DRIVER=ironic
+# Always use config drive whith Ironic nodes
+#FORCE_CONFIG_DRIVE=True
 
 ### NEUTRON ###
 enable_service neutron q-svc q-agt q-dhcp q-l3 q-meta q-metering
 #enable_service q-lbaas
 ### NEUTRON PLUGINS ###
 #enable_plugin networking-generic-switch git://git.openstack.org/openstack/networking-generic-switch
+# Needed for Newton release
 #Q_PLUGIN_EXTRA_CONF_PATH=/etc/neutron/plugins/ml2
 #Q_PLUGIN_EXTRA_CONF_FILES['generic_switch']=ml2_conf_genericswitch.ini
 
@@ -190,22 +189,28 @@ enable_service neutron q-svc q-agt q-dhcp q-l3 q-meta q-metering
 #IRONIC_RAMDISK_TYPE = coreos
 # To build your own IPA ramdisk from source, set this to True (default)
 #IRONIC_BUILD_DEPLOY_RAMDISK=False
-# Enable iPXE in favor of PXE (default True)
+# Use iPXE or PXE (default True)
 #IRONIC_IPXE_ENABLED=False
-# Nodes download deploy images from Swift (default False) NOT MERGED refs/changes/60/344160/6
+# iPXE on nodes downloads deploy images from Swift (default False)
 #IRONIC_IPXE_USE_SWIFT=True
+# Enable builtin iPXE boot script and config server (default False)
+#IRONIC_IPXE_SERVER_ENABLED=True # NOT MERGED CR369438
 
 # Ironic's multi-tenancy
 #IRONIC_USE_LINK_LOCAL=True
 #IRONIC_ENABLED_NETWORK_INTERFACES=flat,neutron
 #IRONIC_NETWORK_INTERFACE=neutron
+#IRONIC_PROVISION_NETWORK_NAME=ironic-provision
+#IRONIC_PROVISION_SUBNET_PREFIX=10.0.5.0/24
+#IRONIC_PROVISION_SUBNET_GATEWAY=10.0.5.1
 ### IRONIC STAGING DRIVERS ###
 # Uncomment last part to deploy from Gerrit change (example)
 #enable_plugin ironic-staging-drivers git://git.openstack.org/openstack/ironic-staging-drivers #refs/changes/74/325974/15
+#IRONIC_STAGING_DRIVER=pxe_ipmitool_ansible # NOT MERGED CR414644
 
 ### IRONIC-INSPECTOR ###
 #enable_plugin ironic-inspector git://git.openstack.org/openstack/ironic-inspector
-#IRONIC_INSPECTOR_BUILD_RAMDISK=False
+#IRONIC_INSPECTOR_BUILD_RAMDISK=True
 #IRONIC_INSPECTOR_RAMDISK_ELEMENT=ironic-agent
 
 ### TROVE ###
