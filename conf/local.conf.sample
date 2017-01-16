@@ -15,6 +15,9 @@
 #SERVICE_DIR=/home/pshchelo/stack/status
 #SUBUNIT_OUTPUT=/home/pshchelo/stack/devstack.subunit
 
+# Save devstack log to file for later inspection
+#LOGFILE=/opt/stack/devstacklog.txt
+
 ###########
 # PASSWORDS
 ###########
