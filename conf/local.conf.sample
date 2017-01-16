@@ -61,6 +61,7 @@ SERVICE_PASSWORD=service
 #ENABLE_TENANT_VLANS=True
 #Q_ML2_TENANT_NETWORK_TYPE=vlan
 #TENANT_VLAN_RANGE=100:150
+#Q_USE_PROVIDERNET_FOR_PUBLIC=False
 
 ##########
 # PACKAGES
@@ -203,6 +204,7 @@ enable_service neutron q-svc q-agt q-dhcp q-l3 q-meta q-metering
 #IRONIC_PROVISION_NETWORK_NAME=ironic-provision
 #IRONIC_PROVISION_SUBNET_PREFIX=10.0.5.0/24
 #IRONIC_PROVISION_SUBNET_GATEWAY=10.0.5.1
+
 ### IRONIC STAGING DRIVERS ###
 # Uncomment last part to deploy from Gerrit change (example)
 #enable_plugin ironic-staging-drivers git://git.openstack.org/openstack/ironic-staging-drivers #refs/changes/74/325974/15
