@@ -87,8 +87,8 @@ function secgroup {
         #       which understands only ingress rules,
         #       and this is exactly what I need 
         openstack ${DEMO} security group rule list default -f value -c ID | xargs -L1 openstack ${DEMO} security group rule delete
-        openstack ${DEMO} security group rule create default --proto icmp --src-ip "0.0.0.0/0"
-        openstack ${DEMO} security group rule create default --proto tcp --src-ip "0.0.0.0/0" --dst-port 22
+        openstack ${DEMO} security group rule create default --proto icmp --remote-ip "0.0.0.0/0"
+        openstack ${DEMO} security group rule create default --proto tcp --remote-ip "0.0.0.0/0" --dst-port 22
     else
         echo "Neutron is not installed, skip modifying default security groups."
     fi
