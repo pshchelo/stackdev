@@ -18,6 +18,10 @@
 # Save devstack log to file for later inspection
 #LOGFILE=/opt/stack/devstacklog.txt
 
+# define how services are started
+USE_SYSTEMD=False
+USE_SCREEN=True
+
 ###########
 # PASSWORDS
 ###########
