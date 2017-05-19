@@ -1,0 +1,25 @@
+[dashboard]
+title = Ironic Networking Review Dashboard
+description = Summary of Ironic + Networking Patches to Review
+foreach = (project:openstack/networking-baremetal OR project:openstack/networking-generic-switch) status:open -label:Code-Review<=-2
+
+[section "My Patches Requiring Attention"]
+query = owner:self (label:Verified-1,jenkins OR label:Code-Review-1 OR label:Workflow<=-1)
+
+[section "Small things (<25 LOC, limit 10)"]
+query = delta:<=25 limit:10 NOT ((label:Code-Review-1,ironic-core AND project:openstack/networking-baremetal) OR (label:Code-Review-1,networking-generic-switch-core AND project:openstack/networking-generic-switch)) label:Verified>=1,jenkins branch:master
+
+[section "Needs Reverify"]
+query = label:Workflow>=1 -label:Workflow<=-1 label:Verified<=-1,jenkins
+
+[section "Needs Final Approval (to land on master)"]
+query = branch:master -label:Workflow>=1 -label:Workflow<=-1 -owner:self label:Code-Review>=2 label:Verified>=1,jenkins NOT ((label:Code-Review-1,ironic-core AND project:openstack/networking-baremetal) OR (label:Code-Review-1,networking-generic-switch-core AND project:openstack/networking-generic-switch))
+
+[section "Newer (<1wk) Open Patches (limit 25)"]
+query = -age:1week limit:25 branch:master -label:Workflow>=1 NOT ((label:Code-Review-1,ironic-core AND project:openstack/networking-baremetal) OR (label:Code-Review-1,networking-generic-switch-core AND project:openstack/networking-generic-switch)) label:Verified>=1,jenkins -label:Code-Review>=2
+
+[section "Older (>1wk) Open Patches Passing Jenkins Tests (limit 50)"]
+query = age:1week limit:50 -label:Workflow>=1 -label:Code-Review<=2 label:Verified=1,jenkins NOT ((label:Code-Review-1,ironic-core AND project:openstack/networking-baremetal) OR (label:Code-Review-1,networking-generic-switch-core AND project:openstack/networking-generic-switch))
+
+[section "Open Stable Backports"]
+query = branch:^stable/.* status:open
