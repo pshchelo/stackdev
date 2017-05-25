@@ -20,6 +20,7 @@ function has_services {
 
 function clean_pkgs {
     sudo -H pip2 uninstall -y flake8-docstrings
+    sudo python2 ${HOME}/stackdev/scripts/setvirtvnc.py
 }
 
 function allow_wan {
