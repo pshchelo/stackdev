@@ -19,8 +19,10 @@
 #LOGFILE=/opt/stack/devstacklog.txt
 
 # define how services are started
-USE_SYSTEMD=False
-USE_SCREEN=True
+# starting mid-Pike devstack deploys services under systemd by default
+# to switch to old behavior of using screen for logs and process restart use:
+#USE_SYSTEMD=False
+#USE_SCREEN=True
 
 ###########
 # PASSWORDS
