@@ -1,0 +1,10 @@
+#!/usr/bin/env sh
+
+# helper script for DevStack running on systemd
+# restart a service(s) and immediately show relevant logs from journal
+
+service=${1:-"devstack@ir-cond.service"}
+set -ex
+
+sudo systemctl restart ${service}
+sudo journalctl -fan -u ${service}
