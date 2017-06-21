@@ -1,10 +1,13 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 # helper script for DevStack running on systemd
 # restart a service(s) and immediately show relevant logs from journal
 
 service=${1:-"devstack@ir-cond.service"}
-set -ex
 
-sudo systemctl restart ${service}
+set -e
+if [ $(basename ${BASH_SOURCE[0]}) = 'rdevlog' ]; then
+    echo "restaring ${service}"
+    sudo systemctl restart ${service}
+fi
 sudo journalctl -fan -u ${service}
