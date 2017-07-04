@@ -95,7 +95,13 @@ SERVICE_PASSWORD=service
 disable_all_services
 
 ### BASIC INFRA ###
-enable_service dstat mysql rabbit
+enable_service mysql rabbit
+# support for etcd was added mid-Pike
+enable_service etcd3
+
+### PERFORMANCE TRACKING ###
+enable_service dstat
+#enable_service peakmem_tracker
 
 ### TEMPEST ###
 enable_service tempest
