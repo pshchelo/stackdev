@@ -1,0 +1,11 @@
+heat_template_version: 2015-10-15
+resources:
+  my_keypair:
+    type: OS::Nova::KeyPair
+    properties:
+      name: pshchelo
+      save_private_key: true
+outputs:
+  private_key:
+    value: {get_attr: [my_keypair, private_key]}
+    description: private key of the keypair
