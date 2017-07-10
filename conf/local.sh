@@ -131,7 +131,7 @@ function run_default {
 
 if [ $# -eq 0 ]; then
     run_default
-    exit 0
+    exit $?
 fi
 
 while [[ $# > 0 ]]; do
@@ -139,7 +139,7 @@ while [[ $# > 0 ]]; do
     case $key in
         -h|--help)
             echo -e "Supported options: clean wan key dns secgroup heatnet cirros awslb\nDefault - all the above except awslb"
-            exit 0
+            exit 1
         ;;
         clean)
             clean_pkgs
