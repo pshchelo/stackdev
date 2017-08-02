@@ -8,6 +8,12 @@
 # - Networking (Neutron)
 #
 # tempest and dstat are also enabled to help with testing
+#
+# NOTE ON DEVSTACK PLUGNS:
+# to install from specific gerrit change/patch-set,
+# append ' refs/changes/<FG>/<ABCDEFG>/<N>' to the line enabling the plugin
+# where ABCDEFG is the change number as in https://review.openstack.org/#/<ABCDEFG>
+# and N is the patch-set number.
 
 # How to set custom DEST instead of default /opt/stack
 #DEST=/home/pshchelo/stack
@@ -101,6 +107,7 @@ enable_service etcd3
 
 ### PERFORMANCE TRACKING ###
 enable_service dstat
+# added mid-Pike, does not seem to work for now
 #enable_service peakmem_tracker
 
 ### TEMPEST ###
@@ -112,7 +119,7 @@ enable_service key
 #ENABLE_IDENTITY_V2=False
 
 ### GLANCE ###
-enable_service glance g-api g-reg
+enable_service g-api g-reg
 # specify what images to download
 #DOWNLOAD_DEFAULT_IMAGES=False
 # latest cirros qcow2 image
@@ -126,8 +133,13 @@ enable_service glance g-api g-reg
 #IMAGE_URLS+=",https://cloud-images.ubuntu.com/releases/trusty/release/ubuntu-14.04-server-cloudimg-amd64-disk1.img"
 
 ### NOVA ###
-enable_service nova n-api n-crt n-cpu n-cond n-sch n-cauth
+enable_service n-api n-cond n-sch n-cauth
 #enable_service n-novnc
+enable_service n-cpu
+# Pike and newer
+enable_service placement-api placement-client
+# Does not exist in Pike and newer
+#enable_service n-crt
 # Use Nova-network - mutually exclusive with Neutron
 #enable_service n-net
 # Set nova-compute to use ironic virt-driver
@@ -136,17 +148,18 @@ enable_service nova n-api n-crt n-cpu n-cond n-sch n-cauth
 #FORCE_CONFIG_DRIVE=True
 
 ### NEUTRON ###
-enable_service neutron q-svc q-agt q-dhcp q-l3 q-meta q-metering
-#enable_service q-lbaas
+enable_service q-svc q-agt q-dhcp q-l3 q-meta q-metering
+#enable_service q-lbaasv2
 ### NEUTRON PLUGINS ###
 #enable_plugin networking-generic-switch git://git.openstack.org/openstack/networking-generic-switch
+#GENERIC_SWITCH_USER_MAX_SESSIONS=2
 # Needed for Newton release
 #Q_PLUGIN_EXTRA_CONF_PATH=/etc/neutron/plugins/ml2
 #Q_PLUGIN_EXTRA_CONF_FILES['generic_switch']=ml2_conf_genericswitch.ini
 
 ### CINDER ###
 # For All-in-one
-#enable_service cinder c-sch c-api c-vol
+#enable_service c-sch c-api c-vol c-bak
 # For Multi-node - c-vol is on compute
 #enable_service cinder c-sch c-api
 # How to erase cinder volumes on delete [none, zero, shred]
@@ -159,15 +172,15 @@ enable_service neutron q-svc q-agt q-dhcp q-l3 q-meta q-metering
 
 ### SWIFT ###
 #enable_service s-proxy s-object s-container s-account
-# set swift hash - the hash below is result of
-# echo "SWIFT_HASH" | md5sum | awk '{print $1}'
-#SWIFT_HASH=096d08da4f8d4cce3a724c5f6c18f055
+#SWIFT_REPLICAS=1
+#SWIFT_START_ALL_SERVICES=False
+#SWIFT_HASH=1234123412341234
 # Enable Swift TempUrls
 #SWIFT_ENABLE_TEMPURLS=True
 #SWIFT_TEMPURL_KEY=tempurl
 
 ### HEAT ###
-#enable_service heat h-eng h-api h-api-cfn h-api-cw
+#enable_plugin heat git://git.openstack.org/openstack/heat
 #HEAT_ENABLE_ADOPT_ABANDON=True
 #LIBS_FROM_GIT+=,python-heatclient
 
@@ -180,16 +193,19 @@ enable_service neutron q-svc q-agt q-dhcp q-l3 q-meta q-metering
 #enable_plugin aodh https://git.openstack.org/openstack/aodh
 
 ### IRONIC ###
-# Uncomment last part to deploy from Gerrit change (example)
-#enable_plugin ironic git://git.openstack.org/openstack/ironic #refs/changes/60/344160/6
-#LIBS_FROM_GIT+=,ironic-lib,python-ironicclient
+#enable_plugin ironic git://git.openstack.org/openstack/ironic
+#LIBS_FROM_GIT+=,python-ironicclient,ironic-lib
 
+#IRONIC_USE_MOD_WSGI=True
 #IRONIC_IS_HARDWARE=False
 #IRONIC_BAREMETAL_BASIC_OPS=True
 # Create 3 virtual machines to pose as Ironic's baremetal nodes.
 #IRONIC_VM_COUNT=3
 # Hardware properties of virtual BM nodes to be crated.
 # For CoreOS-based IPA bootsrtap image required RAM is 1024MB.
+# To deploy a dib-rebuilt xenial baremetal image, 1536MB RAM is required
+# with tinyipa ramdisk.
+# For cirros image and tinyipa ramdisk, 384MB RAM is sufficient.
 # For IPA in general, required disk is > 4GB.
 #IRONIC_VM_SPECS_RAM=512
 #IRONIC_VM_SPECS_DISK=5
@@ -198,8 +214,8 @@ enable_service neutron q-svc q-agt q-dhcp q-l3 q-meta q-metering
 # Configure available drivers
 #IRONIC_ENABLED_DRIVERS=fake,agent_ipmitool
 #IRONIC_DEPLOY_DRIVER=agent_ipmitool
-# Set the SSH port to connect for *_ssh and *_libvirt drivers
-#IRONIC_VM_SSH_PORT=22
+# Set default boot option - local or netboot (default)
+#IRONIC_DEFAULT_BOOT_OPTION=local
 # Type of bootstrap image to build and use.
 # Available values are dib, coreos (deprecated), tinyipa (default)
 #IRONIC_RAMDISK_TYPE = coreos
@@ -222,19 +238,15 @@ enable_service neutron q-svc q-agt q-dhcp q-l3 q-meta q-metering
 
 ### IRONIC STAGING DRIVERS ###
 # Uncomment last part to deploy from Gerrit change (example)
-#enable_plugin ironic-staging-drivers git://git.openstack.org/openstack/ironic-staging-drivers #refs/changes/74/325974/15
-#IRONIC_STAGING_DRIVER=pxe_ipmitool_ansible # NOT MERGED CR414644
+#enable_plugin ironic-staging-drivers git://git.openstack.org/openstack/ironic-staging-drivers
+#IRONIC_STAGING_DRIVER=pxe_ipmitool_ansible
+#IRONIC_STAGING_DRIVER=staging-ansible-ipmi  # NOT MERGED CR482105
 
 ### IRONIC-INSPECTOR ###
 #enable_plugin ironic-inspector git://git.openstack.org/openstack/ironic-inspector
 #IRONIC_INSPECTOR_BUILD_RAMDISK=True
 #IRONIC_INSPECTOR_RAMDISK_ELEMENT=ironic-agent
 
-### TROVE ###
-#enable_service trove tr-api tr-tmgr tr-cond
-
-### SAHARA ###
-#enable_service sahara
 
 ############################
 # POST CONFIG STAGE SETTINGS
