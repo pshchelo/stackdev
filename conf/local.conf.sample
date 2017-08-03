@@ -107,8 +107,8 @@ enable_service etcd3
 
 ### PERFORMANCE TRACKING ###
 enable_service dstat
-# added mid-Pike, does not seem to work for now
-#enable_service peakmem_tracker
+# new in Pike
+enable_service peakmem_tracker
 
 ### TEMPEST ###
 enable_service tempest
@@ -122,19 +122,17 @@ enable_service key
 enable_service g-api g-reg
 # specify what images to download
 #DOWNLOAD_DEFAULT_IMAGES=False
-# latest cirros qcow2 image
-#IMAGE_URLS="http://download.cirros-cloud.net/0.3.4/cirros-0.3.4-x86_64-disk.img"
-#IMAGE_URLS+=",http://download.cirros-cloud.net/0.3.4/cirros-0.3.4-x86_64-rootfs.img.gz"
 # Heat functional tests image (Fedora20 based)
 #IMAGE_URLS+=",http://tarballs.openstack.org/heat-test-image/fedora-heat-test-image.qcow2"
-# Fedora 21 cloud image (e.g. for AWS LoadBalancer resource in Heat)
-#IMAGE_URLS+=",http://download.fedoraproject.org/pub/fedora/linux/releases/21/Cloud/Images/x86_64/Fedora-Cloud-Base-20141203-21.x86_64.qcow2"
+# Fedora 24 cloud image (e.g. for AWS LoadBalancer resource in Heat)
+#IMAGE_URLS+=http://fedora.bhs.mirrors.ovh.net/linux/releases/24/CloudImages/x86_64/images/Fedora-Cloud-Base-24-1.2.x86_64.qcow2
 # latest Ubuntu Trusty amd64 cloud image
 #IMAGE_URLS+=",https://cloud-images.ubuntu.com/releases/trusty/release/ubuntu-14.04-server-cloudimg-amd64-disk1.img"
 
 ### NOVA ###
-enable_service n-api n-cond n-sch n-cauth
-#enable_service n-novnc
+enable_service n-api n-cond n-sch
+enable_service n-api-meta
+enable_service n-novnc n-cauth
 enable_service n-cpu
 # Pike and newer
 enable_service placement-api placement-client
@@ -149,7 +147,6 @@ enable_service placement-api placement-client
 
 ### NEUTRON ###
 enable_service q-svc q-agt q-dhcp q-l3 q-meta q-metering
-#enable_service q-lbaasv2
 ### NEUTRON PLUGINS ###
 #enable_plugin networking-generic-switch git://git.openstack.org/openstack/networking-generic-switch
 #GENERIC_SWITCH_USER_MAX_SESSIONS=2
@@ -157,18 +154,20 @@ enable_service q-svc q-agt q-dhcp q-l3 q-meta q-metering
 #Q_PLUGIN_EXTRA_CONF_PATH=/etc/neutron/plugins/ml2
 #Q_PLUGIN_EXTRA_CONF_FILES['generic_switch']=ml2_conf_genericswitch.ini
 
+### NEUTRON LBAAS ###
+#enable_plugin neutron-lbaas https://git.openstack.org/openstack/neutron-lbaas
+#NEUTRON_LBAAS_SERVICE_PROVIDERV2=LOADBALANCERV2:Haproxy:neutron_lbaas.drivers.haproxy.plugin_driver.HaproxyOnHostPluginDriver:default
+#enable_service q-lbaasv2
+#enable_service q-trunk
+
 ### CINDER ###
-# For All-in-one
-#enable_service c-sch c-api c-vol c-bak
-# For Multi-node - c-vol is on compute
-#enable_service cinder c-sch c-api
+enable_service c-sch c-api c-bak
+enable_service c-vol
+CINDER_PERIODIC_INTERVAL=10
 # How to erase cinder volumes on delete [none, zero, shred]
 #CINDER_VOLUME_CLEAR=none
 # set the size of the stack volume backing file (in MB, default 10250M)
 #VOLUME_BACKING_FILE_SIZE=41000M
-
-### HORIZON ###
-#enable_service horizon
 
 ### SWIFT ###
 #enable_service s-proxy s-object s-container s-account
@@ -178,19 +177,6 @@ enable_service q-svc q-agt q-dhcp q-l3 q-meta q-metering
 # Enable Swift TempUrls
 #SWIFT_ENABLE_TEMPURLS=True
 #SWIFT_TEMPURL_KEY=tempurl
-
-### HEAT ###
-#enable_plugin heat git://git.openstack.org/openstack/heat
-#HEAT_ENABLE_ADOPT_ABANDON=True
-#LIBS_FROM_GIT+=,python-heatclient
-
-### CEILOMETER ###
-#enable_plugin ceilometer git://git.openstack.org/openstack/ceilometer
-# set shorter sample collection interval (default is 600)
-#CEILOMETER_PIPELINE_INTERVAL=60
-
-### AODH ###
-#enable_plugin aodh https://git.openstack.org/openstack/aodh
 
 ### IRONIC ###
 #enable_plugin ironic git://git.openstack.org/openstack/ironic
@@ -233,8 +219,9 @@ enable_service q-svc q-agt q-dhcp q-l3 q-meta q-metering
 #IRONIC_ENABLED_NETWORK_INTERFACES=flat,neutron
 #IRONIC_NETWORK_INTERFACE=neutron
 #IRONIC_PROVISION_NETWORK_NAME=ironic-provision
-#IRONIC_PROVISION_SUBNET_PREFIX=10.0.5.0/24
-#IRONIC_PROVISION_SUBNET_GATEWAY=10.0.5.1
+#IRONIC_PROVISION_SUBNET_PREFIX=10.0.6.0/24
+#IRONIC_PROVISION_SUBNET_GATEWAY=10.0.6.1
+#IRONIC_PROVISION_ALLOCATION_POOL='start=10.0.6.10,end=10.0.6.100'
 
 ### IRONIC STAGING DRIVERS ###
 # Uncomment last part to deploy from Gerrit change (example)
@@ -247,19 +234,66 @@ enable_service q-svc q-agt q-dhcp q-l3 q-meta q-metering
 #IRONIC_INSPECTOR_BUILD_RAMDISK=True
 #IRONIC_INSPECTOR_RAMDISK_ELEMENT=ironic-agent
 
+### HEAT ###
+#enable_plugin heat git://git.openstack.org/openstack/heat
+#HEAT_ENABLE_ADOPT_ABANDON=True
+#LIBS_FROM_GIT+=,python-heatclient
+
+### CEILOMETER ###
+#enable_plugin ceilometer git://git.openstack.org/openstack/ceilometer
+# set shorter sample collection interval (default is 600)
+#CEILOMETER_PIPELINE_INTERVAL=60
+#CEILOMETER_BACKEND=mysql
+
+### AODH ###
+#enable_plugin aodh git://git.openstack.org/openstack/aodh
+
+### ZAQAR ###
+#enable_plugin zaqar git://git.openstack.org/openstack/zaqar
+
+### BARBICAN ###
+#enable_plugin barbican git://git.openstack.org/openstack/barbican
+
+### HORIZON ###
+#enable_service horizon
+
+### IRONIC UI ###
+#enable_plugin ironic-ui git://git.openstack.org/openstack/ironic-ui
+
 
 ############################
 # POST CONFIG STAGE SETTINGS
 ############################
 
 # fix to allow access to instance vnc console when accessing Horizon via tunnel
-#[[post-config|$NOVA_CONF]]
-#[DEFAULT]
+[[post-config|$NOVA_CONF]]
+[DEFAULT]
 #novncproxy_base_url = http://172.18.200.23:6127/vnc_auto.html
+#quota_driver=nova.quota.NoopQuotaDriver
 
-#[[post-config|$HEAT_CONF]]
-#[DEFAULT]
-# enable Convergence engine
-#convergence_engine=true
-# decrease number of Heat engine workers, when too much for devstack
+[[post-config|$HEAT_CONF]]
+[DEFAULT]
+#convergence_engine=false
 #num_engine_workers = 2
+#stack_scheduler_hints=true
+#hidden_stack_tags=hidden
+#encrypt_parameters_and_properties=True
+#logging_exception_prefix=%(asctime)s.%(msecs)03d %(process)d TRACE %(name)s %(instance)s
+
+#[heat_api]
+#workers=2
+
+#[heat_api_cfn]
+#workers=2
+
+#[heat_api_cloudwatch]
+#workers=2
+
+#[cache]
+#enabled=True
+
+#[eventlet_opts]
+#client_socket_timeout=120
+
+#[oslo_messaging_notifications]
+#driver=messagingv2
