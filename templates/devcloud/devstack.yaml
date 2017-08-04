@@ -1,0 +1,103 @@
+heat_template_version: ocata
+
+parameters:
+
+  public_net_name:
+    type: string
+    default: public
+
+  server_user_name:
+    type: string
+    default: pshchelo
+
+  key_name:
+    type: string
+    default: pshchelo
+
+  flavor:
+    type: string
+    default: oc_aio_medium
+
+  image:
+    type: string
+    default: ubuntu-16-04-x64-latest
+
+  availability_zone:
+    type: string
+    default: mcp-oscore
+
+
+resources:
+
+  network:
+    type: OS::Neutron::Net
+
+  subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      network: { get_resource: network }
+      cidr: 192.168.100.0/24
+      dns_nameservers:
+        - 8.8.8.8
+        - 8.8.4.4
+
+  server_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_resource: network }
+      fixed_ips:
+        - subnet: { get_resource: subnet }
+
+  router:
+    type: OS::Neutron::Router
+    properties:
+      external_gateway_info:
+        network: { get_param: public_net_name }
+
+  router_interface:
+    type: OS::Neutron::RouterInterface
+    properties:
+      router: { get_resource: router }
+      subnet: { get_resource: subnet }
+
+  floating_ip:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network: { get_param: public_net_name }
+
+  floating_ip_association:
+    type: OS::Neutron::FloatingIPAssociation
+    properties:
+      floatingip_id: { get_resource: floating_ip }
+      port_id: { get_resource: server_port }
+
+  config:
+    type: OS::Heat::CloudConfig
+    properties:
+      cloud_config:
+        users:
+          - default
+          - name: { get_param: server_user_name }
+            shell: /bin/bash
+            sudo: "ALL=(ALL) NOPASSWD:ALL"
+            ssh_authorized_keys:
+              - { get_file: /home/pshchelo/.ssh/git_rsa.pub }
+
+  server:
+    type: OS::Nova::Server
+    properties:
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      availability_zone: { get_param: availability_zone }
+      key_name: { get_param: key_name }
+      name: { list_join: [ '-', [ {get_param: server_user_name }, 'devstack' ] ] }
+      networks:
+        - port: { get_resource: server_port }
+      user_data_format: RAW
+      user_data: { get_resource: config }
+
+
+outputs:
+  access_ip:
+    description: IP of the server
+    value: { get_attr: [floating_ip, floating_ip_address ] }
