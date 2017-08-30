@@ -16,7 +16,7 @@ parameters:
 
   flavor:
     type: string
-    default: oc_aio_medium
+    default: oc_aio_large_4
 
   image:
     type: string
