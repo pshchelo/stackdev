@@ -104,6 +104,8 @@ disable_all_services
 enable_service mysql rabbit
 # support for etcd was added mid-Pike
 enable_service etcd3
+# TLS was added by default in early Queens
+enable_service tls-proxy
 
 ### PERFORMANCE TRACKING ###
 enable_service dstat
@@ -132,7 +134,8 @@ enable_service g-api g-reg
 ### NOVA ###
 enable_service n-api n-cond n-sch
 enable_service n-api-meta
-enable_service n-novnc n-cauth
+enable_service n-cauth
+enable_service n-novnc
 enable_service n-cpu
 # Pike and newer
 enable_service placement-api placement-client
@@ -177,6 +180,13 @@ CINDER_PERIODIC_INTERVAL=10
 # Enable Swift TempUrls
 #SWIFT_ENABLE_TEMPURLS=True
 #SWIFT_TEMPURL_KEY=tempurl
+
+### CEPH + RADOSGW ###
+#enable_plugin devstack-plugin-ceph git://git.openstack.org/openstack/devstack-plugin-ceph
+# ENABLE_CEPH_CINDER=True     # ceph backend for cinder
+#ENABLE_CEPH_GLANCE=True     # store images in ceph
+#ENABLE_CEPH_C_BAK=True      # backup volumes to ceph
+#ENABLE_CEPH_NOVA=True       # allow nova to use ceph resources
 
 ### IRONIC ###
 #enable_plugin ironic git://git.openstack.org/openstack/ironic
@@ -227,7 +237,8 @@ CINDER_PERIODIC_INTERVAL=10
 # Uncomment last part to deploy from Gerrit change (example)
 #enable_plugin ironic-staging-drivers git://git.openstack.org/openstack/ironic-staging-drivers
 #IRONIC_STAGING_DRIVER=pxe_ipmitool_ansible
-#IRONIC_STAGING_DRIVER=staging-ansible-ipmi  # NOT MERGED CR482105
+# NOT MERGED CR499561
+#IRONIC_STAGING_DRIVER=staging-ansible-ipmi
 
 ### IRONIC-INSPECTOR ###
 #enable_plugin ironic-inspector git://git.openstack.org/openstack/ironic-inspector
@@ -266,13 +277,13 @@ CINDER_PERIODIC_INTERVAL=10
 ############################
 
 # fix to allow access to instance vnc console when accessing Horizon via tunnel
-[[post-config|$NOVA_CONF]]
-[DEFAULT]
+#[[post-config|$NOVA_CONF]]
+#[DEFAULT]
 #novncproxy_base_url = http://172.18.200.23:6127/vnc_auto.html
 #quota_driver=nova.quota.NoopQuotaDriver
 
-[[post-config|$HEAT_CONF]]
-[DEFAULT]
+#[[post-config|$HEAT_CONF]]
+#[DEFAULT]
 #convergence_engine=false
 #num_engine_workers = 2
 #stack_scheduler_hints=true
