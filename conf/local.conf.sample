@@ -183,7 +183,7 @@ CINDER_PERIODIC_INTERVAL=10
 
 ### CEPH + RADOSGW ###
 #enable_plugin devstack-plugin-ceph git://git.openstack.org/openstack/devstack-plugin-ceph
-# ENABLE_CEPH_CINDER=True     # ceph backend for cinder
+#ENABLE_CEPH_CINDER=True     # ceph backend for cinder
 #ENABLE_CEPH_GLANCE=True     # store images in ceph
 #ENABLE_CEPH_C_BAK=True      # backup volumes to ceph
 #ENABLE_CEPH_NOVA=True       # allow nova to use ceph resources
@@ -195,6 +195,8 @@ CINDER_PERIODIC_INTERVAL=10
 #IRONIC_USE_MOD_WSGI=True
 #IRONIC_IS_HARDWARE=False
 #IRONIC_BAREMETAL_BASIC_OPS=True
+# try to use nested KVM if possible
+#IRONIC_VM_ENGINE=auto
 # Create 3 virtual machines to pose as Ironic's baremetal nodes.
 #IRONIC_VM_COUNT=3
 # Hardware properties of virtual BM nodes to be crated.
@@ -210,6 +212,9 @@ CINDER_PERIODIC_INTERVAL=10
 # Configure available drivers
 #IRONIC_ENABLED_DRIVERS=fake,agent_ipmitool
 #IRONIC_DEPLOY_DRIVER=agent_ipmitool
+#IRONIC_ENABLED_DEPLOY_INTERFACES=iscsi,direct
+#IRONIC_DEFAULT_DEPLOY_INTERFACE=direct
+#IRONIC_CONFIGURE_GLANCE_WITH_SWIFT=True
 # Set default boot option - local or netboot (default)
 #IRONIC_DEFAULT_BOOT_OPTION=local
 # Type of bootstrap image to build and use.
@@ -234,11 +239,13 @@ CINDER_PERIODIC_INTERVAL=10
 #IRONIC_PROVISION_ALLOCATION_POOL='start=10.0.6.10,end=10.0.6.100'
 
 ### IRONIC STAGING DRIVERS ###
-# Uncomment last part to deploy from Gerrit change (example)
 #enable_plugin ironic-staging-drivers git://git.openstack.org/openstack/ironic-staging-drivers
-#IRONIC_STAGING_DRIVER=pxe_ipmitool_ansible
-# NOT MERGED CR499561
+# enable and prepare for ansible-deploy driver,
+# usable only when IRONIC_DEPLOY_DRIVER is agent_ipmitool
+# for Queens and further:
 #IRONIC_STAGING_DRIVER=staging-ansible-ipmi
+# for Pike and older
+#IRONIC_STAGING_DRIVER=pxe_ipmitool_ansible
 
 ### IRONIC-INSPECTOR ###
 #enable_plugin ironic-inspector git://git.openstack.org/openstack/ironic-inspector
@@ -250,13 +257,18 @@ CINDER_PERIODIC_INTERVAL=10
 #HEAT_ENABLE_ADOPT_ABANDON=True
 #LIBS_FROM_GIT+=,python-heatclient
 
-### CEILOMETER ###
+### TELEMETRY ###
+# PANKO - data backend MUST BE ENABLED BEFORE CEILOMETER!
+#enable_plugin panko git://git.openstack.org/openstack/panko
+# GNOCCI - data backend
+#enable_plugin gnocci https://github.com/gnocchixyz/gnocchi
+# CEILOMETER - metrics collection
 #enable_plugin ceilometer git://git.openstack.org/openstack/ceilometer
 # set shorter sample collection interval (default is 600)
 #CEILOMETER_PIPELINE_INTERVAL=60
-#CEILOMETER_BACKEND=mysql
-
-### AODH ###
+# ceilometer backend, default (empty) needs Panko, gnocci needs gnocci
+#CEILOMETER_BACKEND=gnocci
+# AODH - alarming
 #enable_plugin aodh git://git.openstack.org/openstack/aodh
 
 ### ZAQAR ###
