@@ -23,6 +23,11 @@ parameters:
     type: string
     default: mcp-oscore
 
+  vm_name:
+    type: string
+    default: devstack
+    description: name of the vm to be appended to name of the key
+
 
 resources:
 
@@ -90,7 +95,7 @@ resources:
       flavor: { get_param: flavor }
       availability_zone: { get_param: availability_zone }
       key_name: { get_param: key_name }
-      name: { list_join: [ '-', [ {get_param: key_name }, 'devstack' ] ] }
+      name: { list_join: [ '-', [ {get_param: key_name }, {get_param: vm_name } ] ] }
       networks:
         - port: { get_resource: server_port }
       user_data_format: RAW
