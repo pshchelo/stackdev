@@ -3,7 +3,7 @@
 # helper script for DevStack running on systemd
 # restart a service(s) and immediately show relevant logs from journal
 
-service=${1:-"devstack@ir-cond.service"}
+service="devstack@${1}.service"
 
 set -e
 if [ $(basename ${BASH_SOURCE[0]}) = 'rdevlog' ]; then
