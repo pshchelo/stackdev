@@ -1,17 +1,27 @@
 #!/usr/bin/env bash
-pwd=${PWD}
-dirs=$(ls -d */)
-for d in $dirs
-do
-    if [ -d "$pwd/$d/.git" ]; then
-        echo -e "\n======="
-        echo "$pwd/$d"
-        cd $pwd/$d
+function repo_check {
+    pushd "$1" > /dev/null
+    echo -e "\n======="
+    echo "$1"
+
+    echo -e "\nGit branches"
+    git branch --list
+
+    gstatus=$(git status --porcelain)
+    if [[ ! -z $gstatus ]]; then
         echo "Git Status:"
-        git status
-        echo -e "\nGit branches"
-        git branch
+        echo $gstatus
+    fi
+    gstashes=$(git stash list --oneline)
+    if [[ ! -z $gstashes ]]; then
         echo -e "\nGit stashes"
-        git stash list
+        echo $gstashes
+    fi
+    popd > /dev/null
+}
+
+for d in $(ls -d ${PWD}/*/); do
+    if [ -d "$d/.git" ]; then
+        repo_check $d
     fi
 done
