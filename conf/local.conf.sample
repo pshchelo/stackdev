@@ -267,7 +267,7 @@ CINDER_PERIODIC_INTERVAL=10
 # set shorter sample collection interval (default is 600)
 #CEILOMETER_PIPELINE_INTERVAL=60
 # ceilometer backend, default (empty) needs Panko, gnocci needs gnocci
-#CEILOMETER_BACKEND=gnocci
+#CEILOMETER_BACKEND=gnocchi
 # AODH - alarming
 #enable_plugin aodh git://git.openstack.org/openstack/aodh
 
