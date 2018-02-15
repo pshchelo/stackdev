@@ -1,8 +1,0 @@
-#!/usr/bin/env sh
-
-cat << EOF | mysql -u root
-DROP DATABASE heat;
-CREATE DATABASE heat CHARACTER SET utf8;
-EOF
-
-heat-manage db_sync
