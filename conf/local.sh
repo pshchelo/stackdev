@@ -2,6 +2,7 @@
 DEMO="--os-cloud devstack"
 ADMIN="--os-cloud devstack-admin"
 CATALOG=`openstack ${ADMIN} catalog list -f value -c Name`
+set -x
 
 # sanitize env from OS_* vars
 function reset_os_vars {
