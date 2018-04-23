@@ -19,9 +19,17 @@ function has_services {
     return 0
 }
 
-function clean_pkgs {
-    sudo -H pip2 uninstall -y flake8-docstrings
-    sudo python2 ${HOME}/stackdev/scripts/setvirtvnc.py
+function patch_system {
+    # General changes to the system and installed packages
+    local python_version='2'
+    #echo "Am I using Python3?" $USE_PYTHON3
+    if [ $USE_PYTHON3 == "True" ]; then
+        python_version='3'
+    fi
+    # sudo -H pip2 uninstall -y flake8-docstrings
+    # sudo python2 ${HOME}/stackdev/scripts/setvirtvnc.py
+    sudo -H pip${python_version} uninstall -y flake8-docstrings
+    sudo python${python_version} ${HOME}/stackdev/scripts/setvirtvnc.py
 }
 
 function allow_wan {
@@ -122,7 +130,7 @@ function add_awslb_image {
 
 function run_default {
     reset_os_vars
-    clean_pkgs
+    patch_system
     allow_wan
     add_keypair
     secgroup
@@ -139,11 +147,11 @@ while [[ $# > 0 ]]; do
     key="$1"
     case $key in
         -h|--help)
-            echo -e "Supported options: clean wan key dns secgroup heatnet cirros awslb\nDefault - all the above except awslb"
+            echo -e "Supported options: patch wan key dns secgroup heatnet cirros awslb\nDefault - all the above except awslb"
             exit 1
         ;;
-        clean)
-            clean_pkgs
+        patch)
+            patch_system
             shift # past argument
         ;;
         wan)
