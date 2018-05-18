@@ -13,12 +13,12 @@ parameters:
   server_image:
     type: string
     description: Image name
-    default: fedora-heat-test-image
+    default: cirros-0.3.5-x86_64-disk
 
   server_flavor:
     type: string
     description: Flavor
-    default: m1.heat
+    default: m1.nano
 
   server_key:
     type: string
@@ -86,16 +86,19 @@ resources:
           protocol: icmp
 
   server_config:
-    type: OS::Heat::CloudConfig
+    type: OS::Heat::SoftwareConfig
     properties:
-      cloud_config:
-        runcmd:
-          - echo  $(hostname) > index.html
-          - str_replace:
-              template:
-                python -m SimpleHTTPServer PORT &
-              params:
-                PORT: { get_param: app_port }
+      group: ungrouped
+      config:
+        str_replace:
+          template: |
+            #! /bin/sh -v
+            Body=$(cat /etc/hostname)
+            Response="HTTP/1.1 200 OK\r\nContent-Length: ${#Body}\r\n\r\n$Body"
+            echo $Response
+            while true ; do echo -e $Response | nc -llp PORT; done
+          params:
+            PORT: { get_param: app_port }
 
   server_group:
     type: OS::Heat::ResourceGroup
