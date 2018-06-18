@@ -20,7 +20,6 @@ resources:
     properties:
       image: { get_param: image }
       flavor: { get_param: flavor }
-      key_name: demo
       networks:
         - network: {get_param: net}
 
