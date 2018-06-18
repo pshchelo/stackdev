@@ -26,9 +26,13 @@ function patch_system {
     if [ $USE_PYTHON3 == "True" ]; then
         python_version='3'
     fi
-    # sudo -H pip2 uninstall -y flake8-docstrings
-    # sudo python2 ${HOME}/stackdev/scripts/setvirtvnc.py
-    sudo -H pip${python_version} uninstall -y flake8-docstrings
+    pypkg_to_remove="flake8-docstrings
+                     openstack.nose-plugin"
+    for pypkg in $pypkg_to_remove; do
+        if `pip${python_version} freeze | grep $pypkg`; then 
+            sudo -H pip${python_version} uninstall -y $pypkg
+        fi
+    done
     sudo python${python_version} ${HOME}/stackdev/scripts/setvirtvnc.py
 }
 
