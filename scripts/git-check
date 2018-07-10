@@ -5,7 +5,7 @@ function repo_check {
     echo "$1"
 
     echo -e "\nGit branches"
-    git branch --list
+    git branch -v --no-merged
 
     gstatus=$(git status --porcelain)
     if [[ ! -z $gstatus ]]; then
