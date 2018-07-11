@@ -82,6 +82,8 @@ SERVICE_PASSWORD=service
 # PACKAGES
 ##########
 
+# Run services under Python3 (default False)
+#USE_PYTHON3=True
 # run already-installed devstack in offline mode
 #OFFLINE=True
 # refresh repos
@@ -110,7 +112,7 @@ enable_service tls-proxy
 ### PERFORMANCE TRACKING ###
 enable_service dstat
 # new in Pike
-enable_service peakmem_tracker
+enable_service memory_tracker
 
 ### TEMPEST ###
 enable_service tempest
@@ -258,15 +260,16 @@ CINDER_PERIODIC_INTERVAL=10
 #LIBS_FROM_GIT+=,python-heatclient
 
 ### TELEMETRY ###
-# PANKO - data backend MUST BE ENABLED BEFORE CEILOMETER!
+# backends must be enabled before ceilometer!
+# PANKO - data backend
 #enable_plugin panko git://git.openstack.org/openstack/panko
-# GNOCCI - data backend
-#enable_plugin gnocci https://github.com/gnocchixyz/gnocchi
+# GNOCCHI - data backend
+#enable_plugin gnocchi https://github.com/gnocchixyz/gnocchi
 # CEILOMETER - metrics collection
 #enable_plugin ceilometer git://git.openstack.org/openstack/ceilometer
 # set shorter sample collection interval (default is 600)
 #CEILOMETER_PIPELINE_INTERVAL=60
-# ceilometer backend, default (empty) needs Panko, gnocci needs gnocci
+# ceilometer backend, default (empty) needs Panko, gnocchi needs gnocchi
 #CEILOMETER_BACKEND=gnocchi
 # AODH - alarming
 #enable_plugin aodh git://git.openstack.org/openstack/aodh
@@ -283,6 +286,8 @@ CINDER_PERIODIC_INTERVAL=10
 ### IRONIC UI ###
 #enable_plugin ironic-ui git://git.openstack.org/openstack/ironic-ui
 
+### HEAT UI ###
+#enable_plugin heat-dashboard https://git.openstack.org/openstack/heat-dashboard
 
 ############################
 # POST CONFIG STAGE SETTINGS
