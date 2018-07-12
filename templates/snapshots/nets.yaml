@@ -1,0 +1,50 @@
+heat_template_version: ocata
+
+parameters:
+  public_net:
+    type: string
+    default: public
+  cidr:
+    type: string
+    default: '10.10.10.0/24'
+
+resources:
+  net:
+    type: OS::Neutron::Net
+
+  subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      network: { get_resource: net }
+      cidr: { get_param: cidr }
+
+  router:
+    type: OS::Neutron::Router
+    properties:
+      external_gateway_info:
+        network: { get_param: public_net }
+
+  router_interface:
+    type: OS::Neutron::RouterInterface
+    properties:
+      router: { get_resource: router }
+      subnet: { get_resource: subnet }
+
+  secgroup:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      rules:
+        - protocol: tcp
+          remote_ip_prefix: '0.0.0.0/0'
+        - protocol: udp
+          remote_ip_prefix: '0.0.0.0/0'
+        - protocol: icmp
+          remote_ip_prefix: '0.0.0.0/0'
+
+outputs:
+  net:
+    value: { get_resource: net }
+  subnet:
+    value: { get_resource: subnet }
+  secgroup:
+    value: { get_resource: secgroup }

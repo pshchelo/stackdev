@@ -1,0 +1,39 @@
+heat_template_version: ocata
+
+parameters:
+  key_name:
+    type: string
+    default: demo
+  image:
+    type: string
+    default: cirros-0.3.5-x86_64-disk
+  flavor:
+    type: string
+    default: m1.nano
+  cidr:
+    type: string
+    default: '10.10.10.0/24'
+  public_net:
+    type: string
+    default: public
+
+resources:
+
+  nets:
+    type: Test::Nets
+    properties:
+      cidr: { get_param: cidr }
+
+  server:
+    type: Test::Server
+    properties:
+      key_name: { get_param: key_name }
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      net: { get_attr: [ nets, net ] }
+      subnet: { get_attr: [ nets, subnet ] }
+      secgroup: { get_attr: [ nets, secgroup ] }
+
+outputs:
+  access:
+    value: { get_attr: [ server, fip ] }
