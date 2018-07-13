@@ -1,6 +1,10 @@
 heat_template_version: ocata
 
 parameters:
+  az:
+    type: string
+    default: nova
+    description: Compute Availability Zone to boot instance in.
   key_name:
     type: string
     default: demo
@@ -40,6 +44,7 @@ resources:
   server:
     type: OS::Nova::Server
     properties:
+      availability_zone: { get_param: az }
       key_name: { get_param: key_name }
       image: { get_param: image }
       flavor: { get_param: flavor }
