@@ -280,6 +280,9 @@ CINDER_PERIODIC_INTERVAL=10
 ### BARBICAN ###
 #enable_plugin barbican git://git.openstack.org/openstack/barbican
 
+### DESIGNATE ###
+#enable_plugin designate git://git.openstack.org/openstack/designate
+
 ### HORIZON ###
 #enable_service horizon
 
