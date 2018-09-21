@@ -1,0 +1,14 @@
+heat_template_version: rocky
+
+parameters:
+  count:
+    type: number
+    default: 1
+
+resources:
+  server_group:
+    type: OS::Heat::ResourceGroup
+    properties:
+      count: { get_param: count }
+      resource_def:
+        type: My::Server

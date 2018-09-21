@@ -1,0 +1,10 @@
+heat_template_version: rocky
+
+resources:
+  server:
+    type: OS::Nova::Server
+    properties:
+      image: cirros-0.3.5-x86_64-disk
+      flavor: m1.nano
+      networks:
+        - network: private

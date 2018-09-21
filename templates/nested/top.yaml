@@ -1,0 +1,7 @@
+heat_template_version: rocky
+
+resources:
+  nested:
+    type: My::ServerGroup
+    properties:
+      count: 2
