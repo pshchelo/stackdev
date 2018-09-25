@@ -99,11 +99,15 @@ SERVICE_PASSWORD=service
 # SERVICES
 ##########
 
+# timeout for services to start, default is 60
+#SERVICE_TIMEOUT=180
+
 ### DISABLE EVERYTHING ###
 disable_all_services
 
 ### BASIC INFRA ###
-enable_service mysql rabbit
+enable_service mysql
+enable_service rabbit
 # support for etcd was added mid-Pike
 enable_service etcd3
 # TLS was added by default in early Queens
@@ -121,6 +125,10 @@ enable_service tempest
 enable_service key
 # disable Keystone V2 completely
 #ENABLE_IDENTITY_V2=False
+# testing federated Keystone (with remote Shibboleth instance by default)
+#enable_plugin keystone git://git.openstack.org/openstack/keystone
+#enable_service keystone-saml2-federation
+#TEMPEST_PLUGINS='/opt/stack/keystone-tempest-plugin'
 
 ### GLANCE ###
 enable_service g-api g-reg
