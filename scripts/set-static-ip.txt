@@ -1,6 +1,0 @@
-auto eth0
-iface eth0 inet static
-address 192.168.100.127
-netmask 255.255.255.0
-gateway 192.168.100.1
-dns-nameservers 192.168.122.1 8.8.8.8 8.8.4.4

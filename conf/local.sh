@@ -33,7 +33,7 @@ function patch_system {
             sudo -H pip${python_version} uninstall -y $pypkg
         fi
     done
-    sudo python${python_version} ${HOME}/stackdev/scripts/setvirtvnc.py
+    sudo python${python_version} ${HOME}/stackdev/scripts/ironic/setvirtvnc.py
 }
 
 function allow_wan {
