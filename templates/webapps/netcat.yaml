@@ -18,15 +18,18 @@ resources:
         str_replace:
           template: |
             #! /bin/sh -v
-            Body=$(cat /etc/hostname)
+            cat > /etc/init.d/simpleweb << EOF
+            #Body=$(cat /etc/hostname)
+            Body=$(hostname)
             Response="HTTP/1.1 200 OK\r\nContent-Length: ${#Body}\r\n\r\n$Body"
-            echo $Response
+            while true; do
+                echo -e ${Response} | nc -llp PORT
+                #echo -e ${Response} | nc -l 0.0.0.0 PORT
+            done
+            EOF
+            chmod +x /etc/init.d/simpleweb
+            /etc/init.d/simpleweb start
             wc_notify --data-binary '{"status": "SUCCESS"}'
-            while true ; do echo -e $Response | nc -llp PORT; done
-            #echo "while true ; do echo -e \"${Response}\" | nc -llp PORT; done" > /bin/ncserve
-            #chmod +x /bin/ncserve
-            #(sudo ncserve > /dev/null 2>&1 &) &
-            #nohup ./bin/ncserve > /dev/null 2>&1 &
           params:
             wc_notify: { get_param: curl_cli }
             PORT: { get_param: port }
