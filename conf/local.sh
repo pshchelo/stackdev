@@ -108,29 +108,6 @@ function secgroup {
     fi
 }
 
-function rename_cirros {
-    if has_services glance; then
-        echo "Renaming cirros image..."
-        read -r -a image <<< `openstack ${ADMIN} image list -f value -c ID -c Name | grep "cirros-.*-disk"`
-        if [ -n "image[0]" ]; then
-            ${OSADMIN} image set ${image[0]} --name cirros --property description=${image[1]}
-            ${OSADMIN} image show ${image[0]}
-        fi
-    else
-        echo "Glance is not installed, skip renaming Cirros image."
-    fi
-}
-
-function add_awslb_image {
-    if has_services heat glance; then
-        echo "Uploading Fedora 21 cloud image to glance"
-        AWS_LB_IMAGE_NAME=Fedora-Cloud-Base-20141203-21.x86_64
-        AWS_LB_IMAGE_URL="http://download.fedoraproject.org/pub/fedora/linux/releases/21/Cloud/Images/x86_64/${AWS_LB_IMAGE_NAME}.qcow2"
-        curl -L ${AWS_LB_IMAGE_URL} | ${OSADMIN} image create --public --disk-format qcow2  --container-format bare ${AWS_LB_IMAGE_NAME}
-    else
-        echo "Heat or Glance not installed, skip adding base image for AWS LoadBalancer."
-    fi
-}
 
 function run_default {
     reset_os_vars
@@ -151,7 +128,7 @@ while [[ $# > 0 ]]; do
     key="$1"
     case $key in
         -h|--help)
-            echo -e "Supported options: patch wan key dns secgroup heatnet cirros awslb\nDefault - all the above except awslb"
+            echo -e "Supported options: patch wan key dns secgroup heatnet\nDefault - all the above"
             exit 1
         ;;
         patch)
@@ -177,13 +154,6 @@ while [[ $# > 0 ]]; do
         heatnet)
             add_heat_net
             shift
-        ;;
-        cirros)
-            rename_cirros
-            shift
-        ;;
-        awslb)
-            add_awslb_image
         ;;
         *)
             echo -e "Unregognized option $key\nRun with -h to see available options"
