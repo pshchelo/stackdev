@@ -29,7 +29,7 @@ function patch_system {
     pypkg_to_remove="flake8-docstrings
                      openstack.nose-plugin"
     for pypkg in $pypkg_to_remove; do
-        if `pip${python_version} freeze | grep $pypkg`; then 
+        if `pip${python_version} freeze | grep $pypkg`; then
             sudo -H pip${python_version} uninstall -y $pypkg
         fi
     done
@@ -49,7 +49,8 @@ function allow_wan {
 function add_keypair {
     if has_services nova; then
         echo "Adding demo keypair..."
-        ${OSDEMO} keypair create demo --public-key $HOME/.ssh/id_rsa.pub
+        ${OSDEMO} keypair create demo > ~/.ssh/demo_rsa
+        chmod 600 ~/.ssh/demo_rsa
     else
         echo "Nova is not installed, skip adding keypair"
     fi
