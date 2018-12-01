@@ -5,17 +5,17 @@ function repo_check {
     echo "$1"
 
     echo -e "\nGit branches"
-    git branch -v --no-merged
+    git branch -v
 
     gstatus=$(git status --porcelain)
     if [[ ! -z $gstatus ]]; then
         echo "Git Status:"
-        echo $gstatus
+        echo "$gstatus"
     fi
-    gstashes=$(git stash list --oneline)
+    gstashes=$(git stash list)
     if [[ ! -z $gstashes ]]; then
         echo -e "\nGit stashes"
-        echo $gstashes
+        echo -e "$gstashes"
     fi
     popd > /dev/null
 }
