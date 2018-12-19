@@ -1,0 +1,15 @@
+heat_template_version: 2015-04-30
+
+resources:
+  dep:
+    type: OS::Neutron::Net
+    properties:
+      name: repro
+  grp:
+    type: OS::Heat::ResourceGroup
+    properties:
+      count: 1
+      resource_def:
+        type: repro-nested.yaml
+        properties:
+          foo: { get_resource: dep }

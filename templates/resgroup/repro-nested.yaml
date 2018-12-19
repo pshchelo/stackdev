@@ -1,0 +1,11 @@
+heat_template_version: 2015-04-30
+
+parameters:
+  foo:
+    type: string
+
+resources:
+  unit:
+    type: OS::Heat::TestResource
+    properties:
+      value: { get_param: foo }
