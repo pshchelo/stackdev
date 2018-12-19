@@ -33,7 +33,10 @@ function patch_system {
             sudo -H pip${python_version} uninstall -y $pypkg
         fi
     done
-    sudo python${python_version} ${HOME}/stackdev/scripts/ironic/setvirtvnc.py
+    if has_services ironic; then
+        # patch vnc settings on ironic's fake BM nodes
+        sudo python${python_version} ${HOME}/stackdev/scripts/ironic/setvirtvnc.py
+    fi
 }
 
 function allow_wan {
