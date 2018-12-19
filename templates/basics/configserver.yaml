@@ -1,0 +1,79 @@
+heat_template_version: 2015-10-15
+description: >
+  Use with ``hot/software-config/boot-config/*_env.yaml`` env files
+  from ``openstack/heat-templates`` repo.
+
+parameters:
+  image:
+    type: string
+    default: fedora27x64
+
+  flavor:
+    type: string
+    default: heat
+
+  net:
+    type: string
+    default: heat-net
+
+  subnet:
+    type: string
+    default: heat-subnet
+
+  key_name:
+    type: string
+    default: demo
+
+  public_net:
+    type: string
+    default: public
+
+  secgroup:
+    type: string
+    default: demo
+
+resources:
+
+  floating_ip:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network: {get_param: public_net}
+
+  boot_config:
+    type: Heat::InstallConfigAgent
+
+  port:
+    type: OS::Neutron::Port
+    properties:
+      network: {get_param: net}
+      fixed_ips:
+        - subnet: {get_param: subnet}
+      security_groups:
+        - {get_param: secgroup}
+
+  server:
+    type: OS::Nova::Server
+    properties:
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
+      networks:
+        - port: {get_resource: port}
+      user_data_format: SOFTWARE_CONFIG
+      user_data: {get_attr: [boot_config, config]}
+      software_config_transport: POLL_SERVER_HEAT
+
+  server_floating_ip_assoc:
+    type: OS::Neutron::FloatingIPAssociation
+    properties:
+      floatingip_id: {get_resource: floating_ip}
+      port_id: {get_resource: port}
+
+
+#outputs:
+  #networks:
+    #value: { get_attr: [server, networks ] }
+  #addresses:
+    #value: { get_attr: [server, addresses ] }
+  #ip:
+    #value: { get_attr: [server, networks, {get_param: net }, 0 ] }
