@@ -15,6 +15,14 @@ parameters:
 
 resources:
 
+  handle:
+    type: OS::Heat::WaitConditionHandle
+  waiter:
+    type: OS::Heat::WaitCondition
+    depends_on: server
+    properties:
+      timeout: 120
+      handle: { get_resource: handle }
   server:
     type: OS::Nova::Server
     properties:
@@ -22,6 +30,14 @@ resources:
       flavor: { get_param: flavor }
       networks:
         - network: {get_param: net}
+      user_data_format: RAW
+      user_data:
+        str_replace:
+          template: |
+            #!/bin/sh -x
+            WC_NOTIFY -k -d '{"status": "SUCCESS", "reason": "ready!", "data": "done", "id": "server1"}'
+          params:
+            WC_NOTIFY: { get_attr: [ handle, curl_cli ] }
 
 outputs:
   networks:
@@ -30,3 +46,5 @@ outputs:
     value: { get_attr: [server, addresses ] }
   ip:
     value: { get_attr: [server, networks, {get_param: net }, 0 ] }
+  signal:
+    value: { get_attr: [ handle. curl_cli ] }
