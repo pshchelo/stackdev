@@ -1,8 +1,0 @@
-heat_template_version: 2015-10-15
-
-resources:
-  first:
-    type: OS::Heat::TestResource
-    properties:
-      action_wait_secs:
-        create: -1
