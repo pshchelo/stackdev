@@ -47,4 +47,4 @@ outputs:
   ip:
     value: { get_attr: [server, networks, {get_param: net }, 0 ] }
   signal:
-    value: { get_attr: [ handle. curl_cli ] }
+    value: { get_attr: [ handle, curl_cli ] }
