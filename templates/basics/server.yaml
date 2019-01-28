@@ -21,7 +21,7 @@ resources:
     type: OS::Heat::WaitCondition
     depends_on: server
     properties:
-      timeout: 120
+      timeout: 600
       handle: { get_resource: handle }
   server:
     type: OS::Nova::Server
