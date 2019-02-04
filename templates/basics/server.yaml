@@ -32,6 +32,10 @@ parameters:
       List of DNS servers to set for instance.
       May be needed when public API iof the cloud is using
       DNS names that are resolved only internally.
+  curl_timeout:
+    type: number
+    description: Seconds to wait before POSTing to Heat's WaitConditionHandle
+    default: 0
 
 resources:
   network:
@@ -73,9 +77,11 @@ resources:
         str_replace:
           template: |
             #!/bin/sh -x
+            sleep CURL_TIMEOUT
             WC_NOTIFY -k -d '{"status": "SUCCESS", "reason": "ready!", "data": "done", "id": "server1"}'
           params:
             WC_NOTIFY: { get_attr: [ handle, curl_cli ] }
+            CURL_TIMEOUT: { get_param: curl_timeout }
 
 outputs:
   networks:
