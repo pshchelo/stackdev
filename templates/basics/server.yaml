@@ -1,22 +1,60 @@
-heat_template_version: 2015-10-15
-
+heat_template_version: ocata
+description: >
+  A simple Heat template that creates an instance with a network and a subnet,
+  and verifies that instance can ping back to Heat API via WaitCondition.
 parameters:
   image:
     type: string
     default: cirros-0.3.5-x86_64-disk
-
+    description: Glance image name or UUID
+    constraints:
+      - custom_constraint: glance.image
   flavor:
     type: string
     default: m1.nano
-
-  net:
+    description: Nova flavor name or ID
+    constraints:
+      - custom_constraint: nova.flavor
+  extnet:
     type: string
-    default: private
+    default: public
+    description: >
+      Name or ID of the public network in Neutron.
+      Needed for instances to have access to public cloud API
+      when Neutron backend is OVS.
+    constraints:
+      - custom_constraint: neutron.network
+  dns_servers:
+    type: comma_delimited_list
+    default: "1.1.1.1"
+    #default: 172.18.224.6
+    description: >
+      List of DNS servers to set for instance.
+      May be needed when public API iof the cloud is using
+      DNS names that are resolved only internally.
 
 resources:
-
+  network:
+    type: OS::Neutron::Net
+  subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      network: { get_resource: network }
+      cidr: 10.0.0.0/24
+      dns_nameservers: { get_param: dns_servers }
+  router:
+    type: OS::Neutron::Router
+    properties:
+      external_gateway_info:
+        network: { get_param: extnet }
+  router_iface:
+    type: OS::Neutron::RouterInterface
+    properties:
+      router: { get_resource: router }
+      subnet: { get_resource: subnet }
   handle:
     type: OS::Heat::WaitConditionHandle
+    depends_on: router_iface
   waiter:
     type: OS::Heat::WaitCondition
     depends_on: server
@@ -29,7 +67,7 @@ resources:
       image: { get_param: image }
       flavor: { get_param: flavor }
       networks:
-        - network: {get_param: net}
+        - subnet: { get_resource: subnet }
       user_data_format: RAW
       user_data:
         str_replace:
@@ -45,6 +83,6 @@ outputs:
   addresses:
     value: { get_attr: [server, addresses ] }
   ip:
-    value: { get_attr: [server, networks, {get_param: net }, 0 ] }
+    value: { get_attr: [server, networks, {get_resource: network }, 0 ] }
   signal:
     value: { get_attr: [ handle, curl_cli ] }
