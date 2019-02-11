@@ -117,7 +117,6 @@ function run_default {
     patch_system
     allow_wan
     add_keypair
-    secgroup
     add_dns
     add_heat_net
 }
