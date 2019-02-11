@@ -51,9 +51,9 @@ function allow_wan {
 
 function add_keypair {
     if has_services nova; then
+        ssh-keygen -y -f ~/.ssh/id_rsa > ~/.ssh/id_rsa.pub
         echo "Adding demo keypair..."
-        ${OSDEMO} keypair create demo > ~/.ssh/demo_rsa
-        chmod 600 ~/.ssh/demo_rsa
+        ${OSDEMO} keypair create demo --public-key ~/.ssh/id_rsa.pub
     else
         echo "Nova is not installed, skip adding keypair"
     fi
