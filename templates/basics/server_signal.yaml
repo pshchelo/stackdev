@@ -1,0 +1,65 @@
+heat_template_version: 2015-10-15
+
+parameters:
+  image:
+    type: string
+    default: cirros-0.3.6-x86_64-disk
+
+  flavor:
+    type: string
+    default: m1.nano
+
+  net:
+    type: string
+    default: private
+
+resources:
+
+  handle:
+    type: OS::Heat::WaitConditionHandle
+    properties:
+      signal_transport: HEAT_SIGNAL
+  waiter:
+    type: OS::Heat::WaitCondition
+    depends_on: server
+    properties:
+      timeout: 600
+      handle: { get_resource: handle }
+  server:
+    type: OS::Nova::Server
+    properties:
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      networks:
+        - network: {get_param: net}
+      user_data_format: RAW
+      user_data:
+        str_replace:
+          template: |
+            #!/bin/sh -x
+            cat > token.json <<EOL
+            {
+            "auth": {"scope": {"project": "id": "PROJECT"}},
+            "identity": {"password": {"user": {"password": "PASSWORD", "id": "USER"}},
+            "methods": ["password"]}
+            }
+            EOL
+            token=$(curl -ksi -X POST AUTH_URL/v3/auth/tokens -H "Content-type: application/json" -d @token.json | awk '/X-Subject-Token/' {print $2})
+            curl -X POST SIGNAL_URL -H "Content-type: application/json" -G "X-Auth-Token: $token" -k -d '{"status": "SUCCESS", "reason": "ready!", "data": "done", "id": "server1"}'
+          params:
+            USER: { get_attr: [ handle, signal, user_id ] }
+            PASSWORD: { get_attr: [ handle, signal, password ] }
+            PROJECT: { get_attr: [ handle, signal, project_id] }
+            #DOMAIN: { get_attr: [ handle, signal, domain_id] }
+            AUTH_URL: { get_attr: [ handle, signal, auth_url ] }
+            SIGNAL_URL: { get_attr: [ handle, signal, alarm_url ] }
+
+outputs:
+  networks:
+    value: { get_attr: [server, networks ] }
+  addresses:
+    value: { get_attr: [server, addresses ] }
+  ip:
+    value: { get_attr: [server, networks, {get_param: net }, 0 ] }
+  signal:
+    value: { get_attr: [ handle, curl_cli ] }
