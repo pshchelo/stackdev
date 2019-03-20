@@ -1,0 +1,20 @@
+heat_template_version: 'ocata'
+
+resources:
+  stuck_in_delete:
+    type: OS::Heat::TestResource
+    properties:
+      action_wait_secs:
+        delete: 120
+  handle:
+    type: OS::Heat::WaitConditionHandle
+    depends_on: stuck_in_delete
+  waiter:
+    type: OS::Heat::WaitCondition
+    properties:
+      timeout: 120
+      handle: { get_resource: handle }
+
+outputs:
+  signal:
+    value: { get_attr: [ handle, curl_cli ] }

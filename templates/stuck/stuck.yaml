@@ -1,0 +1,9 @@
+heat_template_version: 'ocata'
+
+resources:
+  nested:
+    type: Custom::Stuck
+
+outputs:
+  signal:
+    value: { get_attr: [ nested, signal ]}
