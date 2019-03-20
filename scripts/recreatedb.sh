@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -x
+
+db=$1
+DATABASE_USER=${2:-root}
+DATABASE_PASSWORD=${3:-mysql}
+MYSQL_HOST=127.0.0.1
+
+mysql -u$DATABASE_USER -p$DATABASE_PASSWORD -h$MYSQL_HOST -e "DROP DATABASE IF EXISTS $db;"
+mysql -u$DATABASE_USER -p$DATABASE_PASSWORD -h$MYSQL_HOST -e "CREATE DATABASE $db CHARACTER SET utf8;"
+sudo mysql -uroot -p$DATABASE_PASSWORD -h127.0.0.1 -e "GRANT ALL PRIVILEGES ON *.* TO '$DATABASE_USER'@'%' identified by '$DATABASE_PASSWORD';"
+
+${db}-manage db_sync
