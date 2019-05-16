@@ -12,7 +12,7 @@
 # NOTE ON DEVSTACK PLUGNS:
 # to install from specific gerrit change/patch-set,
 # append ' refs/changes/<FG>/<ABCDEFG>/<N>' to the line enabling the plugin
-# where ABCDEFG is the change number as in https://review.openstack.org/#/<ABCDEFG>
+# where ABCDEFG is the change number as in https://review.opendev.org/#/<ABCDEFG>
 # and N is the patch-set number.
 
 # How to set custom DEST instead of default /opt/stack
@@ -126,7 +126,7 @@ enable_service key
 # disable Keystone V2 completely
 #ENABLE_IDENTITY_V2=False
 # testing federated Keystone (with remote Shibboleth instance by default)
-#enable_plugin keystone git://git.openstack.org/openstack/keystone
+#enable_plugin keystone https://opendev.org/openstack/keystone
 #enable_service keystone-saml2-federation
 #TEMPEST_PLUGINS='/opt/stack/keystone-tempest-plugin'
 
@@ -134,7 +134,7 @@ enable_service key
 enable_service g-api g-reg
 # specify what images to download
 #DOWNLOAD_DEFAULT_IMAGES=False
-# Heat functional tests image (Fedora20 based)
+# Heat functional tests image (Fedora based)
 #IMAGE_URLS+=",http://tarballs.openstack.org/heat-test-image/fedora-heat-test-image.qcow2"
 # Fedora 24 cloud image (e.g. for AWS LoadBalancer resource in Heat)
 #IMAGE_URLS+=http://fedora.bhs.mirrors.ovh.net/linux/releases/24/CloudImages/x86_64/images/Fedora-Cloud-Base-24-1.2.x86_64.qcow2
@@ -161,14 +161,14 @@ enable_service placement-api placement-client
 ### NEUTRON ###
 enable_service q-svc q-agt q-dhcp q-l3 q-meta q-metering
 ### NEUTRON PLUGINS ###
-#enable_plugin networking-generic-switch git://git.openstack.org/openstack/networking-generic-switch
+#enable_plugin networking-generic-switch https://opendev.org/openstack/networking-generic-switch
 #GENERIC_SWITCH_USER_MAX_SESSIONS=2
 # Needed for Newton release
 #Q_PLUGIN_EXTRA_CONF_PATH=/etc/neutron/plugins/ml2
 #Q_PLUGIN_EXTRA_CONF_FILES['generic_switch']=ml2_conf_genericswitch.ini
 
 ### NEUTRON LBAAS ###
-#enable_plugin neutron-lbaas https://git.openstack.org/openstack/neutron-lbaas
+#enable_plugin neutron-lbaas https://opendev.org/openstack/neutron-lbaas
 #NEUTRON_LBAAS_SERVICE_PROVIDERV2=LOADBALANCERV2:Haproxy:neutron_lbaas.drivers.haproxy.plugin_driver.HaproxyOnHostPluginDriver:default
 #enable_service q-lbaasv2
 #enable_service q-trunk
@@ -192,14 +192,14 @@ CINDER_PERIODIC_INTERVAL=10
 #SWIFT_TEMPURL_KEY=tempurl
 
 ### CEPH + RADOSGW ###
-#enable_plugin devstack-plugin-ceph git://git.openstack.org/openstack/devstack-plugin-ceph
+#enable_plugin devstack-plugin-ceph https://opendev.org/openstack/devstack-plugin-ceph
 #ENABLE_CEPH_CINDER=True     # ceph backend for cinder
 #ENABLE_CEPH_GLANCE=True     # store images in ceph
 #ENABLE_CEPH_C_BAK=True      # backup volumes to ceph
 #ENABLE_CEPH_NOVA=True       # allow nova to use ceph resources
 
 ### IRONIC ###
-#enable_plugin ironic git://git.openstack.org/openstack/ironic
+#enable_plugin ironic https://opendev.org/openstack/ironic
 #LIBS_FROM_GIT+=,python-ironicclient,ironic-lib
 
 #IRONIC_USE_MOD_WSGI=True
@@ -249,7 +249,7 @@ CINDER_PERIODIC_INTERVAL=10
 #IRONIC_PROVISION_ALLOCATION_POOL='start=10.0.6.10,end=10.0.6.100'
 
 ### IRONIC STAGING DRIVERS ###
-#enable_plugin ironic-staging-drivers git://git.openstack.org/openstack/ironic-staging-drivers
+#enable_plugin ironic-staging-drivers https://opendev.org/x/ironic-staging-drivers
 # enable and prepare for ansible-deploy driver,
 # usable only when IRONIC_DEPLOY_DRIVER is agent_ipmitool
 # for Queens and further:
@@ -258,47 +258,47 @@ CINDER_PERIODIC_INTERVAL=10
 #IRONIC_STAGING_DRIVER=pxe_ipmitool_ansible
 
 ### IRONIC-INSPECTOR ###
-#enable_plugin ironic-inspector git://git.openstack.org/openstack/ironic-inspector
+#enable_plugin ironic-inspector https://opendev.org/openstack/ironic-inspector
 #IRONIC_INSPECTOR_BUILD_RAMDISK=True
 #IRONIC_INSPECTOR_RAMDISK_ELEMENT=ironic-agent
 
 ### HEAT ###
-#enable_plugin heat git://git.openstack.org/openstack/heat
+#enable_plugin heat https://opendev.org/openstack/heat
 #HEAT_ENABLE_ADOPT_ABANDON=True
 #LIBS_FROM_GIT+=,python-heatclient
 
 ### TELEMETRY ###
 # backends must be enabled before ceilometer!
 # PANKO - data backend
-#enable_plugin panko git://git.openstack.org/openstack/panko
+#enable_plugin panko https://opendev.org/openstack/panko
 # GNOCCHI - data backend
 #enable_plugin gnocchi https://github.com/gnocchixyz/gnocchi
 # CEILOMETER - metrics collection
-#enable_plugin ceilometer git://git.openstack.org/openstack/ceilometer
+#enable_plugin ceilometer https://opendev.org/openstack/ceilometer
 # set shorter sample collection interval (default is 600)
 #CEILOMETER_PIPELINE_INTERVAL=60
 # ceilometer backend, default (empty) needs Panko, gnocchi needs gnocchi
 #CEILOMETER_BACKEND=gnocchi
 # AODH - alarming
-#enable_plugin aodh git://git.openstack.org/openstack/aodh
+#enable_plugin aodh https://opendev.org/openstack/aodh
 
 ### ZAQAR ###
-#enable_plugin zaqar git://git.openstack.org/openstack/zaqar
+#enable_plugin zaqar https://opendev.org/openstack/zaqar
 
 ### BARBICAN ###
-#enable_plugin barbican git://git.openstack.org/openstack/barbican
+#enable_plugin barbican https://opendev.org/openstack/barbican
 
 ### DESIGNATE ###
-#enable_plugin designate git://git.openstack.org/openstack/designate
+#enable_plugin designate https://opendev.org/openstack/designate
 
 ### HORIZON ###
 #enable_service horizon
 
 ### IRONIC UI ###
-#enable_plugin ironic-ui git://git.openstack.org/openstack/ironic-ui
+#enable_plugin ironic-ui https://opendev.org/openstack/ironic-ui
 
 ### HEAT UI ###
-#enable_plugin heat-dashboard https://git.openstack.org/openstack/heat-dashboard
+#enable_plugin heat-dashboard https://opendev.org/openstack/heat-dashboard
 
 ############################
 # POST CONFIG STAGE SETTINGS

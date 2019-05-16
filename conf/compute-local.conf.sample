@@ -23,6 +23,6 @@ enable_service n-cpu
 enable_service q-agt
 enable_service c-vol mysql
 CINDER_VOLUME_CLEAR=None
-enable_plugin ceilometer git://git.openstack.org/openstack/ceilometer
+enable_plugin ceilometer https://opendev.org/openstack/ceilometer
 disable_service ceilometer-acentral ceilometer-aipmi ceilometer-anotification ceilometer-collector ceilometer-api
 CEILOMETER_PIPELINE_INTERVAL=60
