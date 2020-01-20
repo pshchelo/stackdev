@@ -271,7 +271,7 @@ CINDER_PERIODIC_INTERVAL=10
 #enable_plugin heat https://opendev.org/openstack/heat
 #HEAT_ENABLE_ADOPT_ABANDON=True
 #LIBS_FROM_GIT+=,python-heatclient
-# Needed until https://review.opendev.org/662476 is merged and backported
+# Needed until https://review.opendev.org/662476 is backported
 #HEAT_BRANCH=stable/stein
 
 ### TELEMETRY ###
@@ -301,15 +301,12 @@ CINDER_PERIODIC_INTERVAL=10
 ### HORIZON ###
 #enable_service horizon
 
-# Heat dashboard
+### HEAT UI ###
 #enable_plugin heat-dashboard https://opendev.org/openstack/heat-dashboard
 #enable_service heat-dashboard
 
 ### IRONIC UI ###
 #enable_plugin ironic-ui https://opendev.org/openstack/ironic-ui
-
-### HEAT UI ###
-#enable_plugin heat-dashboard https://opendev.org/openstack/heat-dashboard
 
 ############################
 # POST CONFIG STAGE SETTINGS
