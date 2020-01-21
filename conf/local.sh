@@ -20,14 +20,18 @@ function has_services {
 }
 
 function patch_system {
+    # create BASH completions for openstack client
+    local completions_dir=~/.local/share/bash-completion/completions
+    mkdir -p $completions_dir
+    openstack complete > $completions_dir/openstack
     # General changes to the system and installed packages
     local python_version='2'
     #echo "Am I using Python3?" $USE_PYTHON3
     if [ $USE_PYTHON3 == "True" ]; then
         python_version='3'
     fi
-    pypkg_to_remove="flake8-docstrings
-                     openstack.nose-plugin"
+    local pypkg_to_remove="flake8-docstrings
+                           openstack.nose-plugin"
     for pypkg in $pypkg_to_remove; do
         if `pip${python_version} freeze | grep $pypkg`; then
             sudo -H pip${python_version} uninstall -y $pypkg
