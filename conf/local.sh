@@ -92,10 +92,14 @@ function add_heat_net {
         ${OSDEMO} subnet create heat-subnet --network heat-net --subnet-range "${HEAT_PRIVATE_SUBNET_CIDR}"
         ${OSDEMO} router add subnet router1 heat-subnet
 
-        PUB_SUBNET_ID=$(${OSADMIN} subnet list --name public-subnet -f value -c ID)
-        PUB_SUBNET_PORT_ID=$(${OSADMIN} port list --device-owner network:router_gateway --fixed-ip subnet=public-subnet -f value -c ID)
-        ROUTER_GW_IP=$(${OSADMIN} port show ${PUB_SUBNET_PORT_ID} -c fixed_ips -f value | grep ${PUB_SUBNET_ID} | awk -F"='|'," '{print $2}')
-        sudo route add -net "${HEAT_PRIVATE_SUBNET_CIDR}" gw "${ROUTER_GW_IP}"
+        if command -v jq; then
+            PUB_SUBNET_ID=$(${OSADMIN} subnet list --name public-subnet -f value -c ID)
+            PUB_SUBNET_PORT_ID=$(${OSADMIN} port list --device-owner network:router_gateway --fixed-ip subnet=public-subnet -f value -c ID)
+            ROUTER_GW_IP=$(${OSADMIN} port show ${PUB_SUBNET_PORT_ID} -fjson | jq -r --arg SUBNET_ID "$PUB_SUBNET_ID" '.fixed_ips[] | select(.subnet_id==$SUBNET_ID) | .ip_address')
+            sudo route add -net "${HEAT_PRIVATE_SUBNET_CIDR}" gw "${ROUTER_GW_IP}"
+        else
+            echo "Jq tool not available, skip adding Heat network to local routes"
+        fi
     else
         echo "Heat or Neutron not installed, skip adding Heat test network."
     fi
