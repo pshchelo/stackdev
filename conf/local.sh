@@ -126,7 +126,7 @@ function run_default {
     allow_wan
     add_keypair
     add_dns
-    add_heat_net
+#    add_heat_net
 }
 
 if [ $# -eq 0 ]; then
