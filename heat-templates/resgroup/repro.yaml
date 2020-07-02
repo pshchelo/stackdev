@@ -1,15 +1,20 @@
 heat_template_version: 2015-04-30
 
+parameters:
+  count:
+    type: number
+    default: 1
+  scalein:
+    type: comma_delimited_list
+    default: ""
+
 resources:
-  dep:
-    type: OS::Neutron::Net
-    properties:
-      name: repro
   grp:
     type: OS::Heat::ResourceGroup
     properties:
-      count: 1
+      removal_policies: [ { resource_list: { get_param: scalein } } ]
+      count: { get_param: count }
       resource_def:
         type: repro-nested.yaml
         properties:
-          foo: { get_resource: dep }
+          foo: bar
