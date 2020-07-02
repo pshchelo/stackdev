@@ -1,0 +1,33 @@
+heat_template_version: pike
+description: >
+  simple template to test LUKS encrypted volumes,
+  with secret stored in Barbican
+parameters:
+  flavor:
+    type: string
+    default: m1.nano
+  image:
+    type: string
+    default: cirros-0.3.5-x86_64-disk
+  vtype:
+    type: string
+    default: LUKS
+
+resources:
+  server:
+    type: OS::Nova::Server
+    properties:
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      networks:
+        - allocate_network: none
+  volume:
+    type: OS::Cinder::Volume
+    properties:
+      size: 1
+      volume_type: { get_param: vtype }
+  vol_attach:
+    type: OS::Cinder::VolumeAttachment
+    properties:
+      instance_uuid: { get_resource: server }
+      volume_id: { get_resource: volume }
