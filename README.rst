@@ -3,17 +3,20 @@ stackdev
 
 my good-to-go settings for DevStack installations
 
-templates
----------
-various Heat templates to play/test, see also https://github.com/openstack/heat-templates
+conf
+----
+
+stubs of local.conf files for DevStack and my personal local.sh script
+to execute at the end of DevStack run.
+
+heat-templates
+--------------
+various Heat templates to play/test,
+see also https://opendev.org/openstack/heat-templates
 
 scripts
 -------
 helper scripts to setup the DevStack env
-
-heat_plugins
-------------
-experimantal or test-oriented Heat resource plugins
 
 dib_elements
 ------------
