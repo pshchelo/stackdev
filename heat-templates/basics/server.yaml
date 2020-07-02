@@ -38,50 +38,63 @@ parameters:
     default: 0
 
 resources:
+
   network:
     type: OS::Neutron::Net
+
   subnet:
     type: OS::Neutron::Subnet
     properties:
       network: { get_resource: network }
       cidr: 10.0.0.0/24
       dns_nameservers: { get_param: dns_servers }
+
   router:
     type: OS::Neutron::Router
     properties:
       external_gateway_info:
         network: { get_param: extnet }
+
   router_iface:
     type: OS::Neutron::RouterInterface
     properties:
       router: { get_resource: router }
       subnet: { get_resource: subnet }
+
   handle:
     type: OS::Heat::WaitConditionHandle
-    depends_on: router_iface
+
   waiter:
     type: OS::Heat::WaitCondition
     depends_on: server
     properties:
       timeout: 600
       handle: { get_resource: handle }
+
+  config:
+    type: OS::Heat::SoftwareConfig
+    properties:
+      group: ungrouped
+      config:
+        str_replace:
+          template: |
+            #!/bin/sh -x
+            sleep $CURL_TIMEOUT
+            $WC_NOTIFY -k -d '{"status": "SUCCESS", "reason": "ready!", "data": "done", "id": "server1"}'
+          params:
+            $WC_NOTIFY: { get_attr: [ handle, curl_cli ] }
+            $CURL_TIMEOUT: { get_param: curl_timeout }
+
   server:
     type: OS::Nova::Server
+    depends_on: router_iface
     properties:
       image: { get_param: image }
       flavor: { get_param: flavor }
       networks:
         - subnet: { get_resource: subnet }
       user_data_format: RAW
-      user_data:
-        str_replace:
-          template: |
-            #!/bin/sh -x
-            sleep CURL_TIMEOUT
-            WC_NOTIFY -k -d '{"status": "SUCCESS", "reason": "ready!", "data": "done", "id": "server1"}'
-          params:
-            WC_NOTIFY: { get_attr: [ handle, curl_cli ] }
-            CURL_TIMEOUT: { get_param: curl_timeout }
+      user_data: { get_resource: config }
 
 outputs:
   networks:
