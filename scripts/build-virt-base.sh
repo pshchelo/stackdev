@@ -5,7 +5,7 @@ tmpkey=/tmp/ssh_tmp_pub_key_file
 wget https://github.com/"${USER}".keys -O $tmpkey
 
 IMAGE_BASE=${1:-'ubuntu'}
-RELEASE=${2:-'xenial'}
+RELEASE=${2:-'focal'}
 SIZE=${3:-'50'}
 
 export DIB_DEV_USER_USERNAME="${USER}"
