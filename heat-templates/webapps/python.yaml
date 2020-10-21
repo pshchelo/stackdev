@@ -1,7 +1,7 @@
 heat_template_version: 2015-10-15
 
 description: |
-  Simplest webapp using Python.
+  Simplest webapp using Python3 or Python.
 
 parameters:
   curl_cli:
@@ -19,11 +19,18 @@ resources:
           - str_replace:
               template: |
                 #! /bin/bash -v
-                python -m SimpleHTTPServer PORT &
-                wc_notify --data-binary '{"status": "SUCCESS"}'
+                if type python3; then
+                    cmd="python3 -m http.server"
+                elif type python; then
+                    cmd="python -m SimpleHTTPServer"
+                else
+                    $wc_notify --data-binary '{"status": "FAILURE"}'
+                fi
+                $cmd $PORT &
+                $wc_notify --data-binary '{"status": "SUCCESS"}'
               params:
-                PORT: { get_param: port }
-                wc_notify: { get_param: curl_cli }
+                $PORT: { get_param: port }
+                $wc_notify: { get_param: curl_cli }
 outputs:
   OS::stack_id:
     value: { get_resource: config }

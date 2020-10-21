@@ -16,7 +16,8 @@ Available environments:
 
 ``fedora-python.yaml``
   Uses ``fedora-heat-test-image`` and Python's SimpleHTTPServer,
-  reports hostname. Generally any image with Python installed could be used.
+  reports hostname.
+  Generally any image with Python3 or Python installed could be used.
 
 ``fedora-tomcat.yaml``
   Uses ``fedora-heat-test-image``, installs Java, Tomcat and simple Tomcat servlet.
