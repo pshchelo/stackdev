@@ -1,0 +1,169 @@
+heat_template_version: queens
+
+description: >
+  Creates several rich servers with volumes, floating IPs
+  and a simple webapp running, with load balancing
+
+parameters:
+  group_size:
+    type: number
+    description: Number of rich servers to create
+    default: 2
+
+  server_image:
+    type: string
+    description: Image name
+    default: cirros-0.3.5-x86_64-disk
+
+  server_flavor:
+    type: string
+    description: Flavor
+    default: m1.nano
+
+  server_key:
+    type: string
+    description: Keypair name
+    default: demo
+
+  public_net:
+    type: string
+    description: Neutron network of Floating IPs (name or UUID)
+    default: public
+
+  subnet_cidr:
+    type: string
+    description: IP range to create in subnet
+    default: '10.20.30.0/24'
+
+  app_port:
+    type: number
+    description: Port to start a simple webapp on
+    default: 8080
+
+resources:
+
+  network:
+    type: OS::Neutron::Net
+
+  subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      cidr: { get_param: subnet_cidr }
+      network: { get_resource: network }
+
+  router:
+    type: OS::Neutron::Router
+    properties:
+      external_gateway_info:
+        network: { get_param: public_net }
+
+  router_interface:
+    type: OS::Neutron::RouterInterface
+    properties:
+      router: { get_resource: router }
+      subnet: { get_resource: subnet }
+
+  secgroup:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      description: Allow ping, ssh and webapp access
+      name: security-group
+      rules:
+        - remote_ip_prefix: 0.0.0.0/0
+          protocol: tcp
+          port_range_min: 22
+          port_range_max: 22
+        - remote_ip_prefix: 0.0.0.0/0
+          protocol: tcp
+          port_range_min: { get_param: app_port }
+          port_range_max: { get_param: app_port }
+        - remote_ip_prefix: 0.0.0.0/0
+          protocol: icmp
+
+  wait_handle:
+    type: OS::Heat::WaitConditionHandle
+
+  # FIXME: waiters should be ideally closer to servers,
+  # use big enough timeout for now
+  waiter:
+    type: OS::Heat::WaitCondition
+    properties:
+      handle: { get_resource: wait_handle }
+      timeout: 600
+      count: { get_param: group_size }
+
+  server_config:
+    type: Test::Web::App
+    properties:
+      port: { get_param: app_port }
+      curl_cli: { get_attr: [ wait_handle, curl_cli] }
+
+  loadbalancer:
+    type: OS::Octavia::LoadBalancer
+    properties:
+      vip_subnet: { get_resource: subnet }
+
+  listener:
+    type: OS::Octavia::Listener
+    properties:
+      loadbalancer: { get_resource: loadbalancer }
+      protocol: HTTP
+      protocol_port: { get_param: app_port }
+
+  pool:
+    type: OS::Octavia::Pool
+    properties:
+      listener: { get_resource: listener }
+      protocol: HTTP
+      lb_algorithm: ROUND_ROBIN
+
+  monitor:
+    type: OS::Octavia::HealthMonitor
+    properties:
+      pool: { get_resource: pool }
+      type: HTTP
+      delay: 5
+      timeout: 5
+      max_retries: 5
+
+  lb_floating_ip:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network_id: { get_param: public_net }
+      port_id: { get_attr: [ loadbalancer, vip_port_id ] }
+
+  server_group:
+    type: OS::Heat::ResourceGroup
+    # to resolve dependency with Floating IPs
+    depends_on: router_interface
+    properties:
+      count: { get_param: group_size }
+      resource_def:
+        type: OS::Sanity::RichServer
+        properties:
+          image: { get_param: server_image }
+          flavor: { get_param: server_flavor }
+          key_name: { get_param: server_key }
+          security_group: { get_resource: secgroup }
+          public_net: { get_param: public_net }
+          private_net: { get_resource: network }
+          private_subnet: { get_resource: subnet }
+          config: { get_resource: server_config }
+          pool: { get_resource: pool }
+          app_port: { get_param: app_port }
+
+outputs:
+  webapp_ips:
+    description: floating IPs of running webapp instances
+    value: { get_attr: [ server_group, server_public_ip ] }
+  app_ip:
+    description: IP of the app loadbalancer
+    value: { get_attr: [ lb_floating_ip, floating_ip_address ] }
+  app_url:
+    description: loadbalanced access URL for the webapp
+    value:
+      str_replace:
+        template: http://$APP_IP:$APP_PORT
+        params:
+          $APP_IP: { get_attr: [ lb_floating_ip, floating_ip_address ] }
+          $APP_PORT: { get_param: app_port }

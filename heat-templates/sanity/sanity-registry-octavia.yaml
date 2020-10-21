@@ -1,0 +1,6 @@
+resource_registry:
+  "OS::Sanity::RichServer": rich-srv-octavia.yaml
+  "Test::Web::App": ../webapps/netcat.yaml
+parameters:
+  server_image: Cirros-0.5.1
+  server_key: sanity
