@@ -114,7 +114,8 @@ enable_service etcd3
 enable_service tls-proxy
 
 ### PERFORMANCE TRACKING ###
-enable_service dstat
+# ATM broken on Focal https://bugs.launchpad.net/ubuntu/+source/dstat/+bug/1866619
+#enable_service dstat
 # new in Pike
 enable_service memory_tracker
 
@@ -167,9 +168,6 @@ enable_service q-svc q-agt q-dhcp q-l3 q-meta q-metering
 
 #enable_plugin networking-generic-switch https://opendev.org/openstack/networking-generic-switch
 #GENERIC_SWITCH_USER_MAX_SESSIONS=2
-# Needed for Newton release
-#Q_PLUGIN_EXTRA_CONF_PATH=/etc/neutron/plugins/ml2
-#Q_PLUGIN_EXTRA_CONF_FILES['generic_switch']=ml2_conf_genericswitch.ini
 
 ### NEUTRON LBAAS ###
 #enable_plugin neutron-lbaas https://opendev.org/openstack/neutron-lbaas
@@ -180,7 +178,7 @@ enable_service q-svc q-agt q-dhcp q-l3 q-meta q-metering
 ### CINDER ###
 enable_service c-sch c-api c-bak
 enable_service c-vol
-CINDER_PERIODIC_INTERVAL=10
+#CINDER_PERIODIC_INTERVAL=10
 # How to erase cinder volumes on delete [none, zero, shred]
 #CINDER_VOLUME_CLEAR=none
 # set the size of the stack volume backing file (in MB, default 10250M)
@@ -233,8 +231,9 @@ CINDER_PERIODIC_INTERVAL=10
 # Set default boot option - local or netboot (default)
 #IRONIC_DEFAULT_BOOT_OPTION=local
 # Type of bootstrap image to build and use.
-# Available values are dib, coreos (deprecated), tinyipa (default)
-#IRONIC_RAMDISK_TYPE = coreos
+# Available values are dib, coreos (deprecated), tinyipa
+# Default may be different between releases, better to always set explicitly
+#IRONIC_RAMDISK_TYPE=tinyipa
 # To build your own IPA ramdisk from source, set this to True (default)
 #IRONIC_BUILD_DEPLOY_RAMDISK=False
 # Use iPXE or PXE (default True)
@@ -312,12 +311,6 @@ CINDER_PERIODIC_INTERVAL=10
 # POST CONFIG STAGE SETTINGS
 ############################
 
-# fix to allow access to instance vnc console when accessing Horizon via tunnel
-#[[post-config|$NOVA_CONF]]
-#[DEFAULT]
-#novncproxy_base_url = http://172.18.200.23:6127/vnc_auto.html
-#quota_driver=nova.quota.NoopQuotaDriver
-
 #[[post-config|$HEAT_CONF]]
 #[DEFAULT]
 #convergence_engine=false
@@ -331,9 +324,6 @@ CINDER_PERIODIC_INTERVAL=10
 #workers=2
 
 #[heat_api_cfn]
-#workers=2
-
-#[heat_api_cloudwatch]
 #workers=2
 
 #[cache]
