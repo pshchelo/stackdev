@@ -132,7 +132,9 @@ enable_service key
 #TEMPEST_PLUGINS='/opt/stack/keystone-tempest-plugin'
 
 ### GLANCE ###
-enable_service g-api g-reg
+enable_service g-api
+#needed for Glance V1, dead since Rocky
+#enable_service g-reg
 # specify what images to download
 #DOWNLOAD_DEFAULT_IMAGES=False
 # Heat functional tests image (Fedora based)
@@ -148,8 +150,6 @@ enable_service n-api-meta
 enable_service n-cauth
 enable_service n-novnc
 enable_service n-cpu
-# Pike and newer
-enable_service placement-api placement-client
 # Does not exist in Pike and newer
 #enable_service n-crt
 # Use Nova-network - mutually exclusive with Neutron
@@ -158,6 +158,10 @@ enable_service placement-api placement-client
 #VIRT_DRIVER=ironic
 # Always use config drive whith Ironic nodes
 #FORCE_CONFIG_DRIVE=True
+
+### PLACEMENT ###
+# Pike and newer
+enable_service placement-api placement-client
 
 ### NEUTRON ###
 enable_service q-svc q-agt q-dhcp q-l3 q-meta q-metering
