@@ -33,7 +33,7 @@ function patch_system {
     local pypkg_to_remove="flake8-docstrings
                            openstack.nose-plugin"
     for pypkg in $pypkg_to_remove; do
-        if `pip${python_version} freeze | grep $pypkg`; then
+        if [ `pip${python_version} freeze | grep $pypkg` ]; then
             sudo -H pip${python_version} uninstall -y $pypkg
         fi
     done
