@@ -1,0 +1,79 @@
+default_context:
+  openssh_groups: qa_scale,oscore_devops,networking,tcpcloud,stacklight,k8s_team,drivetrain,storage,maintenance
+  # repos and branches
+  cookiecutter_template_url: ssh://gerrit.mcp.mirantis.com:29418/mk/cookiecutter-templates.git
+  cookiecutter_template_branch: release/proposed/2019.2.0  # <-- Can use refs from Gerrit
+  shared_reclass_url: https://gerrit.mcp.mirantis.com/salt-models/reclass-system.git
+  shared_reclass_branch: release/proposed/2019.2.0  # <-- Can use refs from Gerrit
+  # jenkins_pipelines_url: ????
+  jenkins_pipelines_branch: release/proposed/2019.2.0  # <-- Can use refs from Gerrit
+  # mcp_common_scripts_url: ????
+  mcp_common_scripts_branch: release/proposed/2019.2.0  # <-- Can use refs from Gerrit
+  # general settings
+  mcp_version: 2019.2.0  # <-- No MU! Just base version. Can be "testing"/"nightly"?
+  maas_enabled: False  # <-- virtual deployment, no MaaS
+  offline_deployment: False  # <-- online
+  # CI/CD
+  #cicd_enabled: False
+  # STACKLIGHT
+  stacklight_enabled: False
+  fluentd_enabled: True
+  # KUBERNETES
+  kubernetes_enabled: False
+  kubernetes_compute_count: 2
+  # CONTRAIL
+  opencontrail_enabled: False
+  #opencontrail_version: "4.1"
+  #opencontrail_router01_address: 10.11.0.131
+  # CEPH
+  ceph_enabled: False
+  # OPENSTACK
+  openstack_enabled: True
+  openstack_compute_count: 2
+  openstack_version: queens
+  # TLS/SSL
+  nova_vnc_tls_enabled: False
+  galera_ssl_enabled: False
+  openstack_mysql_x509_enabled: False
+  rabbitmq_ssl_enabled: False
+  openstack_rabbitmq_x509_enabled: False
+  openstack_internal_protocol: http  # set to https to enable TLS
+  # Cinder
+  # cinder_backup_engine: ceph  # <-- if ceph_enabled
+  # Neutron
+  openstack_network_engine: ovs  # <--- opencontrail is an option
+  openstack_ovs_dvr_enabled: False
+  openstack_ovs_encapsulation_type: vxlan  # <-- vlan as an option
+  openstack_public_neutron_subnet_gateway: 10.13.0.80 # Override neutron public subnet gateway to point to proxy vip address to pass network_basic_ops test
+  # advanced neutron stuff
+  openstack_neutron_l2gw: False
+  openstack_neutron_bgp_vpn: False
+  openstack_neutron_qos: False
+  openstack_neutron_vlan_aware_vms: False  # <-- Trunks?
+  #ovsdb_server: "ovsdbx:127.0.0.1:6632"
+  # Octavia
+  openstack_octavia_enabled: False
+  # Designate
+  designate_enabled: False
+  designate_backend: bind  # default backend is powerdns
+  # Barbican
+  barbican_enabled: False
+  barbican_integration_enabled: False  # <-- image signature verification in Nova
+  barbican_backend: simple_crypto  # <-- dogtag is a 'production' backend, needs more nodes
+  # Telemetry
+  tenant_telemetry_enabled: False
+  # Manila
+  manila_enabled: False
+  manila_share_backend: lvm
+  manila_lvm_volume_name: manila-volume
+  manila_lvm_devices: /dev/loop1
+  # Ironic
+  ironic_enabled: False
+  # Setting IPs defferent from heat template to avoid networking issues
+  # caused by arp_responder when assigning IP to OVS bridge
+  openstack_baremetal_address_baremetal: 10.14.0.20
+  openstack_baremetal_node01_baremetal_address: 10.14.0.15
+  openstack_baremetal_node02_baremetal_address: 10.14.0.16
+  openstack_baremetal_node03_baremetal_address: 10.14.0.17
+  openstack_baremetal_interface: ens7
+  openstack_baremetal_vip_interface: phy-baremetal
