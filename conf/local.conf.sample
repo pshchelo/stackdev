@@ -143,6 +143,7 @@ enable_service g-api
 #IMAGE_URLS+=http://fedora.bhs.mirrors.ovh.net/linux/releases/24/CloudImages/x86_64/images/Fedora-Cloud-Base-24-1.2.x86_64.qcow2
 # latest Ubuntu Trusty amd64 cloud image
 #IMAGE_URLS+=",https://cloud-images.ubuntu.com/releases/trusty/release/ubuntu-14.04-server-cloudimg-amd64-disk1.img"
+LIBS_FROM_GIT+=,glance_store
 
 ### NOVA ###
 enable_service n-api n-cond n-sch
@@ -164,7 +165,27 @@ enable_service n-cpu
 enable_service placement-api placement-client
 
 ### NEUTRON ###
-enable_service q-svc q-agt q-dhcp q-l3 q-meta q-metering
+enable_service q-svc
+
+## ML2 ## - default up to Wallaby is OVS, since Xena - OVN
+
+# ML2/OVS
+#enable_service q-agt q-dhcp q-l3 q-meta q-metering
+# need to set the below for OVS on Xena+
+# possible are vxlan, gre or gre,vxlan
+#Q_ML2_TENANT_NETWORK_TYPE=vxlan
+#Q_ML2_PLUGIN_MECHANISM_DRIVERS=openvswitch,linuxbridge
+#Q_AGENT=openvswitch
+
+# ML2/OVN
+enable_service q-ovn-metadata-agent
+# OVN components
+enable_service ovn-controller ovn-northd ovs-vswitchd ovsdb-server
+# enable debug logging in OVN itself
+#OVN_DBS_LOG_LEVEL=dbg
+# node serves as gateway, True for AiO devstack, set to False on dedicated compute
+#ENABLE_CHASSIS_AS_GW=False
+#OVN_L3_CREATE_PUBLIC_NETWORK=False
 
 ### NEUTRON PLUGINS ###
 #enable_plugin networking-l2gw https://opendev.org/openstack/networking-l2gw
