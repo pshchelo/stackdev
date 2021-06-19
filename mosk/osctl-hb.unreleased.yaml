@@ -1,0 +1,23 @@
+# NOTE difference to https://github.com/Mirantis/release-openstack-k8s/blob/master/release/70-openstack-operator.yaml
+apiVersion: lcm.mirantis.com/v1alpha1
+kind: HelmBundle
+metadata:
+  name: openstack-operator
+  namespace: osh-system
+spec:
+  releases:
+  - chart: openstack-controller/openstack-operator
+    name: openstack-operator
+    namespace: osh-system
+    values:
+      image:
+        # NOTE to build from review, always try to rebase on master first,
+        # so that images baked into controller code are still available
+        # TODO find image to deploy from master w/o dummy patches to gerrit
+        fullName: docker-review-local.docker.mirantis.net/review/openstack-controller-103223:4
+    # NOTE last version available at openstack-controller repo below
+    # curl -s <repo/index.yaml> | yq -r '.entries["openstack-operator"] | max_by(.created) | .version'
+    version: 0.3.34-125
+  repositories:
+  - name: openstack-controller
+    url: https://artifactory.mcp.mirantis.net/artifactory/binary-dev-kaas-local/openstack/helm/openstack-controller

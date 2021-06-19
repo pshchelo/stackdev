@@ -1,0 +1,12 @@
+# NOTE as a difference to https://github.com/Mirantis/release-openstack-k8s/blob/master/examples/osdpl/core*.yaml examples
+apiVersion: lcm.mirantis.com/v1alpha1
+kind: OpenStackDeployment
+metadata:
+  name: osh-dev
+  namespace: openstack
+spec:
+  artifacts:
+    # NOTE these contain unreleased charts and images,
+    # released ones are on publicly available CDN
+    binary_base_url: https://artifactory.mcp.mirantis.net/artifactory/binary-dev-kaas-local
+    images_base_url: docker-dev-kaas-local.docker.mirantis.net
