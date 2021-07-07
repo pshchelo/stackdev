@@ -28,16 +28,14 @@ resources:
         str_replace:
           template: |
             #! /bin/sh -v
-            echo 'SCRIPT' > /bin/cpuload
+            echo '$SCRIPT' > /bin/cpuload
             chmod 777 /bin/cpuload
-            Body=$(hostname)
-            Response="HTTP/1.1 200 OK\r\nContent-Length: ${#Body}\r\n\r\n$Body"
-            wc_notify --data-binary '{"status": "SUCCESS"}'
-            while true ; do echo -e $Response | nc -llp PORT; done
+            start-stop-daemon -S -bmp /var/run/simpleweb.pid -x nc -- -lk -p $PORT -e sh -c "echo -e \"HTTP/1.1 200 OK\r\nContent-Length: ${#body}\r\n\r\n${body}\""
+            $wc_notify --data-binary '{"status": "SUCCESS"}'
           params:
-            SCRIPT: { get_file: "../../scripts/cpuload" }
-            PORT: { get_param: app_port }
-            wc_notify: { get_param: wc_curl_cli }
+            $SCRIPT: { get_file: "../../scripts/heat/cpuload" }
+            $PORT: { get_param: app_port }
+            $wc_notify: { get_param: wc_curl_cli }
 
 outputs:
   OS::stack_id:

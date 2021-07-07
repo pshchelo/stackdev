@@ -14,9 +14,9 @@ parameters:
     type: string
   net:
     type: string
-  app_sec_group:
+  subnet:
     type: string
-  ssh_sec_group:
+  sec_group:
     type: string
   app_pool_id:
     type: string
@@ -45,8 +45,7 @@ resources:
       networks:
         - network: { get_param: net }
       security_groups:
-        - { get_param: app_sec_group }
-        - { get_param: ssh_sec_group }
+        - { get_param: sec_group }
       user_data_format: RAW
       user_data: { get_resource: config }
 
@@ -61,17 +60,19 @@ resources:
       handle: { get_resource: handle }
 
   app_pool_member:
-    type: OS::Neutron::PoolMember
+    type: OS::Octavia::PoolMember
     depends_on: waiter
     properties:
       address: { get_attr: [ server, networks, { get_param: net }, 0 ] }
-      pool_id: { get_param: app_pool_id }
+      pool: { get_param: app_pool_id }
       protocol_port: { get_param: app_port }
+      subnet: { get_param: subnet }
 
   ssh_pool_member:
-    type: OS::Neutron::PoolMember
+    type: OS::Octavia::PoolMember
     depends_on: waiter
     properties:
       address: { get_attr: [ server, networks, { get_param: net }, 0 ] }
-      pool_id: { get_param: ssh_pool_id }
+      pool: { get_param: ssh_pool_id }
       protocol_port: 22
+      subnet: { get_param: subnet }

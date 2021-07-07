@@ -17,7 +17,8 @@ parameters:
   image:
     type: string
     description: Glance image to launch instances from
-    default: cirros
+    #default: cirros
+    default: Cirros-5.1
   username:
     type: string
     description: default user name on the image used (for SSH access)
@@ -26,14 +27,10 @@ parameters:
     type: string
     description: Nova keypair name to put on the instances (for SSH access)
     default: demo
-  net:
+  subnet_cidr:
     type: string
-    description: Neutron network to launch instances in
-    default: heat-net
-  subnet:
-    type: string
-    description: Neutron subnet to launch instances in
-    default: heat-subnet
+    description: IPv4 addresses range to create a subnet for servers with
+    default: 10.20.30.0/24
   public_net:
     type: string
     description: Network from where Floating IPs are assigned
@@ -42,10 +39,6 @@ parameters:
     type: number
     description: port on which the web app will run on instances
     default: 8080
-  app_lb_port:
-    type: number
-    description: port on which the load-balanced webapp must be accessed
-    default: 80
   timeout:
     type: number
     description: Time to allow instances to finish provisioning in seconds
@@ -69,7 +62,28 @@ parameters:
 
 resources:
 
-  app_sec_group:
+  net:
+    type: OS::Neutron::Net
+
+  subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      network: { get_resource: net }
+      cidr: { get_param: subnet_cidr}
+
+  router:
+    type: OS::Neutron::Router
+    properties:
+      external_gateway_info:
+        network: { get_param: public_net }
+
+  router_iface:
+    type: OS::Neutron::RouterInterface
+    properties:
+      router: { get_resource: router }
+      subnet: { get_resource: subnet }
+
+  sec_group:
     type: OS::Neutron::SecurityGroup
     properties:
       rules:
@@ -77,11 +91,6 @@ resources:
         protocol: tcp
         port_range_min: { get_param: app_port }
         port_range_max: { get_param: app_port }
-
-  ssh_sec_group:
-    type: OS::Neutron::SecurityGroup
-    properties:
-      rules:
       - remote_ip_prefix: 0.0.0.0/0
         protocol: tcp
         port_range_min: 22
@@ -89,6 +98,7 @@ resources:
 
   asg:
     type: OS::Heat::AutoScalingGroup
+    depends_on: router_iface
     properties:
       desired_capacity: { get_param: launch_asg_size }
       max_size: { get_param: max_asg_size }
@@ -97,13 +107,13 @@ resources:
       resource:
         type: OS::Test::NeutronAppServer
         properties:
-          mdata: {"metering.stack": {get_param: "OS::stack_id"}}
+          mdata: {"metering.server_group": {get_param: "OS::stack_id"}}
           image: { get_param: image }
           flavor: { get_param: flavor }
           key_name: { get_param: key_name }
-          net: { get_param: net}
-          app_sec_group: { get_resource: app_sec_group }
-          ssh_sec_group: { get_resource: ssh_sec_group }
+          net: { get_resource: net}
+          subnet: { get_resource: subnet}
+          sec_group: { get_resource: sec_group }
           app_port: { get_param: app_port }
           app_pool_id: { get_resource: app_pool }
           ssh_pool_id: { get_resource: ssh_pool }
@@ -115,6 +125,7 @@ resources:
       adjustment_type: change_in_capacity
       auto_scaling_group_id: { get_resource: asg }
       scaling_adjustment: 1
+      cooldown: 60
 
   scale_down:
     type: OS::Heat::ScalingPolicy
@@ -122,78 +133,98 @@ resources:
       adjustment_type: change_in_capacity
       auto_scaling_group_id: { get_resource: asg }
       scaling_adjustment: -1
+      cooldown: 60
 
   cpu_alarm_high:
-    type: OS::Ceilometer::Alarm
+    type: OS::Aodh::GnocchiAggregationByResourcesAlarm
     properties:
-      description: Scale-up if the average CPU > 50% for 1 minute
-      meter_name: cpu_util
-      statistic: avg
-      period: 60
+      description: Scale up if CPU > 80%
+      metric: cpu_util
+      aggregation_method: mean
+      granularity: 300
       evaluation_periods: 1
-      threshold: 50
-      repeat_actions: true
-      alarm_actions:
-        - {get_attr: [scale_up, alarm_url]}
-      matching_metadata: {"metadata.user_metadata.stack": {get_param: "OS::stack_id"}}
+      threshold: 80
+      resource_type: instance
       comparison_operator: gt
+      alarm_actions:
+        - str_replace:
+            template: trust+url
+            params:
+              url: {get_attr: [scale_up, signal_url]}
+      query:
+        list_join:
+          - ''
+          - - {'=': {server_group: {get_param: "OS::stack_id"}}}
 
   cpu_alarm_low:
-    type: OS::Ceilometer::Alarm
+    type: OS::Aodh::GnocchiAggregationByResourcesAlarm
     properties:
-      description: Scale-down if the average CPU < 15% for 1 minute
-      meter_name: cpu_util
-      statistic: avg
-      period: 60
+      description: Scale down if CPU < 15% for 5 minutes
+      metric: cpu_util
+      aggregation_method: mean
+      granularity: 300
       evaluation_periods: 1
       threshold: 15
-      repeat_actions: true
-      alarm_actions:
-        - {get_attr: [scale_down, alarm_url]}
-      matching_metadata: {"metadata.user_metadata.stack": {get_param: "OS::stack_id"}}
+      resource_type: instance
       comparison_operator: lt
+      alarm_actions:
+        - str_replace:
+            template: trust+url
+            params:
+              url: {get_attr: [scale_down, signal_url]}
+      query:
+        list_join:
+          - ''
+          - - {'=': {server_group: {get_param: "OS::stack_id"}}}
 
-  app_health_monitor:
-    type: OS::Neutron::HealthMonitor
+  lb:
+    type: OS::Octavia::LoadBalancer
     properties:
+      vip_subnet: { get_resource: subnet }
+
+  app_listener:
+    type: OS::Octavia::Listener
+    properties:
+      loadbalancer: { get_resource: lb }
+      protocol: HTTP
+      protocol_port: 80
+
+  app_pool:
+    type: OS::Octavia::Pool
+    properties:
+      listener: { get_resource: app_listener }
+      lb_algorithm: ROUND_ROBIN
+      protocol: HTTP
+
+  health_monitor_app:
+    type: OS::Octavia::HealthMonitor
+    properties:
+      pool: { get_resource: app_pool }
       delay: 3
       type: HTTP
       timeout: 3
       max_retries: 3
 
-  app_pool:
-    type: OS::Neutron::Pool
+  ssh_listener:
+    type: OS::Octavia::Listener
     properties:
-      lb_method: ROUND_ROBIN
-      protocol: HTTP
-      subnet: { get_param: subnet }
-      monitors:
-      - { get_resource: app_health_monitor }
-      vip:
-        protocol_port: { get_param: app_lb_port }
-
-  app_floating_ip:
-     type: OS::Neutron::FloatingIP
-     properties:
-       floating_network: { get_param: public_net }
-       port_id:
-         { get_attr: [app_pool, vip, 'port_id'] }
+      loadbalancer: { get_resource: lb }
+      protocol: TCP
+      protocol_port: 22
 
   ssh_pool:
-    type: OS::Neutron::Pool
+    type: OS::Octavia::Pool
     properties:
-      lb_method: ROUND_ROBIN
+      listener: { get_resource: ssh_listener }
+      lb_algorithm: ROUND_ROBIN
       protocol: TCP
-      subnet: { get_param: subnet }
-      vip:
-        protocol_port: 22
 
-  ssh_floating_ip:
+  floating_ip:
      type: OS::Neutron::FloatingIP
      properties:
        floating_network: { get_param: public_net }
        port_id:
-         { get_attr: [ssh_pool, vip, 'port_id'] }
+         { get_attr: [ lb, vip_port_id ] }
 
 outputs:
 
@@ -201,10 +232,9 @@ outputs:
     description: URL of the loadbalanced app
     value:
       str_replace:
-        template: http://IP_ADDRESS:PORT
+        template: http://IP_ADDRESS
         params:
-          IP_ADDRESS: { get_attr: [ app_floating_ip, floating_ip_address ] }
-          PORT: { get_param: app_lb_port }
+          IP_ADDRESS: { get_attr: [ floating_ip, floating_ip_address ] }
 
   ssh_lb_url:
     description: command for the loadbalanced SSH access
@@ -212,14 +242,34 @@ outputs:
       str_replace:
         template: ssh -i KEY.pem USER@IP_ADDRESS
         params:
-          IP_ADDRESS: { get_attr: [ ssh_floating_ip, floating_ip_address ] }
+          IP_ADDRESS: { get_attr: [ floating_ip, floating_ip_address ] }
           KEY: { get_param: key_name }
           USER: { get_param: username }
 
   scale_up_hook:
     description: POST to this URL for manual scale up
-    value: {get_attr: [scale_up, alarm_url]}
+    value: {get_attr: [scale_up, signal_url]}
 
   scale_down_hook:
     description: POST to this URL for manual scale up
-    value: {get_attr: [scale_down, alarm_url]}
+    value: {get_attr: [scale_down, signal_url]}
+
+  gnocchi_query:
+    value:
+      str_replace:
+        template: >
+          gnocchi measures aggregation --resource-type instance
+          --query 'server_group="stackval"'
+          --granularity 300 --aggregation mean -m cpu_util
+        params:
+          stackval: { get_param: "OS::stack_id" }
+    description: >
+      This is a Gnocchi query for statistics on the cpu_util measurements about
+      OS::Nova::Server instances in this stack. The --resource-type select the
+      type of Gnocchi resource. The --query parameter filters resources
+      according to its attributes. When a VM's metadata includes an item of the
+      form metering.server_group=X, the corresponding Gnocchi resource has a
+      attribute named server_group that can queried with 'server_group="X"' In
+      this case the nested stacks give their VMs metadata that is passed as a
+      nested stack parameter, and this stack passes a metadata of the form
+      metering.server_group=X, where X is this stack's ID.

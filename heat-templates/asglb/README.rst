@@ -1,17 +1,12 @@
 ##############################################################
-AutoScaling WebApp using Ceilometer and Neutron Load Balancing
+AutoScaling WebApp using Ceilometer and Octavia Load Balancing
 ##############################################################
 
-Current version will not work from OpenStack Dashboard (Horizon)
+Current version will not work as-is from OpenStack Dashboard (Horizon)
 as Horizon can not parse environment declarations as local files.
 Upload all files to web and modify ``env_asglb.yaml``  and
 ``netcat-webapp.yaml`` to point to appropriate HTTP links instead
 (e.g. use raw links from this repo on GitHub).
-
-**Note** this will not work as-is on Heat ≤ Juno version.
-Reason - absence of special handling of ``OS::stack_id`` pseudo-parameter
-as attribute. But with some editing/replacing resources in template it is
-possible to make it work on Heat ≤ Juno.
 
 Create the stack
 ================
@@ -28,7 +23,7 @@ Access the web app
 
 Get the URL of the HTTP webapp:
 
-    heat output-show asglb app_lb_url
+    openstack stack output show asglb app_lb_url
 
 Curl it to show hostname. Repeat to see the host name alternating.
 
@@ -42,7 +37,7 @@ Manual scaling up/down
 
 Show the URLs of the scaling hooks:
 
-    heat output-show asglb scale_[up|down]_hook
+    openstack stack output show asglb scale_[up|down]_hook
 
 ``curl -X POST`` to these to force manual scale up or down.
 Check by accessing the webapp and observe some hostname added/removed
@@ -55,7 +50,7 @@ Auto-scaling via Ceilometer
 
 Get the command to SSH to one of the instances:
 
-    heat output-show asglb ssh_lb_url
+    openstack stack output show asglb ssh_lb_url
 
 SSH access is also load-balanced in a round-robin fashion.
 VMs are preloaded with ``cpuload`` script that can be executed via SSH
@@ -68,12 +63,11 @@ as follows:
 
 Use it to load/release load on CPU and test the auto-scaling via Ceilometer.
 
-The script is taken from ``scripts/cpuload`` file from this very repo.
+The script is taken from ``scripts/heat/cpuload`` file from this very repo.
 
 TODO
 ====
 
-- create network and subnet on the fly
 - create nova key on the fly
 
   - expose the private key via template output
