@@ -1,5 +1,6 @@
 #! /bin/sh
 PID_FILE=/tmp/cpuload.pid
+HOSTNAME=$(hostname)
 
 set_status() {
     if [ -f "$PID_FILE" ]; then
@@ -12,9 +13,9 @@ set_status() {
 print_status() {
     local _load_on=$1
     if $_load_on; then
-        echo "CPU load in progress"
+        echo "${HOSTNAME} - CPU load in progress"
     else
-        echo "CPU load is not running"
+        echo "${HOSTNAME} - CPU load is not running"
     fi
 }
 
@@ -25,7 +26,7 @@ cpu_load() {
         exit 1
     else
         NUM_CPU=$(grep -c ^processor /proc/cpuinfo 2>/dev/null || sysctl -n hw.ncpu)
-        echo "Starting CPU load"
+        echo "${HOSTNAME} - Starting CPU load"
         for in in $( seq $NUM_CPU ); do
             cat /dev/urandom >> /dev/null 2>&1 &
             echo $! >> $PID_FILE
@@ -37,7 +38,7 @@ cpu_load() {
 cpu_release() {
     set_status
     if $inprogress; then
-        echo "Releasing CPU load"
+        echo "${HOSTNAME} - Releasing CPU load"
         cat $PID_FILE | xargs kill
         rm -f $PID_FILE
         exit 0
@@ -48,16 +49,26 @@ cpu_release() {
 }
 
 case $1 in
-    -s)
+    -s | --status)
         set_status
         print_status $inprogress
-        exit 0
     ;;
-    -r)
+    -r | --release)
         cpu_release 
     ;;
-    -i)
-        echo $(hostname)
+    -i | --identify)
+        echo ${HOSTNAME}
+    ;;
+    -h | --help)
+        echo "cpuload [-r,--release|-i,--identify|-s,--status|-h,--help]"
+        echo "        without arguments starts CPU load"
+        echo "        --release   stop CPU load if running"
+        echo "        --status    report if CPU load is in progress"
+        echo "        --identify  print hostname"
+        echo "        --help      pring this message"
+        echo "        exit code: 1 if releasing unstarted load"
+        echo "                     if starting already started load"
+
     ;;
     *)
         cpu_load
