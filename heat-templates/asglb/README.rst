@@ -68,15 +68,7 @@ The script is taken from ``scripts/heat/cpuload`` file from this very repo.
 TODO
 ====
 
-- create nova key on the fly
-
-  - expose the private key via template output
-
-- put custom constraints on parameters
-- move default parameter values to environment
 - improve passing the security groups in
 - split config to cpuload script config and webapp config
 
   - might not work on Cirros if it will require multi-part MIME
-
-- prettify this README

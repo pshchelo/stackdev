@@ -30,6 +30,7 @@ resources:
             #! /bin/sh -v
             echo '$SCRIPT' > /bin/cpuload
             chmod 777 /bin/cpuload
+            body=$(hostname)
             start-stop-daemon -S -bmp /var/run/simpleweb.pid -x nc -- -lk -p $PORT -e sh -c "echo -e \"HTTP/1.1 200 OK\r\nContent-Length: ${#body}\r\n\r\n${body}\""
             $wc_notify --data-binary '{"status": "SUCCESS"}'
           params:

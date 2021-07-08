@@ -1,64 +1,72 @@
-heat_template_version: 2015-10-15
+heat_template_version: queens
 
 description: |
-  Template which tests Neutron load balancing requests to members of
-  Heat AutoScalingGroup.
-  Instances must be running some webserver on a given app_port
-  producing HTTP response that is different between servers
-  but stable over time for given server.
-  Auto-scaling is driven by Ceilometer alarms besed on CPU utilization.
+  Template which tests Octavia load balancing requests
+  to members of Heat AutoScalingGroup.
+  Instances must be running some webserver on a given app_port.
   Both HTTP and SSH access are load-balanced.
+  Auto-scaling is driven by Aodh alarms besed on CPU utilization,
+  derived from Gnocchi metrics that were collected by Ceilometer.
 
 parameters:
   flavor:
     type: string
     description: Nova flavor to launch instances with
-    default: m1.nano
+    constraints:
+    - custom_constraint: nova.flavor
   image:
     type: string
     description: Glance image to launch instances from
-    #default: cirros
-    default: Cirros-5.1
+    constraints:
+    - custom_constraint: glance.image
   username:
     type: string
     description: default user name on the image used (for SSH access)
-    default: cirros
   key_name:
     type: string
     description: Nova keypair name to put on the instances (for SSH access)
-    default: demo
+    constraints:
+    - custom_constraint: nova.keypair
   subnet_cidr:
     type: string
     description: IPv4 addresses range to create a subnet for servers with
-    default: 10.20.30.0/24
+    constraints:
+    - custom_constraint: net_cidr
   public_net:
     type: string
     description: Network from where Floating IPs are assigned
-    default: public
+    constraints:
+      - custom_constraint: neutron.network
   app_port:
     type: number
     description: port on which the web app will run on instances
-    default: 8080
+    constraints:
+    - range: {min: 1025, max: 65535}
   timeout:
     type: number
     description: Time to allow instances to finish provisioning in seconds
-    default: 600
+    constraints:
+      - range: {min: 1}
   min_asg_size:
     type: number
     description: minimal number of instances in auto-scaling group
-    default: 1
+    constraints:
+      - range: {min: 1}
   max_asg_size:
     type: number
     description: maximal number of instances in auto-scaling group
-    default: 3
+    constraints:
+      - range: {min: 1}
   launch_asg_size:
     type: number
     description: number of instances in auto-scaling group to create at launch time
-    default: 2
+    constraints:
+      - range: {min: 1}
   cooldown:
     type: number
     description: autoscaling cooldown timeout in seconds
-    default: 60
+    constraints:
+      - range: {min: 1}
 
 resources:
 
@@ -138,12 +146,12 @@ resources:
   cpu_alarm_high:
     type: OS::Aodh::GnocchiAggregationByResourcesAlarm
     properties:
-      description: Scale up if CPU > 80%
-      metric: cpu_util
-      aggregation_method: mean
-      granularity: 300
+      description: Scale up if CPU utilization is growing fast
+      metric: cpu
+      aggregation_method: rate:mean
+      granularity: 60
       evaluation_periods: 1
-      threshold: 80
+      threshold: 3000000000   # MAGIC! number, https://review.opendev.org/c/openstack/ceilometer/+/799963/1/ceilometer/compute/virt/libvirt/inspector.py#247
       resource_type: instance
       comparison_operator: gt
       alarm_actions:
@@ -159,12 +167,12 @@ resources:
   cpu_alarm_low:
     type: OS::Aodh::GnocchiAggregationByResourcesAlarm
     properties:
-      description: Scale down if CPU < 15% for 5 minutes
-      metric: cpu_util
-      aggregation_method: mean
-      granularity: 300
+      description: Scale down if CPU utilization is dropping fast
+      metric: cpu
+      aggregation_method: rate:mean
+      granularity: 60
       evaluation_periods: 1
-      threshold: 15
+      threshold: 1500000000  # MAGIC! number, https://review.opendev.org/c/openstack/ceilometer/+/799963/1/ceilometer/compute/virt/libvirt/inspector.py#247
       resource_type: instance
       comparison_operator: lt
       alarm_actions:
@@ -258,9 +266,9 @@ outputs:
     value:
       str_replace:
         template: >
-          gnocchi measures aggregation --resource-type instance
+          openstack metric measures aggregation --resource-type instance
           --query 'server_group="stackval"'
-          --granularity 300 --aggregation mean -m cpu_util
+          --granularity 60 --aggregation rate:mean -m cpu
         params:
           stackval: { get_param: "OS::stack_id" }
     description: >

@@ -1,3 +1,16 @@
 resource_registry:
   "OS::Test::NeutronAppServer": app_server_neutron.yaml
   "OS::Test::WebAppConfig": netcat-webapp.yaml
+parameters:
+  image: Cirros-5.1
+  flavor: m1.nano
+  username: cirros
+  key_name: demo
+  subnet_cidr: 10.20.30.0/24
+  public_net: public
+  app_port: 8080
+  timeout: 600
+  min_asg_size: 1
+  max_asg_size: 3
+  launch_asg_size: 2
+  cooldown: 60
