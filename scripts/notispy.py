@@ -40,11 +40,9 @@ def main():
     if args.config:
         cfg.CONF(["--config-file", args.config])
 
-
     cfg.CONF.heartbeat_interval = 5
     cfg.CONF.prog = parser.prog
     cfg.CONF.project = parser.prog
-
 
     transport = oslo_messaging.get_notification_transport(
         cfg.CONF, url=args.url)
@@ -59,6 +57,7 @@ def main():
         transport,
         targets,
         endpoints,
+        executor='threading',
         pool=None if args.consume else args.pool,
     )
 
