@@ -25,7 +25,7 @@ def servers_consumption(servers):
         try:
             server = nova.get_server(server_id)
         except openstack.exceptions.ResourceNotFound:
-            print(f"Server {server.id} not found, deleted manually?")
+            print(f"Server {server_id} not found, deleted manually?")
             continue
         vcpus += server.flavor["vcpus"]  # number
         ram += server.flavor["ram"]  # Megabytes
