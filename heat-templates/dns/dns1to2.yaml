@@ -1,0 +1,74 @@
+heat_template_version: pike
+description: >
+  Showcase how to replace Designate v1 resources with v2 ones.
+  Unfortunately this does not work w/o downtime, as the v1 resources
+  must be deleted and re-created as v2 ones.
+  0. Create this stack (works only on Pike with designate v1 api enabled)
+  1. Comment out designate v1 resources (domain, record[1-3])
+  2. Update stack
+  3. Uncomment designate v2 resources (zone, recordset*)
+  4. Update stack
+
+resources:
+  test:
+    type: OS::Heat::TestResource
+
+  domain:
+    type: OS::Designate::Domain
+    properties:
+      email: foo@bar.net
+      name: bar.net.
+
+  record1:
+    type: OS::Designate::Record
+    properties:
+      domain: { get_resource: domain }
+      name: baz.bar.net.
+      type: A
+      data: 10.20.30.41
+
+  record2:
+    type: OS::Designate::Record
+    properties:
+      domain: { get_resource: domain }
+      name: baz.bar.net.
+      type: A
+      data: 10.20.30.42
+
+  record3:
+    type: OS::Designate::Record
+    properties:
+      domain: { get_resource: domain }
+      name: zzz.bar.net.
+      type: A
+      data: 10.20.30.50
+
+# 'zone' resource replaces 'domain' resource above
+# 'recordset1_2' replaces 'record1' and 'record2' as they fall into the same recordset
+# 'recordset3' replaces 'record3', it has different name than 'record1' and 'record2'
+# so falls into a separate recordset
+
+  #zone:
+  #  type: OS::Designate::Zone
+  #  properties:
+  #    email: foo@bar.net
+  #    name: bar.net.
+
+  #recordset1_2:
+  #  type: OS::Designate::RecordSet
+  #  properties:
+  #    zone: { get_resource: zone}
+  #    name: baz.bar.net.
+  #    type: A
+  #    records:
+  #      - 10.20.30.41
+  #      - 10.20.30.42
+
+  #recordset3:
+  #  type: OS::Designate::RecordSet
+  #  properties:
+  #    zone: { get_resource: zone }
+  #    name: zzz.bar.net.
+  #    type: A
+  #    records:
+  #      - 10.20.30.50
