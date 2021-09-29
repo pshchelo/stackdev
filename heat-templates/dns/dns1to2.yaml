@@ -9,21 +9,26 @@ description: >
   3. Uncomment designate v2 resources (zone, recordset*)
   4. Update stack
 
-resources:
-  test:
-    type: OS::Heat::TestResource
+parameters:
+  dom:
+    type: string
+    default: bar.net.
 
+resources:
   domain:
     type: OS::Designate::Domain
     properties:
-      email: foo@bar.net
-      name: bar.net.
+      email: admin@example.com
+      name: { get_param: dom }
 
   record1:
     type: OS::Designate::Record
     properties:
       domain: { get_resource: domain }
-      name: baz.bar.net.
+      name:
+        list_join:
+          - "."
+          - [ baz, { get_param: dom }]
       type: A
       data: 10.20.30.41
 
@@ -31,7 +36,10 @@ resources:
     type: OS::Designate::Record
     properties:
       domain: { get_resource: domain }
-      name: baz.bar.net.
+      name:
+        list_join:
+          - "."
+          - [ baz, { get_param: dom }]
       type: A
       data: 10.20.30.42
 
@@ -39,7 +47,10 @@ resources:
     type: OS::Designate::Record
     properties:
       domain: { get_resource: domain }
-      name: zzz.bar.net.
+      name:
+        list_join:
+          - "."
+          - [ zzz, { get_param: dom }]
       type: A
       data: 10.20.30.50
 
@@ -51,14 +62,17 @@ resources:
   #zone:
   #  type: OS::Designate::Zone
   #  properties:
-  #    email: foo@bar.net
-  #    name: bar.net.
+  #    email: admin@example.com
+  #    name: { get_param: zone }
 
   #recordset1_2:
   #  type: OS::Designate::RecordSet
   #  properties:
-  #    zone: { get_resource: zone}
-  #    name: baz.bar.net.
+  #    zone: { get_resource: dom}
+  #    name:
+  #      list_join:
+  #        - "."
+  #        - [ baz, { get_param: dom }]
   #    type: A
   #    records:
   #      - 10.20.30.41
@@ -67,8 +81,11 @@ resources:
   #recordset3:
   #  type: OS::Designate::RecordSet
   #  properties:
-  #    zone: { get_resource: zone }
-  #    name: zzz.bar.net.
+  #    zone: { get_resource: dom }
+  #    name:
+  #      list_join:
+  #        - "."
+  #        - [ zzz, { get_param: dom }]
   #    type: A
   #    records:
   #      - 10.20.30.50
