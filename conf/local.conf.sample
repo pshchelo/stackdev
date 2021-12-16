@@ -178,6 +178,7 @@ enable_service q-svc
 #Q_AGENT=openvswitch
 
 # ML2/OVN
+# NEED TO ENABLE PUBLIC_NETWORK_GATEWAY EXPLICITLY!!! see above
 enable_service q-ovn-metadata-agent
 # OVN components
 enable_service ovn-controller ovn-northd ovs-vswitchd ovsdb-server
