@@ -1,4 +1,4 @@
-heat_template_version: 2015-10-15
+heat_template_version: pike
 
 description: >
   Simplest http server using netcat, reports 200 + hostname on any request.
@@ -19,12 +19,13 @@ resources:
         str_replace:
           template: |
             #! /bin/sh -v
-            body=$(hostname)
-            start-stop-daemon -S -bmp /var/run/simpleweb.pid -x nc -- -lk -p $PORT -e sh -c "echo -e \"HTTP/1.1 200 OK\r\nContent-Length: ${#body}\r\n\r\n${body}\""
-            $wc_notify --data-binary '{"status": "SUCCESS"}'
+            NC_PORT=$PORT
+            $NC_WEB_SCRIPT
+            $wc_notify -k --data-binary '{"status": "SUCCESS"}'
           params:
             $wc_notify: { get_param: curl_cli }
             $PORT: { get_param: port }
+            $NC_WEB_SCRIPT: { get_file: ncweb.sh }
 
 outputs:
   OS::stack_id:

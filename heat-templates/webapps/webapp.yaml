@@ -1,4 +1,4 @@
-heat_template_version: 2015-10-15
+heat_template_version: pike
 
 description: |
   Test server with WebApp on it.
@@ -14,14 +14,23 @@ parameters:
   app_port:
     type: number
     default: 80
-  net:
+  cidr:
     type: string
-    default: private
-  subnet:
+    default: 192.168.0.0/24
+  public_net:
     type: string
-    default: private-subnet
+    default: public
 
 resources:
+
+  net:
+    type: OS::Neutron::Net
+
+  subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      network: { get_resource: net }
+      cidr: { get_param: cidr }
 
   secgroup:
     type: OS::Neutron::SecurityGroup
@@ -44,11 +53,30 @@ resources:
     type: OS::Neutron::Port
     properties:
       replacement_policy: AUTO
-      network: { get_param: net }
+      network: { get_resource: net }
       fixed_ips:
-        - subnet: {get_param: subnet }
+        - subnet: {get_resource: subnet }
       security_groups:
         - { get_resource: secgroup }
+
+  router:
+    type: OS::Neutron::Router
+    properties:
+      external_gateway_info:
+        network: { get_param: public_net }
+
+  router_iface:
+    type: OS::Neutron::RouterInterface
+    properties:
+      router: { get_resource: router }
+      subnet: { get_resource: subnet }
+
+  fip:
+    type: OS::Neutron::FloatingIP
+    depends_on: router_iface
+    properties:
+      floating_network: { get_param: public_net }
+      port_id: { get_resource: port }
 
   config:
     type: Test::Web::App
@@ -58,6 +86,7 @@ resources:
 
   server:
     type: OS::Nova::Server
+    depends_on: router_iface
     properties:
       key_name: { get_param: key }
       image: { get_param: image }
@@ -78,15 +107,28 @@ resources:
       timeout: 600
       handle: { get_resource: handle }
 
+conditions:
+  default_http_port:
+    equals:
+      - get_param: app_port
+      - 80
+
 outputs:
-  networks:
-    description: URL of the webapp
-    value: { get_attr: [server, networks]}
-  webapp:
+  fip:
+    description: floating IP of the instance
+    value: { get_attr: [fip, floating_ip_address] }
+  url:
     description: URL of the webapp
     value:
       str_replace:
-        template: http://SERVER_IP:PORT
+        template: http://$SERVER_IP$PORT
         params:
-          SERVER_IP: { get_attr: [ server, networks, {get_param: net}, 0 ] }
-          PORT: { get_param: app_port }
+          $SERVER_IP: { get_attr: [ fip, floating_ip_address] }
+          $PORT:
+            if:
+            - default_http_port
+            - ""
+            - str_replace:
+                template: ":$port"
+                params:
+                  $port: { get_param: app_port }

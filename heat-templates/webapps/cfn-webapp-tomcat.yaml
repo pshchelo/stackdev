@@ -12,14 +12,14 @@ Parameters:
     Description: WebServer EC2 instance type
     Type: String
     Default: m1.heat
-  
+
   ImageId:
     Description: the name or uuid of the image in glance
     Type: String
     Default: fedora-heat-test-image
 
 Resources:
-  
+
   Instance:
     Type: AWS::EC2::Instance
     Metadata:

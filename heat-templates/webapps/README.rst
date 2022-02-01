@@ -4,7 +4,7 @@ Set of Heat templates to create (test) webapps
 
 Use as::
 
-    heat stack-create <stack name> -f webapp.yaml -e <environment-file>
+    openstack stack create <stack name> -t webapp.yaml -e <environment-file>
 
 Please check the ``webapp.yaml`` for supported parameters and outputs.
 
