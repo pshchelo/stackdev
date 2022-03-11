@@ -1,0 +1,41 @@
+heat_template_version: queens
+
+parameters:
+  public_net:
+    type: string
+    default: public
+    description: Name/ID of the network for floating IPs
+  cidr:
+    type: string
+    default: "192.168.100.0/24"
+    description: CIDR of the private network to create
+  dns:
+    type: comma_delimited_list
+    default: ''
+    description: list of custom DNS servers to pass to the instance
+    # example: "172.18.224.6,8.8.8.8,8.8.4.4,1.1.1.1"
+    # intra-net one plus 2x google and 1x cloudflare
+
+resources:
+  network:
+    type: OS::Neutron::Net
+    properties:
+      name: pshchelo-dev-infra-net
+  subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      name: pshchelo-dev-infra-subnet
+      network: { get_resource: network }
+      cidr: { get_param: cidr }
+      dns_nameservers: { get_param: dns }
+  router:
+    type: OS::Neutron::Router
+    properties:
+      name: pshchelo-dev-infra-router
+      external_gateway_info:
+        network: { get_param: public_net }
+  router_interface:
+    type: OS::Neutron::RouterInterface
+    properties:
+      router: { get_resource: router }
+      subnet: { get_resource: subnet }

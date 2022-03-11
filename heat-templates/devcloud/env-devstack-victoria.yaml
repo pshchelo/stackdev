@@ -1,0 +1,3 @@
+parameters:
+  image: bionic-server-cloudimg-amd64-20200724
+  name: devstack-victoria

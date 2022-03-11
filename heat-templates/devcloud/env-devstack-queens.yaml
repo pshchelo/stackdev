@@ -1,0 +1,3 @@
+parameters:
+  image: xenial-server-cloudimg-amd64-qcow
+  name: devstack-queens
