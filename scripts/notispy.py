@@ -21,8 +21,8 @@ LOG = logging.getLogger("notispy")
 class NotificationEndpoint(object):
     def _format(self, ctxt, publisher_id, event_type, payload, metadata):
         total = {"event_type": event_type,
-                 "payload": payload,
                  "publisher_id": publisher_id,
+                 "payload": payload,
                  "context": ctxt,
                  "metadata": metadata}
         return json.dumps(total)
@@ -53,6 +53,7 @@ def main():
     parser.add_argument("--pool", default="notispy")
     parser.add_argument("--consume", action="store_true")
     parser.add_argument("--debug", action="store_true")
+    parser.add_argument("--exchange", action="append", dest="exchanges")
     args = parser.parse_args()
 
     if args.debug:
@@ -71,10 +72,16 @@ def main():
     transport = oslo_messaging.get_notification_transport(
         cfg.CONF, url=args.url)
     topics = args.topics or ["notifications"]
+    exchanges = args.exchanges or [None]
 
     targets = [
-        oslo_messaging.Target(topic=t) for t in topics
+        oslo_messaging.Target(exchange=e, topic=t)
+        for t in topics
+        for e in exchanges
+
     ]
+    LOG.debug(f"Messaging targets are {targets}")
+
     endpoints = [
         NotificationEndpoint()
     ]
