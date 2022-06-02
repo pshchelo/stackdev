@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
 import argparse
+import json
 import logging
+import time
 
 from oslo_config import cfg
 import oslo_messaging
@@ -17,16 +19,37 @@ LOG = logging.getLogger("notispy")
 
 
 class NotificationEndpoint(object):
-    def info(self, ctxt, publisher_id, event_type, payload, metadata):
-        LOG.info("%s %s %s %s %s",
-                 ctxt, publisher_id, event_type, payload, metadata)
+    def _format(self, ctxt, publisher_id, event_type, payload, metadata):
+        total = {"event_type": event_type,
+                 "payload": payload,
+                 "publisher_id": publisher_id,
+                 "context": ctxt,
+                 "metadata": metadata}
+        return json.dumps(total)
 
+    def error(self, *args):
+        LOG.error(self._format(*args) + "\n===========")
+
+    def warn(self, *args):
+        LOG.warning(self._format(*args) + "\n===========")
+
+    def info(self, *args):
+        LOG.info(self._format(*args) + "\n===========")
+
+    def audit(self, *args):
+        LOG.info("AUDIT - " + self._format(*args) + "\n===========")
+
+    def sample(self, *args):
+        LOG.info("SAMPLE - " + self._format(*args) + "\n===========")
+
+    def debug(self, *args):
+        LOG.debug(self._format(*args) + "\n===========")
 
 def main():
     parser = argparse.ArgumentParser("notispy")
     parser.add_argument("--config")
     parser.add_argument("--url")
-    parser.add_argument("--topic", default="notifications")
+    parser.add_argument("--topic", action="append", dest="topics")
     parser.add_argument("--pool", default="notispy")
     parser.add_argument("--consume", action="store_true")
     parser.add_argument("--debug", action="store_true")
@@ -36,6 +59,7 @@ def main():
         LOG.setLevel(logging.DEBUG)
     else:
         LOG.setLevel(logging.INFO)
+    LOG.debug(f"{args}")
 
     if args.config:
         cfg.CONF(["--config-file", args.config])
@@ -46,24 +70,43 @@ def main():
 
     transport = oslo_messaging.get_notification_transport(
         cfg.CONF, url=args.url)
+    topics = args.topics or ["notifications"]
+
     targets = [
-        oslo_messaging.Target(topic=args.topic),
+        oslo_messaging.Target(topic=t) for t in topics
     ]
     endpoints = [
         NotificationEndpoint()
     ]
 
+    pool = args.pool
+    if args.consume:
+        pool = None
+    LOG.debug(f"pool is {pool}")
     server = oslo_messaging.get_notification_listener(
         transport,
         targets,
         endpoints,
         executor='threading',
-        pool=None if args.consume else args.pool,
+        pool=pool,
     )
 
-    LOG.debug("Starting notispy server...")
-    server.start()
-    server.wait()
+    LOG.debug("Starting notispy listener...")
+    try:
+        server.start()
+        LOG.info("Started notispy listener")
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        LOG.warning("KeyboardInterrput, exiting...")
+        pass
+    except Exception:
+        LOG.info("%s" % e)
+        sys.exit(200)
+    finally:
+        server.stop()
+        server.wait()
+
 
 if __name__ == "__main__":
     main()
