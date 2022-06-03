@@ -19,31 +19,49 @@ LOG = logging.getLogger("notispy")
 
 
 class NotificationEndpoint(object):
-    def _format(self, ctxt, publisher_id, event_type, payload, metadata):
+
+    def __init__(self, save=False):
+        self.store = []
+        self.save = save
+
+    def write(self):
+        if not self.save:
+            return
+        if not self.store:
+            LOG.warning("No messages captured")
+        for i, m in enumerate(self.store):
+            # TODO: make filenames unique per endpoint
+            with open(f"message-{i}.json", "w") as f:
+                f.write(m)
+
+    def _process(self, ctxt, publisher_id, event_type, payload, metadata):
         total = {"event_type": event_type,
                  "publisher_id": publisher_id,
                  "payload": payload,
                  "context": ctxt,
                  "metadata": metadata}
-        return json.dumps(total)
+        msg = json.dumps(total)
+        if self.save:
+            self.store.append(msg)
+        return msg
 
     def error(self, *args):
-        LOG.error(self._format(*args) + "\n===========")
+        LOG.error(self._process(*args) + "\n===========")
 
     def warn(self, *args):
-        LOG.warning(self._format(*args) + "\n===========")
+        LOG.warning(self._process(*args) + "\n===========")
 
     def info(self, *args):
-        LOG.info(self._format(*args) + "\n===========")
+        LOG.info(self._process(*args) + "\n===========")
 
     def audit(self, *args):
-        LOG.info("AUDIT - " + self._format(*args) + "\n===========")
+        LOG.info("AUDIT - " + self._process(*args) + "\n===========")
 
     def sample(self, *args):
-        LOG.info("SAMPLE - " + self._format(*args) + "\n===========")
+        LOG.info("SAMPLE - " + self._process(*args) + "\n===========")
 
     def debug(self, *args):
-        LOG.debug(self._format(*args) + "\n===========")
+        LOG.debug(self._process(*args) + "\n===========")
 
 def main():
     parser = argparse.ArgumentParser("notispy")
@@ -53,6 +71,7 @@ def main():
     parser.add_argument("--pool", default="notispy")
     parser.add_argument("--consume", action="store_true")
     parser.add_argument("--debug", action="store_true")
+    parser.add_argument("--save", action="store_true")
     parser.add_argument("--exchange", action="append", dest="exchanges")
     args = parser.parse_args()
 
@@ -83,7 +102,7 @@ def main():
     LOG.debug(f"Messaging targets are {targets}")
 
     endpoints = [
-        NotificationEndpoint()
+        NotificationEndpoint(save=args.save)
     ]
 
     pool = args.pool
@@ -113,7 +132,10 @@ def main():
     finally:
         server.stop()
         server.wait()
-
+        if args.save:
+            LOG.info("Storing captured messages to disk")
+        for e in endpoints:
+            e.write()
 
 if __name__ == "__main__":
     main()
