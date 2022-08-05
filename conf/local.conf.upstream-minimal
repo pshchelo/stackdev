@@ -1,0 +1,42 @@
+[[local|localrc]]
+USE_PYTHON3="True"
+ADMIN_PASSWORD="secretadmin"
+DATABASE_PASSWORD="secretdatabase"
+RABBIT_PASSWORD="secretrabbit"
+SERVICE_PASSWORD="secretservice"
+FIXED_RANGE="10.1.0.0/20"
+IPV4_ADDRS_SAFE_TO_USE="10.1.0.0/20"
+NETWORK_GATEWAY="10.1.0.1"
+FLOATING_RANGE="172.24.5.0/24"
+PUBLIC_NETWORK_GATEWAY="172.24.5.1"
+disable_all_services
+enable_service etcd3
+enable_service mysql
+enable_service rabbit
+enable_service tls-proxy
+enable_service c-api
+disable_service c-bak
+enable_service c-sch
+enable_service c-vol
+ENABLE_VOLUME_MULTIATTACH="True"
+enable_service g-api
+enable_service key
+enable_service n-api
+enable_service n-api-meta
+enable_service n-cond
+enable_service n-cpu
+enable_service n-novnc
+enable_service n-sch
+DEBUG_LIBVIRT_COREDUMPS="True"
+FORCE_CONFIG_DRIVE="True"
+NOVA_VNC_ENABLED="True"
+NOVNC_FROM_PACKAGE="True"
+LIBVIRT_TYPE="qemu"
+enable_service ovn-controller
+enable_service ovn-northd
+enable_service ovs-vswitchd
+enable_service ovsdb-server
+enable_service q-ovn-metadata-agent
+enable_service q-svc
+OVN_DBS_LOG_LEVEL="dbg"
+enable_service placement-api
