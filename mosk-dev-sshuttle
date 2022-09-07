@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+# make tunnels for public API network
+# needs /etc/hosts edited, see openstackk8sfqdn.sh script
+# and default configured public network for floating IPs
+
+CURRENT_CONTEXT=$(kubectl config current-context)
+CONTEXT=${1:-$CURRENT_CONTEXT}
+K8S_IP=$(kubectl config view -o jsonpath="{.clusters[?(@.name == \"$CONTEXT\")].cluster.server}" | awk -F ":" "{print \$2}" | cut -c3-)
+
+SSH_ARGS="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aio_rsa -l ubuntu"
+SUBNETS_TO_PASS="10.172.1.0/24 10.11.12.0/24"
+
+sshuttle -e "${SSH_ARGS}" ${SUBNETS_TO_PASS} -r ${K8S_IP}
