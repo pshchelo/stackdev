@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+
+CONTEXT=${1:-$(kubectl config current-context)}
+kubectl --context $CONTEXT -n openstack exec -it ${1:-mariadb-server-0} -c mariadb -- \
+    bash -c 'mysql -u${MYSQL_DBADMIN_USERNAME} -p${MYSQL_DBADMIN_PASSWORD}'
