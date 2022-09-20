@@ -1,0 +1,58 @@
+heat_template_version: 2015-10-15
+
+parameters:
+  key_name:
+    type: string
+    default: demo
+  flavor:
+    type: string
+    default: m1.nano
+  image:
+    type: string
+    default: cirros
+  pubnet:
+    type: string
+    default: public
+  sec_group:
+    type: string
+  config:
+    type: string
+  ident:
+    type: string
+  net:
+    type: string
+  subnet:
+    type: string
+
+resources:
+
+  port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: net }
+      fixed_ips:
+        - subnet: { get_param: subnet }
+      security_groups:
+        - { get_param: sec_group }
+
+  floating_ip:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network: { get_param: pubnet }
+      port_id: { get_resource: port }
+
+  server:
+    type: OS::Nova::Server
+    properties:
+      metadata: {"metering.server_group": {get_param: ident}}
+      key_name: { get_param: key_name }
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      networks:
+        - port: { get_resource: port }
+      user_data_format: RAW
+      user_data: { get_param: config }
+
+outputs:
+  fip:
+    value: { get_attr: [ floating_ip, floating_ip_address] }

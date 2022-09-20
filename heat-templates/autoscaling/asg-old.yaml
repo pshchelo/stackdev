@@ -15,31 +15,12 @@ parameters:
     default: m1.nano
   image:
     type: string
-    default: Cirros-5.1
-  pubnet:
+    default: cirros
+  net:
     type: string
-    default: public
+    default: heat-net
 
 resources:
-
-  net:
-    type: OS::Neutron::Net
-
-  subnet:
-    type: OS::Neutron::Subnet
-    properties:
-      network: {get_resource: net}
-      cidr: 10.20.30.0/24
-  router:
-    type: OS::Neutron::Router
-    properties:
-      external_gateway_info:
-        network: { get_param: pubnet }
-  router_iface:
-    type: OS::Neutron::RouterInterface
-    properties:
-      router: { get_resource: router }
-      subnet: { get_resource: subnet }
 
   loader:
     type: OS::Heat::SoftwareConfig
@@ -52,7 +33,7 @@ resources:
             echo 'SCRIPT' > /bin/cpuload
             chmod 777 /bin/cpuload
           params:
-            SCRIPT: {get_file: "./cpuload"}
+            SCRIPT: {get_file: "../../scripts/cpuload"}
 
   sec_group:
     type: OS::Neutron::SecurityGroup
@@ -65,22 +46,22 @@ resources:
 
   my_asg:
     type: OS::Heat::AutoScalingGroup
-    depends_on: router_iface
     properties:
       min_size: 1
       max_size: 2
       resource:
-        type: "./server.yaml"
+        type: OS::Nova::Server
         properties:
-          ident: {get_param: "OS::stack_id"}
+          metadata: {"metering.stack": {get_param: "OS::stack_id"}}
           key_name: { get_param: key_name }
           image: { get_param: image }
           flavor: { get_param: flavor }
-          net: { get_resource: net }
-          subnet: { get_resource: subnet }
-          pubnet: { get_param: pubnet }
-          sec_group: { get_resource: sec_group}
-          config: { get_resource: loader }
+          networks:
+            - network: { get_param: net }
+          security_groups:
+          - get_resource: sec_group
+          user_data_format: RAW
+          user_data: { get_resource: loader }
 
   scale_up_policy:
     type: OS::Heat::ScalingPolicy
@@ -99,51 +80,37 @@ resources:
       scaling_adjustment: '-1'
 
   cpu_alarm_high:
-    type: OS::Aodh::GnocchiAggregationByResourcesAlarm
+    type: OS::Ceilometer::Alarm
     properties:
-      description: Scale up if CPU > 80%
-      metric: cpu
-      aggregation_method: rate:mean
-      granularity: 60
+      description: Scale-up if the average CPU > 50% for 1 minute
+      meter_name: cpu_util
+      statistic: avg
+      period: 60
       evaluation_periods: 1
-      threshold: 48000000000 # (cpu_load% / 100) * VCPUs * granularity * 10^9ns
-      resource_type: instance
-      comparison_operator: gt
+      threshold: 50
       alarm_actions:
-        - str_replace:
-            template: trust+url
-            params:
-              url: {get_attr: [scale_up_policy, signal_url]}
-      query:
-        list_join:
-          - ''
-          - - {'=': {server_group: {get_param: "OS::stack_id"}}}
+        - {get_attr: [scale_up_policy, alarm_url]}
+      matching_metadata: {"metadata.user_metadata.stack": {get_param: "OS::stack_id"}}
+      comparison_operator: gt
 
   cpu_alarm_low:
-    type: OS::Aodh::GnocchiAggregationByResourcesAlarm
+    type: OS::Ceilometer::Alarm
     properties:
-      description: Scale up if CPU < 15%
-      metric: cpu
-      aggregation_method: rate:mean
-      granularity: 60
+      description: Scale-down if the average CPU < 15% for 10 minutes
+      meter_name: cpu_util
+      statistic: avg
+      period: 60
       evaluation_periods: 1
-      threshold: 9000000000 # (cpu_load% / 100) * VCPUs * granularity * 10^9ns
-      resource_type: instance
-      comparison_operator: lt
+      threshold: 15
       alarm_actions:
-        - str_replace:
-            template: trust+url
-            params:
-              url: {get_attr: [scale_down_policy, signal_url]}
-      query:
-        list_join:
-          - ''
-          - - {'=': {server_group: {get_param: "OS::stack_id"}}}
+        - {get_attr: [scale_down_policy, alarm_url]}
+      matching_metadata: {"metadata.user_metadata.stack": {get_param: "OS::stack_id"}}
+      comparison_operator: lt
 
 outputs:
-  ips:
+  server_ip:
     description: IP address of the server, use to execute commands via SSH
-    value: { get_attr: [ my_asg, outputs_list, fip] }
+    value: { get_attr: [ my_asg, resource.0, networks, private, 0 ] }
   scaleup:
     description: POST to this webhook to trigger scaling up manually
     value: {get_attr: [scale_up_policy, alarm_url]}
