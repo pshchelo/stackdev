@@ -1,4 +1,3 @@
 #!/usr/bin/env sh
 cmd=${1:-"/bin/bash"}
-client_pod=$(kubectl -n openstack get pod -l application=keystone,component=client -oname)
-kubectl -n openstack exec -ti -c keystone-client $client_pod -- ${cmd}
+kubectl -n openstack exec -ti deploy/keystone-client -c keystone-client -- ${cmd}

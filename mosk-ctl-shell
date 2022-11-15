@@ -1,4 +1,3 @@
 #!/usr/bin/env bash
 container=${1:-osdpl}
-pod=$(kubectl -n osh-system get po -l app.kubernetes.io/instance=openstack-operator,app.kubernetes.io/name=openstack-operator -oname)
-kubectl -n osh-system exec -ti $pod -c $container -- bash
+kubectl -n osh-system exec -ti deploy/openstack-controller -c $container -- bash
