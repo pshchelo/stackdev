@@ -16,3 +16,13 @@ kopenstack role add member --user alt-demo --user-domain Default --project demo 
 
 # Minimal flavor for cirros
 kopenstack flavor create m1.nano --ram 128 --disk 1 --vcpus 1
+
+
+# TODO: change to kopenstack calls using 'demo' project id
+# openstack keypair create demo --public-key ~/.ssh/pub/aio_rsa.pub 
+# openstack network create demo
+# openstack subnet create demo --network demo --subnet-range 10.20.30.0/24
+# openstack router create demo --external-gateway public
+# openstack router add subnet demo demo
+# openstack security group create demo
+# openstack security group rule create demo --ingress --protocol tcp --dst-port 22 --description SSH
