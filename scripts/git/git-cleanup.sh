@@ -8,8 +8,6 @@ for dir in */; do
     done
     if [ -d "${dir}.git" ]; then
         echo "Running git GC in ${dir}"
-        pushd ${dir}
-        git gc --aggressive
-        popd
+        git -C ${dir} gc --aggressive
     fi
 done

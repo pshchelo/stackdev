@@ -3,14 +3,13 @@
 TOP_DIR=$1
 for dir in ${TOP_DIR}/*/; do
     if [ -d $dir/.git ]; then
-        cd $dir
         echo "*** Updating $dir ***"
-        branch=$(git symbolic-ref --short HEAD)
-        git stash
-        git remote update
-        git checkout master
-        git pull
-        git checkout $branch
+        $git_cmd="git -C $dir"
+        branch=$($git_cmd symbolic-ref --short HEAD)
+        $git_cmd stash
+        $git_cmd checkout master
+        $git_cmd pull --all
+        $git_cmd checkout $branch
         echo ""
     fi
 done

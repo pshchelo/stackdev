@@ -1,23 +1,22 @@
 #!/usr/bin/env bash
 function repo_check {
-    pushd "$1" > /dev/null
     echo -e "\n======="
     echo "$1"
+    git_cmd="git -C $d"
 
     echo -e "\nGit branches"
-    git branch -v
+    $git_cmd branch -v
 
-    gstatus=$(git status --porcelain)
+    gstatus=$($git_cmd status --porcelain)
     if [[ ! -z $gstatus ]]; then
         echo "Git Status:"
         echo "$gstatus"
     fi
-    gstashes=$(git stash list)
+    gstashes=$($git_cmd stash list)
     if [[ ! -z $gstashes ]]; then
         echo -e "\nGit stashes"
         echo -e "$gstashes"
     fi
-    popd > /dev/null
 }
 
 for d in $(ls -d ${PWD}/*/); do
