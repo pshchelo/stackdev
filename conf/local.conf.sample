@@ -350,6 +350,9 @@ enable_service c-vol
 ### IRONIC UI ###
 #enable_plugin ironic-ui https://opendev.org/openstack/ironic-ui
 
+### SKYLINE ###
+#enable_plugin skyline-apiserver https://opendev.org/openstack/skyline-apiserver
+
 ############################
 # POST CONFIG STAGE SETTINGS
 ############################
