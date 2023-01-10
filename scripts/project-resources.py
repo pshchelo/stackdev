@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
-import openstack
+import openstack, sys
 
-cloud = openstack.connect()
+sdk_kwargs = {}
+if len(sys.argv) > 1:
+    sdk_kwargs["cloud"] = sys.argv[1]
+
+cloud = openstack.connect(**sdk_kwargs)
 
 nova_limits = cloud.compute.get_limits()
 available_cores = nova_limits.absolute.total_cores - nova_limits.absolute.total_cores_used
