@@ -1,0 +1,27 @@
+apiVersion: lcm.mirantis.com/v1alpha1
+kind: OpenStackDeployment
+metadata:
+  name: minimal-demo
+  namespace: openstack
+spec:
+  draft: true
+  features:
+    neutron:
+      external_networks: []
+      physnet: physnet1
+      floating_network:
+        enabled: false
+        physnet: physnet1
+      tunnel_interface: ens3
+    nova:
+      live_migration_interface: ens3
+    ssl:
+      public_endpoints:
+        api_cert: api_cert
+        api_key: api_key
+        ca_cert: ca_cert
+  internal_domain_name: cluster.local
+  openstack_version: queens
+  profile: compute
+  public_domain_name: it.just.works
+  size: tiny
