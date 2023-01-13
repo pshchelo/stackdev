@@ -1,0 +1,34 @@
+function _ttype() {
+    local string=$1
+    for ((i=0; i<=${#string}; i++)); do
+            printf '%s' "${string:$i:1}"
+            # CONTROL THE LIVE TYPING DELAY HERE
+            #sleep 0.$(( (RANDOM % 5) + 1 ))
+            sleep 0.$(( RANDOM % 2 ))
+    done
+}
+
+function teletype() {
+    # yellow
+    printf '\e[1;33m'
+    printf '|> '
+    _ttype "$1"
+    # reset back
+    printf '\e[0m'
+    printf '\n'
+
+}
+
+function telerun() {
+    local cmd="$@"
+    echo
+    # dark blue
+    printf '\e[1;34m'
+    printf '$ '
+    _ttype "${cmd}"
+    # reset back
+    printf '\e[0m'
+    printf '\n'
+    ${cmd}
+    echo
+}
