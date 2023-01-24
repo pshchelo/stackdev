@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+osdplst=$(kubectl -n openstack get osdplst --no-headers | awk '{print $1}')
+until [ "$(kubectl -n openstack get osdplst $osdplst -ojsonpath='{.status.osdpl.state}')" == "APPLIED" ]; do
+    # TODO: make this indication optional, it will break asciinema recording that 'omits long pauses'
+    echo -n "."
+    # TODO: some nicer spinner?
+    #printf "\b${sp:i++%${#sp}:1}"
+    sleep 10;
+done
