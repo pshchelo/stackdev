@@ -1,9 +1,29 @@
 #!/usr/bin/env bash
+
+function usage {
+    echo "Usage: $(basename $0) [-qh]" 2>&1
+    echo "Wait for the OpenStackDeployment resource to become APPLIED"
+    echo "expects single OpenStackDeployment[Status] resource in the 'openstack' namespace"
+    echo "  -q    quiet, do not print any visual confirmation of work"
+    echo "  -h    print this message and exit"
+}
+
+QUIET=0
+
+while getopts ':qh' arg; do
+    case "${arg}" in
+        q) QUIET=1;;
+        h) usage; exit 0;;
+        ?) usage; exit 1;;
+    esac
+done
+
 osdplst=$(kubectl -n openstack get osdplst --no-headers | awk '{print $1}')
 until [ "$(kubectl -n openstack get osdplst $osdplst -ojsonpath='{.status.osdpl.state}')" == "APPLIED" ]; do
-    # TODO: make this indication optional, it will break asciinema recording that 'omits long pauses'
-    echo -n "."
-    # TODO: some nicer spinner?
-    #printf "\b${sp:i++%${#sp}:1}"
     sleep 10;
+    if [ $QUIET == 0 ]; then
+        echo -n "."
+        # TODO: some nicer spinner?
+        #printf "\b${sp:i++%${#sp}:1}"
+    fi
 done
