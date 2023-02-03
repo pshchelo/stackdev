@@ -52,7 +52,7 @@ resources:
             echo 'SCRIPT' > /bin/cpuload
             chmod 777 /bin/cpuload
           params:
-            SCRIPT: {get_file: "./cpuload"}
+            SCRIPT: {get_file: "../../scripts/heat/cpuload"}
 
   sec_group:
     type: OS::Neutron::SecurityGroup
@@ -101,12 +101,12 @@ resources:
   cpu_alarm_high:
     type: OS::Aodh::GnocchiAggregationByResourcesAlarm
     properties:
-      description: Scale up if CPU > 80%
+      description: Scale up if CPU > 80% for 3 minutes
       metric: cpu
       aggregation_method: rate:mean
       granularity: 60
-      evaluation_periods: 1
-      threshold: 48000000000 # (cpu_load% / 100) * VCPUs * granularity * 10^9ns
+      evaluation_periods: 3
+      threshold: 48000000000 # (80%cpu / 100) * VCPUs * granularity * 10^9ns
       resource_type: instance
       comparison_operator: gt
       alarm_actions:
@@ -122,12 +122,12 @@ resources:
   cpu_alarm_low:
     type: OS::Aodh::GnocchiAggregationByResourcesAlarm
     properties:
-      description: Scale up if CPU < 15%
+      description: Scale up if CPU < 15% for 3 minutes
       metric: cpu
       aggregation_method: rate:mean
       granularity: 60
-      evaluation_periods: 1
-      threshold: 9000000000 # (cpu_load% / 100) * VCPUs * granularity * 10^9ns
+      evaluation_periods: 3
+      threshold: 9000000000 # (15%cpu / 100) * VCPUs * granularity * 10^9ns
       resource_type: instance
       comparison_operator: lt
       alarm_actions:
@@ -141,6 +141,13 @@ resources:
           - - {'=': {server_group: {get_param: "OS::stack_id"}}}
 
 outputs:
+  query:
+    description: CLI command to check the metrics alarms are triggered on
+    value:
+      str_replace:
+        template: "openstack metric aggregates --resource-type instance '(aggregate rate:mean (metric cpu mean))' server_group=STACKID --stop now --needed-overlap 0 --granularity 60"
+        params:
+          STACKID: {get_param: "OS::stack_id" }
   ips:
     description: IP address of the server, use to execute commands via SSH
     value: { get_attr: [ my_asg, outputs_list, fip] }
