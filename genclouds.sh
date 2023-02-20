@@ -6,8 +6,8 @@ clouds:
   admin:
     auth:
       auth_url: https://keystone.it.just.works
-      username: admin
-      password: $(kubectl -n openstack get secret keystone-keystone-admin -ojson | jq -r .data.password | base64 -d)
+      username: $(kubectl -n openstack get secret keystone-os-clouds -ojsonpath='{.data.clouds\.yaml}' | base64 -d | yq -r .clouds.admin.auth.username)
+      password: $(kubectl -n openstack get secret keystone-os-clouds -ojsonpath='{.data.clouds\.yaml}' | base64 -d | yq -r .clouds.admin.auth.password)
       project_name: admin
       user_domain_name: Default
       project_domain_name: Default

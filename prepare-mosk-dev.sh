@@ -1,12 +1,15 @@
 ko="kubectl -n openstack exec -ti deploy/keystone-client -c keystone-client -- openstack"
 
-admin_pass=$(kubectl -n openstack get secret keystone-keystone-admin -ojsonpath='{.data.password}' | base64 -d)
+admin_name=$(kubectl -n openstack get secret keystone-os-clouds -ojsonpath='{.data.clouds\.yaml}' | base64 -d | yq -r .clouds.admin.auth.username)
+admin_pass=$(kubectl -n openstack get secret keystone-os-clouds -ojsonpath='{.data.clouds\.yaml}' | base64 -d | yq -r .clouds.admin.auth.password)
+echo "Admin username is: $admin_name"
 echo "Admin password is: $admin_pass"
 echo "Writing secure.yaml file for mosk-dev-admin cloud"
 cat > secure.yaml << EOF
 clouds:
   mosk-dev-admin:
     auth:
+      username: $admin_name
       password: $admin_pass
 EOF
 
