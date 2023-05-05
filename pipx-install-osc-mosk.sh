@@ -6,13 +6,14 @@
 # or are deprecated in MOSK (like events(panko))
 pipx install python-openstackclient # supports Keystone, Nova, Glance, Cinder, Neutron, Swift
 pipx inject python-openstackclient \
-    python-heatclient \
-    python-designateclient \
-    python-masakariclient \
     aodhclient \
     gnocchiclient \
-    python-ironicclient \
-    python-barbicanclient \
     osc-placement \
-    python-octaviaclient # this one better from downstream for support of --force
+    python-barbicanclient \
+    python-designateclient \
+    python-heatclient \
+    python-ironicclient \
+    python-manilaclient \
+    python-masakariclient \
+    python-octaviaclient # this one better from downstream for support of force-delete
 openstack complete > ~/.local/share/bash-completion/completions/openstack
