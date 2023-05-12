@@ -4,6 +4,7 @@ import argparse
 import json
 import logging
 import time
+import sys
 
 from oslo_config import cfg
 import oslo_messaging
@@ -21,15 +22,15 @@ LOG = logging.getLogger("notispy")
 class NotificationEndpoint(object):
 
     def __init__(self, save=False):
-        self.store = []
-        self.save = save
+        self._store = []
+        self._save = save
 
     def write(self):
-        if not self.save:
+        if not self._save:
             return
-        if not self.store:
+        if not self._store:
             LOG.warning("No messages captured")
-        for i, m in enumerate(self.store):
+        for i, m in enumerate(self._store):
             # TODO: make filenames unique per endpoint
             with open(f"message-{i}.json", "w") as f:
                 f.write(m)
@@ -41,48 +42,54 @@ class NotificationEndpoint(object):
                  "context": ctxt,
                  "metadata": metadata}
         msg = json.dumps(total)
-        if self.save:
-            self.store.append(msg)
+        if self._save:
+            self._store.append(msg)
         return msg
 
+    def _format_and_process(self, *args):
+        msg = self._process(*args)
+        return msg + "\n==========="
+
     def error(self, *args):
-        LOG.error(self._process(*args) + "\n===========")
+        LOG.error(self._format_and_process(*args))
 
     def warn(self, *args):
-        LOG.warning(self._process(*args) + "\n===========")
+        LOG.warning(self._format_and_process(*args))
 
     def info(self, *args):
-        LOG.info(self._process(*args) + "\n===========")
+        LOG.info(self._format_and_process(*args))
 
     def audit(self, *args):
-        LOG.info("AUDIT - " + self._process(*args) + "\n===========")
+        LOG.info("AUDIT - " + self._format_and_process(*args))
 
     def sample(self, *args):
-        LOG.info("SAMPLE - " + self._process(*args) + "\n===========")
+        LOG.info("SAMPLE - " + self._format_and_process(*args))
 
     def debug(self, *args):
-        LOG.debug(self._process(*args) + "\n===========")
+        LOG.debug(self._format_and_process(*args))
 
 def main():
     parser = argparse.ArgumentParser("notispy")
     parser.add_argument("--config")
     parser.add_argument("--url")
-    parser.add_argument("--topic", action="append", dest="topics")
-    parser.add_argument("--pool", default="notispy")
-    parser.add_argument("--consume", action="store_true")
+    parser.add_argument("--topic", action="append", dest="topics",
+                        default=['notifications'])
+    parser.add_argument("--exchange", action="append", dest="exchanges",
+                       default=[None])
+    parser.add_argument("--pool", default=None)
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--save", action="store_true")
-    parser.add_argument("--exchange", action="append", dest="exchanges")
     args = parser.parse_args()
+
+    if args.config:
+        cfg.CONF(["--config-file", args.config])
 
     if args.debug:
         LOG.setLevel(logging.DEBUG)
     else:
         LOG.setLevel(logging.INFO)
-    LOG.debug(f"{args}")
 
-    if args.config:
-        cfg.CONF(["--config-file", args.config])
+    LOG.debug(f"{args}")
 
     cfg.CONF.heartbeat_interval = 5
     cfg.CONF.prog = parser.prog
@@ -90,13 +97,12 @@ def main():
 
     transport = oslo_messaging.get_notification_transport(
         cfg.CONF, url=args.url)
-    topics = args.topics or ["notifications"]
-    exchanges = args.exchanges or [None]
+    LOG.debug(f"Messaging url is {transport._driver._url}")
 
     targets = [
         oslo_messaging.Target(exchange=e, topic=t)
-        for t in topics
-        for e in exchanges
+        for t in args.topics
+        for e in args.exchanges
 
     ]
     LOG.debug(f"Messaging targets are {targets}")
@@ -105,16 +111,11 @@ def main():
         NotificationEndpoint(save=args.save)
     ]
 
-    pool = args.pool
-    if args.consume:
-        pool = None
-    LOG.debug(f"pool is {pool}")
     server = oslo_messaging.get_notification_listener(
         transport,
         targets,
         endpoints,
-        executor='threading',
-        pool=pool,
+        pool=args.pool,
     )
 
     LOG.debug("Starting notispy listener...")
@@ -122,11 +123,11 @@ def main():
         server.start()
         LOG.info("Started notispy listener")
         while True:
-            time.sleep(1)
+            time.sleep(0)
     except KeyboardInterrupt:
         LOG.warning("KeyboardInterrput, exiting...")
         pass
-    except Exception:
+    except Exception as e:
         LOG.info("%s" % e)
         sys.exit(200)
     finally:
