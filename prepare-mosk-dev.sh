@@ -13,6 +13,7 @@ $ko role add admin --user superadmin --user-domain Default --domain Default
 $ko role add admin --user superadmin --user-domain Default --system all
 # custom MOSK role
 $ko role add global-secret-decoder --user superadmin --user-domain Default --project admin --project-domain Default
+$ko role add global-secret-decoder --user superadmin --user-domain Default --system all
 
 # sandbox user to use w/o admin priveleges
 $ko user create demo --domain Default --password demo
@@ -22,6 +23,11 @@ $ko role add creator --user demo --user-domain Default --project demo --project-
 # another sandbox user to use w/o admin privileges
 $ko user create alt-demo --domain Default --password alt-demo
 $ko role add member --user alt-demo --user-domain Default --project demo --project-domain Default
+
+# readonly user
+$ko user create viewer --domain Default --password viewer
+$ko role add reader --user viewer --user-domain Default --project demo --project-domain Default
+$ko role add reader --user viewer --user-domain Default --system all
 
 # Minimal flavor for cirros
 $ko flavor create m1.nano --ram 128 --disk 1 --vcpus 1
