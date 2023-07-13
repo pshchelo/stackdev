@@ -3,7 +3,7 @@ ko="kubectl -n openstack exec -ti deploy/keystone-client -c keystone-client -- o
 # Need this role to use Barbican and encrypted storage for instances and volumes
 $ko role create --or-show creator
 # sandbox project to use w/o admin privileges
-$ko project create demo --domain Default
+demo_project=$($ko project create demo --domain Default)
 
 # separate admin user - not auto-rotated, with stable name and password,
 # to be used from outside
@@ -16,7 +16,7 @@ $ko role add global-secret-decoder --user superadmin --user-domain Default --pro
 $ko role add global-secret-decoder --user superadmin --user-domain Default --system all
 
 # sandbox user to use w/o admin priveleges
-$ko user create demo --domain Default --password demo
+demo_user=$($ko user create demo --domain Default --password demo)
 $ko role add member --user demo --user-domain Default --project demo --project-domain Default
 $ko role add creator --user demo --user-domain Default --project demo --project-domain Default
 
@@ -26,17 +26,19 @@ $ko role add member --user alt-demo --user-domain Default --project demo --proje
 
 # readonly user
 $ko user create viewer --domain Default --password viewer
+$ko role add reader --user viewer --user-domain Default --project admin --project-domain Default
 $ko role add reader --user viewer --user-domain Default --project demo --project-domain Default
 $ko role add reader --user viewer --user-domain Default --system all
 
 # Minimal flavor for cirros
 $ko flavor create m1.nano --ram 128 --disk 1 --vcpus 1
 
-# TODO: change to ko calls using 'demo' project id
-# openstack keypair create demo --public-key ~/.ssh/pub/aio_rsa.pub
-# openstack network create demo
-# openstack subnet create demo --network demo --subnet-range 10.20.30.0/24
-# openstack router create demo --external-gateway public
-# openstack router add subnet demo demo
-# openstack security group create demo
-# openstack security group rule create demo --ingress --protocol tcp --dst-port 22 --description SSH
+# TODO: needs testing
+#n_id=$(ko network create demo --project $demo_project -f value -c id)
+#s_id=$($ko subnet create demo --network $n_id --subnet-range 10.20.30.0/24 --project $demo_project -f value -c id)
+#r_id=$($ko router create demo --external-gateway public --project $demo_project -f value -c id)
+#$ko router add subnet $r_id $s_id --project $demo_project
+#$ko security group create demo --project $demo_project
+#$ko security group rule create demo --ingress --protocol tcp --dst-port 22 --description SSH --project $demo_project
+# FIXME how to pass that to container?
+#$ko keypair create demo --public-key ~/.ssh/pub/aio_rsa.pub --user $demo_user
