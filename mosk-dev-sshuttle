@@ -1,15 +1,45 @@
 #!/usr/bin/env bash
 
-# make tunnels for public API network
-# needs /etc/hosts edited, see openstackk8sfqdn.sh script
-# and default configured public network for floating IPs
+# make tunnels for OpenStack public API and default floating IP networks
+# of MOSK dev cluster
 
+HOSTSFILE=/etc/hosts
 CURRENT_CONTEXT=$(kubectl config current-context)
 CONTEXT=${1:-$CURRENT_CONTEXT}
 CLUSTER=$(kubectl config view  -o jsonpath="{.contexts[?(@.name == \"$CONTEXT\")].context.cluster}")
 K8S_IP=$(kubectl config view -o jsonpath="{.clusters[?(@.name == \"$CLUSTER\")].cluster.server}" | awk -F ":" "{print \$2}" | cut -c3-)
+CLUSTER_NETWORK="10.172.1.0/24"
+PUBLIC_NETWORK="10.11.12.0/24"
+SSH_KEY="~/.ssh/aio_rsa"
+SSH_USER="ubuntu"
 
-SSH_ARGS="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aio_rsa -l ubuntu"
-SUBNETS_TO_PASS="10.172.1.0/24 10.11.12.0/24"
+hosts=()
+ingress_lb_ip=$(kubectl --context $CONTEXT -n openstack get svc ingress -ojsonpath='{.status.loadBalancer.ingress[0].ip}' --ignore-not-found)
+if [ -n ${ingress_lb_ip} ]; then
+    for svc in $(kubectl --context $CONTEXT -n openstack get ingress -ojsonpath='{.items[*].spec.rules[*].host}'); do
+        hosts+=("${ingress_lb_ip} ${svc}")
+    done
+fi
 
-sshuttle -e "${SSH_ARGS}" ${SUBNETS_TO_PASS} -r ${K8S_IP}
+keycloak_ip=$(kubectl --context $CONTEXT -n iam get svc openstack-iam-keyclo-http -ojsonpath='{.status.loadBalancer.ingress[0].ip}' --ignore-not-found)
+if [ -n ${keycloak_ip} ]; then
+    keycloak_domain_record=$(kubectl --context $CONTEXT -n coredns get cm coredns-coredns -oyaml | grep keycloak | awk '{print $1}')
+    # keycloak_domain_record has dot (.) in the end since it is a proper DNS record
+    hosts+=("${keycloak_ip} ${keycloak_domain_record%?}")
+fi
+
+sudo -v
+
+echo backing up $HOSTSFILE
+sudo cp $HOSTSFILE $HOSTSFILE.mosk.bak
+
+echo appending to $HOSTSFILE:
+printf "%s\n" "${hosts[@]}" | sudo tee -a $HOSTSFILE
+
+echo sshuttle to ${K8S_IP}, access ${CLUSTER_NETWORK} for k8s cluster network and ${PUBLIC_NETWORK} for OpenStack public network
+SSH_ARGS="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${SSH_KEY} -l ${SSH_USER}"
+
+sshuttle -e "${SSH_ARGS}" ${CLUSTER_NETWORK} ${PUBLIC_NETWORK} -r ${K8S_IP}
+
+echo restoring $HOSTSFILE
+sudo mv $HOSTSFILE.mosk.bak $HOSTSFILE
