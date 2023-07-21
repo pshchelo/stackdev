@@ -54,9 +54,9 @@ if __name__ == "__main__":
         sys.exit(f"Stack {stack_name} not found.")
     servers = get_servers_in_stack(stack)
     if not servers:
-        print("Stack {stack_name} defines no servers")
+        print(f"Stack {stack_name} defines no servers")
         sys.exit(0)
     print(f"{len(servers)} servers consume:")
     consumed = servers_consumption(servers)
-    for k,v in consumed.items():
+    for k, v in consumed.items():
         print(f"{k}: {v['value']} {v['units']}")
