@@ -1,7 +1,21 @@
 #!/usr/bin/env bash
 
 tox_env=$1
-image=${2:-docker-dev-virtual.docker.mirantis.net/mirantis/openstack-ci/openstack-ci-python3-test:focal}
+
+os_release=${2:-antelope}
+default_image_repo=docker-dev-virtual.docker.mirantis.net/mirantis/openstack-ci
+
+case $os_release in
+    'antelope')
+        default_image=openstack-ci-python3-test:jammy;;
+    'yoga'|'xena'|'wallaby'|'victoria')
+        default_image=openstack-ci-python3-test:focal;;
+    *)
+        echo openstack release $os_release is not supported yet
+        exit 1 ;;
+esac
+
+image=${3:-$default_image_repo/$default_image}
 name="mcp-ci-$tox_env"
 
 # This is how it is started on CI, in this example for python-openstackclient
