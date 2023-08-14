@@ -33,7 +33,6 @@ else
     echo no Keycloak seems to be installed
 fi
 
-set -x
 echo discovering network address of IPv4 subnet of OpenStack network named ${OS_PUBLIC_NETWORK_NAME}
 PUBLIC_CIDR=$(kubectl --context $CONTEXT -n openstack exec deploy/keystone-client -c keystone-client -- openstack subnet list --ip-version 4 --network $OS_PUBLIC_NETWORK_NAME -f value -c Subnet)
 
