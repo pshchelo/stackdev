@@ -2,6 +2,7 @@
 
 # make tunnels for OpenStack public API and default floating IP networks
 # of MOSK dev cluster
+sudo -v
 
 HOSTSFILE=/etc/hosts
 CURRENT_CONTEXT=$(kubectl config current-context)
@@ -23,7 +24,8 @@ if [ -n ${ingress_lb_ip} ]; then
     done
 fi
 echo discovering hosts and IP of Keycloak
-# TODO(pas-ha) older IAM chart was using openstack-iam-keyclo-http as service name, account for that
+
+# TODO: older IAM chart was using openstack-iam-keyclo-http as service name, account for that
 keycloak_ip=$(kubectl --context $CONTEXT -n iam get svc openstack-iam-keycloak-http -ojsonpath='{.status.loadBalancer.ingress[0].ip}' --ignore-not-found)
 if [ -n ${keycloak_ip} ]; then
     keycloak_domain_record=$(kubectl --context $CONTEXT -n coredns get cm coredns-coredns -oyaml | grep keycloak | awk '{print $1}')
@@ -36,7 +38,10 @@ fi
 echo discovering network address of IPv4 subnet of OpenStack network named ${OS_PUBLIC_NETWORK_NAME}
 PUBLIC_CIDR=$(kubectl --context $CONTEXT -n openstack exec deploy/keystone-client -c keystone-client -- openstack subnet list --ip-version 4 --network $OS_PUBLIC_NETWORK_NAME -f value -c Subnet)
 
-sudo -v
+if [ $(pgrep -f "sshuttle.*${CLUSTER_CIDR}.*${PUBLIC_CIDR}") ]; then
+    echo another instance of ${0} proxying the same networks ${CLUSTER_CIDR} and ${PUBLIC_CIDR} is running!
+    exit 1
+fi
 
 echo backing up $HOSTSFILE
 sudo cp $HOSTSFILE $HOSTSFILE.mosk.bak
@@ -46,7 +51,6 @@ printf "%s\n" "${hosts[@]}" | sudo tee -a $HOSTSFILE
 
 echo sshuttle to ${K8S_IP}, access ${CLUSTER_CIDR} for k8s cluster network and ${PUBLIC_CIDR} for OpenStack public network
 SSH_ARGS="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${SSH_KEY} -l ${SSH_USER}"
-
 sshuttle -e "${SSH_ARGS}" ${CLUSTER_CIDR} ${PUBLIC_CIDR} -r ${K8S_IP}
 
 echo restoring $HOSTSFILE from backup
