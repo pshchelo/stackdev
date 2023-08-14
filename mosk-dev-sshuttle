@@ -23,7 +23,8 @@ if [ -n ${ingress_lb_ip} ]; then
     done
 fi
 echo discovering hosts and IP of Keycloak
-keycloak_ip=$(kubectl --context $CONTEXT -n iam get svc openstack-iam-keyclo-http -ojsonpath='{.status.loadBalancer.ingress[0].ip}' --ignore-not-found)
+# TODO(pas-ha) older IAM chart was using openstack-iam-keyclo-http as service name, account for that
+keycloak_ip=$(kubectl --context $CONTEXT -n iam get svc openstack-iam-keycloak-http -ojsonpath='{.status.loadBalancer.ingress[0].ip}' --ignore-not-found)
 if [ -n ${keycloak_ip} ]; then
     keycloak_domain_record=$(kubectl --context $CONTEXT -n coredns get cm coredns-coredns -oyaml | grep keycloak | awk '{print $1}')
     # keycloak_domain_record has dot (.) in the end since it is a proper DNS record
@@ -32,7 +33,8 @@ else
     echo no Keycloak seems to be installed
 fi
 
-echo discovering network address of IPv4 subnet of OpenStack network named \"${OS_PUBLIC_NETWORK_NAME}\"
+set -x
+echo discovering network address of IPv4 subnet of OpenStack network named ${OS_PUBLIC_NETWORK_NAME}
 PUBLIC_CIDR=$(kubectl --context $CONTEXT -n openstack exec deploy/keystone-client -c keystone-client -- openstack subnet list --ip-version 4 --network $OS_PUBLIC_NETWORK_NAME -f value -c Subnet)
 
 sudo -v
@@ -48,5 +50,6 @@ SSH_ARGS="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${S
 
 sshuttle -e "${SSH_ARGS}" ${CLUSTER_CIDR} ${PUBLIC_CIDR} -r ${K8S_IP}
 
-echo restoring $HOSTSFILE
+echo restoring $HOSTSFILE from backup
 sudo mv $HOSTSFILE.mosk.bak $HOSTSFILE
+echo $HOSTSFILE is restored
