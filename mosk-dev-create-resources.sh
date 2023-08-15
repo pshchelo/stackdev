@@ -1,3 +1,6 @@
+#!/bin/bash
+# to be run in MOSK's keystone-client pod
+export OS_CLOUD=admin-system
 # Need this role to use Barbican and encrypted storage for instances and volumes
 openstack role create --or-show creator
 # sandbox project to use w/o admin privileges
@@ -28,14 +31,15 @@ openstack role add reader --user viewer --user-domain Default --project admin --
 openstack role add reader --user viewer --user-domain Default --project demo --project-domain Default
 openstack role add reader --user viewer --user-domain Default --system all
 
+export OS_CLOUD=admin
 # Minimal flavor for cirros
 openstack flavor create m1.nano --ram 128 --disk 1 --vcpus 1
-
-# TODO: needs testing
-#n_id=$(openstack network create demo --project $demo_project -f value -c id)
-#s_id=$(openstack subnet create demo --network $n_id --subnet-range 10.20.30.0/24 --project $demo_project -f value -c id)
-#r_id=$(openstack router create demo --external-gateway public --project $demo_project -f value -c id)
-#openstack router add subnet $r_id $s_id --project $demo_project
-#openstack security group create demo --project $demo_project
-#openstack security group rule create demo --ingress --protocol tcp --dst-port 22 --description SSH --project $demo_project
-#openstack keypair create demo --public-key /tmp/pubkey --user $demo_user
+# network, subnet, router, secgroup  for demo project
+n_id=$(openstack network create demo --project $demo_project -f value -c id)
+s_id=$(openstack subnet create demo --network $n_id --subnet-range 10.20.30.0/24 --project $demo_project -f value -c id)
+r_id=$(openstack router create demo --external-gateway public --project $demo_project -f value -c id)
+openstack router add subnet $r_id $s_id --project $demo_project
+openstack security group create demo --project $demo_project
+openstack security group rule create demo --ingress --protocol tcp --dst-port 22 --description SSH --project $demo_project
+# keypair for demo user
+openstack keypair create demo --public-key /tmp/pubkey --user $demo_user
