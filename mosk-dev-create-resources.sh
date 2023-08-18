@@ -34,12 +34,16 @@ openstack role add reader --user viewer --user-domain Default --system all
 export OS_CLOUD=admin
 # Minimal flavor for cirros
 openstack flavor create m1.nano --ram 128 --disk 1 --vcpus 1
-# network, subnet, router, secgroup  for demo project
+# network, subnet, router, secgroup for demo project
 n_id=$(openstack network create demo --project $demo_project -f value -c id)
 s_id=$(openstack subnet create demo --network $n_id --subnet-range 10.20.30.0/24 --project $demo_project -f value -c id)
-r_id=$(openstack router create demo --external-gateway public --project $demo_project -f value -c id)
-openstack router add subnet $r_id $s_id --project $demo_project
+r_id=$(openstack router create demo --project $demo_project -f value -c id)
+openstack router set $r_id --external-gateway public 
+openstack router add subnet $r_id $s_id
 openstack security group create demo --project $demo_project
 openstack security group rule create demo --ingress --protocol tcp --dst-port 22 --description SSH --project $demo_project
 # keypair for demo user
-openstack keypair create demo --public-key /tmp/pubkey --user $demo_user
+if [ -f /tmp/pubkey ]; then
+    openstack keypair create demo --public-key /tmp/pubkey --user $demo_user
+    rm /tmp/pubkey
+fi
