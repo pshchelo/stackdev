@@ -19,12 +19,14 @@ echo discovering hosts and IP of OpenStack APIs
 hosts=()
 ingress_lb_ip=$(kubectl --context $CONTEXT -n openstack get svc ingress -ojsonpath='{.status.loadBalancer.ingress[0].ip}' --ignore-not-found)
 if [ -n ${ingress_lb_ip} ]; then
-    for svc in $(kubectl --context $CONTEXT -n openstack get ingress -ojsonpath='{.items[*].spec.rules[*].host}'); do
-        hosts+=("${ingress_lb_ip} ${svc}")
+    for ns in "openstack" "rook-ceph"; do
+        for svc in $(kubectl --context $CONTEXT -n $ns get ingress -ojsonpath='{.items[*].spec.rules[*].host}'); do
+            hosts+=("${ingress_lb_ip} ${svc}")
+        done
     done
 fi
-echo discovering hosts and IP of Keycloak
 
+echo discovering hosts and IP of Keycloak
 # TODO: older IAM chart was using openstack-iam-keyclo-http as service name, account for that
 keycloak_ip=$(kubectl --context $CONTEXT -n iam get svc openstack-iam-keycloak-http -ojsonpath='{.status.loadBalancer.ingress[0].ip}' --ignore-not-found)
 if [ -n ${keycloak_ip} ]; then
