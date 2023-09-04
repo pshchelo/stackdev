@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+
+function usage {
+    echo "Usage: $(basename $0) [-qh]" 2>&1
+    echo "Diff OpenStackDeployment resource, apply it after confirmation, wait for the OpenStackDeploymentStatus resource to become APPLIED"
+    echo "expects single OpenStackDeployment[Status] resource in the 'openstack' namespace"
+    echo "  -t <INT> polling interval in seconds, defaults to 10"
+    echo "  -q       quiet, do not print visual confirmation of waiting"
+    echo "  -w       wait only, do not diff and apply"
+    echo "  -h       print this message and exit"
+}
+
+POLL_TIMEOUT=10
+QUIET=0
+WAIT_ONLY=0
+
+while getopts ':qwh' arg; do
+    case "${arg}" in
+        w) WAIT_ONLY=1;;
+        q) QUIET=1;;
+        t) POLL_TIMEOUT="${OPTARG}";;
+        h) usage; exit 0;;
+    esac
+done
+
+infile=${1:-osdpl.yaml}
+
+function osdpl_wait {
+    osdplst=$(kubectl -n openstack get osdplst --no-headers | awk '{print $1}')
+    until [ "$(kubectl -n openstack get osdplst $osdplst -ojsonpath='{.status.osdpl.state}')" == "APPLIED" ]; do
+        sleep $POLL_TIMEOUT;
+        if [ $QUIET == 0 ]; then
+            echo -n "."
+        fi
+    done
+}
+
+# TODO: check that the infile is actually osdpl or contains it
+
+if [ $WAIT_ONLY -eq 0 ]; then
+    kubectl diff -f $infile
+    ret=$?
+    if [ $ret -eq  0 ]; then
+        echo No changes!
+        exit 0
+    fi
+    read -p "Are you sure? [Y/n]" -n 1 -r
+    if [[ $REPLY =~ ^[Yy]$ || $REPLY = "" ]]; then
+        kubectl apply -f $infile
+    fi
+fi
+osdpl_wait
