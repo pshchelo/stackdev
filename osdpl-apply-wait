@@ -38,7 +38,7 @@ function osdpl_wait {
 # TODO: check that the infile is actually osdpl or contains it
 
 if [ $WAIT_ONLY -eq 0 ]; then
-    kubectl diff -f $infile
+    KUBECTL_EXTERNAL_DIFF="diff -u -N --color" kubectl diff -f $infile
     ret=$?
     if [ $ret -eq  0 ]; then
         echo No changes!
