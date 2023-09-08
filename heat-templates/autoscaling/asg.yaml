@@ -15,7 +15,7 @@ parameters:
     default: m1.nano
   image:
     type: string
-    default: Cirros-5.1
+    default: Cirros-6.0
   pubnet:
     type: string
     default: public
