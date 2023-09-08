@@ -16,6 +16,12 @@ mkdir -p $resources_dir
 crudini --set $tempest_conf DEFAULT state_path $resources_dir
 
 kubectl -n openstack cp -c tempest-run-tests $tempest_pod:$(crudini --get $tempest_conf scenario img_file) $resources_dir/test.img
-crudini --set $tempest_conf scenario img_file ${PWD}/test.img
+crudini --set $tempest_conf scenario img_file $resources_dir/test.img
 kubectl -n openstack cp -c tempest-run-tests $tempest_pod:$(crudini --get $tempest_conf load_balancer test_server_path) $resources_dir/test_server.bin
-crudini --set $tempest_conf load_balancer test_server_path ${PWD}/test_server.bin
+crudini --set $tempest_conf load_balancer test_server_path $resources_dir/test_server.bin
+
+cat > run-tempest.sh << EOF
+#!/usr/bin/env bash
+tempest run --config-file ./tempest.conf --blacklist-file ./test-blacklist \$@
+EOF
+chmod +x run-tempest.sh
