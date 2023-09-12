@@ -8,7 +8,7 @@ demo_project=$(openstack project create demo --domain Default -f value -c id --o
 
 # separate admin user - not auto-rotated, with stable name and password,
 # to be used from outside
-openstack user create superadmin --domain Default --password superadmin
+openstack user create superadmin --domain Default --password superadmin --or-show
 openstack role add admin --user superadmin --user-domain Default --project admin --project-domain Default
 openstack role add admin --user superadmin --user-domain Default --domain Default
 openstack role add admin --user superadmin --user-domain Default --system all
@@ -22,7 +22,7 @@ openstack role add member --user demo --user-domain Default --project demo --pro
 openstack role add creator --user demo --user-domain Default --project demo --project-domain Default
 
 # another sandbox user to use w/o admin privileges
-openstack user create alt-demo --domain Default --password alt-demo
+openstack user create alt-demo --domain Default --password alt-demo --or-show
 openstack role add member --user alt-demo --user-domain Default --project demo --project-domain Default
 
 # readonly user
@@ -38,10 +38,12 @@ openstack flavor create m1.nano --ram 128 --disk 1 --vcpus 1
 n_id=$(openstack network create demo --project $demo_project -f value -c id)
 s_id=$(openstack subnet create demo --network $n_id --subnet-range 10.20.30.0/24 --project $demo_project -f value -c id)
 r_id=$(openstack router create demo --project $demo_project -f value -c id)
-openstack router set $r_id --external-gateway public 
+openstack router set $r_id --external-gateway public
 openstack router add subnet $r_id $s_id
 openstack security group create demo --project $demo_project
+openstack security group rule create demo --ingress --protocol icmp --description PING --project $demo_project
 openstack security group rule create demo --ingress --protocol tcp --dst-port 22 --description SSH --project $demo_project
+openstack security group rule create demo --ingress --protocol tcp --dst-port 80 --description HTPP --project $demo_project
 # keypair for demo user
 if [ -f /tmp/pubkey ]; then
     openstack keypair create demo --public-key /tmp/pubkey --user $demo_user
