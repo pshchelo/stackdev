@@ -1,5 +1,6 @@
 #!/bin/bash
 # to be run in MOSK's keystone-client pod
+set -x
 export OS_CLOUD=admin-system
 # Need this role to use Barbican and encrypted storage for instances and volumes
 openstack role create --or-show creator
