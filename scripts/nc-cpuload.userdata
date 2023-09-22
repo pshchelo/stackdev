@@ -1,63 +1,61 @@
+#!/bin/sh -x
+ncport=${NC_PORT:-80}
+cat > /bin/cpuload << EOF
 #! /bin/sh
 PID_FILE=/tmp/cpuload.pid
-HOSTNAME=$(hostname)
-
+HOSTNAME=\$(hostname)
 set_status() {
-    if [ -f "$PID_FILE" ]; then
+    if [ -f "\$PID_FILE" ]; then
         inprogress=true
     else
         inprogress=false
     fi
 }
-
 print_status() {
-    local _load_on=$1
-    if $_load_on; then
-        echo "${HOSTNAME} - CPU load in progress"
-    else
-        echo "${HOSTNAME} - CPU load is not running"
+    local _load_on=\$1
+    if \$_load_on; then
+        echo "\${HOSTNAME} - CPU load in progress"
+     else
+        echo "\${HOSTNAME} - CPU load is not running"
     fi
 }
-
 cpu_load() {
     set_status
-    if $inprogress; then
-        print_status $inprogress
+    if \$inprogress; then
+        print_status \$inprogress
         exit 1
     else
-        NUM_CPU=$(grep -c ^processor /proc/cpuinfo 2>/dev/null || sysctl -n hw.ncpu)
-        echo "${HOSTNAME} - Starting CPU load"
-        for in in $( seq $NUM_CPU ); do
+        NUM_CPU=\$(grep -c ^processor /proc/cpuinfo 2>/dev/null || sysctl -n hw.ncpu)
+        echo "\${HOSTNAME} - Starting CPU load"
+        for in in \$( seq \$NUM_CPU ); do
             cat /dev/urandom >> /dev/null 2>&1 &
-            echo $! >> $PID_FILE
+            echo \$! >> \$PID_FILE
         done
         exit 0
     fi
 }
-
 cpu_release() {
     set_status
-    if $inprogress; then
-        echo "${HOSTNAME} - Releasing CPU load"
-        cat $PID_FILE | xargs kill
-        rm -f $PID_FILE
+    if \$inprogress; then
+        echo "\${HOSTNAME} - Releasing CPU load"
+        cat \$PID_FILE | xargs kill
+        rm -f \$PID_FILE
         exit 0
     else
-        print_status $inprogress
+        print_status \$inprogress
         exit 1
     fi
 }
-
-case $1 in
+case \$1 in
     -s | --status)
         set_status
-        print_status $inprogress
+        print_status \$inprogress
     ;;
     -r | --release)
         cpu_release
     ;;
     -i | --identify)
-        echo ${HOSTNAME}
+        echo \${HOSTNAME}
     ;;
     -h | --help)
         echo "cpuload [-r,--release|-i,--identify|-s,--status|-h,--help]"
@@ -74,3 +72,7 @@ case $1 in
         cpu_load
     ;;
 esac
+EOF
+chmod 777 /bin/cpuload
+body=$(hostname)
+start-stop-daemon -S -bmp /var/run/simpleweb.pid -x nc -- -lk -p $ncport -e sh -c "echo -e \"HTTP/1.1 200 OK\r\nContent-Length: ${#body}\r\n\r\n${body}\""
