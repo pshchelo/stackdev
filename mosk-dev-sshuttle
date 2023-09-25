@@ -40,6 +40,14 @@ else
     echo no Keycloak seems to be installed
 fi
 
+echo discovering StackLight services
+prometheus_ip=$(kubectl --context $CONTEXT -n stacklight get svc prometheus-server -ojsonpath='{.status.loadBalancer.ingress[0].ip}' --ignore-not-found)
+if [[ -n ${prometheus_ip} ]]; then
+    hosts+=("$prometheus_ip prometheus-server.stacklight")
+else
+    echo no StackLight seems to be installed
+fi
+
 echo discovering network address of IPv4 subnet of OpenStack network named ${OS_PUBLIC_NETWORK_NAME}
 PUBLIC_CIDR=$(kubectl --context $CONTEXT -n openstack exec deploy/keystone-client -c keystone-client -- openstack subnet list --ip-version 4 --network $OS_PUBLIC_NETWORK_NAME -f value -c Subnet)
 
