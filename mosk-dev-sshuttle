@@ -19,7 +19,13 @@ ingress_lb_ip=$(kubectl --context $CONTEXT -n openstack get svc ingress -ojsonpa
 if [[ -n ${ingress_lb_ip} ]]; then
     for ns in "openstack" "rook-ceph"; do
         for svc in $(kubectl --context $CONTEXT -n $ns get ingress -ojsonpath='{.items[*].spec.rules[*].host}'); do
-            hosts+=("${ingress_lb_ip} ${svc}")
+            if grep ${svc} /etc/hosts > /dev/null; then
+                echo "ERROR: entry for ${svc} is already in /etc/hosts file."
+                echo "File was not properly restored from backup or parallel $(basename $0) session is running."
+                exit 1
+            else
+                hosts+=("${ingress_lb_ip} ${svc}")
+            fi
         done
     done
 fi
