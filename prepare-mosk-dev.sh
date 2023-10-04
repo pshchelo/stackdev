@@ -7,9 +7,9 @@ pod=$(kubectl -n openstack get pod -l application=keystone,component=client -ojs
 kubectl -n openstack exec -ti $pod -c keystone-client -- openstack --os-cloud admin-system user create superadmin --domain Default --password superadmin --or-show
 kubectl -n openstack exec -ti $pod -c keystone-client -- openstack --os-cloud admin-system role add admin --user superadmin --user-domain Default --project admin --project-domain Default
 kubectl -n openstack exec -ti $pod -c keystone-client -- openstack --os-cloud admin-system role add admin --user superadmin --user-domain Default --domain Default
-osc_version=$(kubectl -n openstack exec -ti $pod -c keystone-client -- openstack --version | awk '{print $2}' | awk -F '.' '{print$1$2}')
+osc_version=$(kubectl -n openstack exec $pod -c keystone-client -- openstack --version | awk '{print $2}')
 # openstackclient supports assigning system roles since version 3.16.0/Rocky
-if (( $osc_version >= 316 )); then
+if $(echo -e "3.16.0\n$osc_version" | sort -V -C) ; then
     kubectl -n openstack exec -ti $pod -c keystone-client -- openstack --os-cloud admin-system role add admin --user superadmin --user-domain Default --system all
 fi
 
@@ -31,7 +31,7 @@ openstack --os-cloud mosk-dev-admin role add creator --user demo --user-domain D
 openstack --os-cloud mosk-dev-admin user create alt-demo --domain Default --password alt-demo --or-show
 openstack --os-cloud mosk-dev-admin role add member --user alt-demo --user-domain Default --project demo --project-domain Default
 # readonly user - reader role is present since Rocky
-if (( $osc_version >= 316 )); then
+if $(echo -e "3.16.0\n$osc_version" | sort -V -C) ; then
     openstack --os-cloud mosk-dev-admin user create viewer --domain Default --password viewer
     openstack --os-cloud mosk-dev-admin role add reader --user viewer --user-domain Default --project admin --project-domain Default
     openstack --os-cloud mosk-dev-admin role add reader --user viewer --user-domain Default --project demo --project-domain Default
