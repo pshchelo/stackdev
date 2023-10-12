@@ -8,10 +8,14 @@ CONTEXT=${1:-$CURRENT_CONTEXT}
 CLUSTER=$(kubectl config view  -o jsonpath="{.contexts[?(@.name == \"$CONTEXT\")].context.cluster}")
 K8S_IP=$(kubectl config view -o jsonpath="{.clusters[?(@.name == \"$CLUSTER\")].cluster.server}" | awk -F ":" "{print \$2}" | cut -c3-)
 OS_PUBLIC_NETWORK_NAME="public"
-# TODO: discover this cidr somehow
-CLUSTER_CIDR="10.172.1.0/24"
 SSH_KEY="~/.ssh/aio_rsa"
 SSH_USER="ubuntu"
+
+echo discoverung openstack services cluserIP range
+cluster_ip_range=$(kubectl -n metallb get ipaddresspools openstack-default -ojsonpath='{.spec.addresses[0]}')
+# TODO: the range may not specifically translate to single CIDR (e.g. default is ...100-...255)
+# proxy specific discovered hosts only? 
+CLUSTER_CIDR="$(echo $cluster_ip_range | awk -F '-' '{print $1}')/24"
 
 echo discovering hosts and IP of OpenStack APIs
 hosts=()
