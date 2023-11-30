@@ -2,7 +2,7 @@
 # generate clouds.yaml with admin account for the test MOS env
 clouds_yaml=$(kubectl -n openstack get secret keystone-os-clouds -ojsonpath='{.data.clouds\.yaml}' | base64 -d)
 echo "clouds:
-  mosk-dev-admin:
+  admin:
     auth:
       auth_url: https://keystone.it.just.works
       username: $(echo  "$clouds_yaml" | yq -r .clouds.admin.auth.username)
