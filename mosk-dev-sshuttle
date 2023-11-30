@@ -8,11 +8,22 @@ CONTEXT=${1:-$CURRENT_CONTEXT}
 CLUSTER=$(kubectl config view  -o jsonpath="{.contexts[?(@.name == \"$CONTEXT\")].context.cluster}")
 K8S_IP=$(kubectl config view -o jsonpath="{.clusters[?(@.name == \"$CLUSTER\")].cluster.server}" | awk -F ":" "{print \$2}" | cut -c3-)
 OS_PUBLIC_NETWORK_NAME="public"
+# defaults for virtual labs
 SSH_KEY="${HOME}/.ssh/aio_rsa"
 SSH_USER="ubuntu"
 
 echo -n "discoverung openstack services cluserIP range... "
-cluster_ip_range=$(kubectl -n metallb get ipaddresspools openstack-default -ojsonpath='{.spec.addresses[0]}')
+# virtual labs have 'metallb' ns, phys labs have 'metallb-system' ns
+metallb_ns=$(kubectl get ns -ocustom-columns=NAME:metadata.name | grep ^metal)
+# virtual labs have 'openstack-default' pool, phys labs have 'default' pool
+ippool=$(kubectl -n "$metallb_ns" get ipaddresspools -ocustom-columns=NAME:metadata.name | grep default)
+
+if [ "$ippool" = "default" ]; then
+    SSH_KEY="./ssh_key"
+    SSH_USER="mcc-user"
+fi
+
+cluster_ip_range=$(kubectl -n "$metallb_ns" get ipaddresspools "$ippool" -ojsonpath='{.spec.addresses[0]}')
 # TODO: the range may not specifically translate to single CIDR (e.g. default is ...100-...255)
 # proxy specific discovered hosts only? 
 CLUSTER_CIDR="$(echo $cluster_ip_range | awk -F '-' '{print $1}')/24"
@@ -69,7 +80,7 @@ if [ $(pgrep -f "sshuttle.*${CLUSTER_CIDR}.*${PUBLIC_CIDR}") ]; then
     exit 1
 fi
 
-echo -n "backing up $HOSTSFILE... "
+echo "backing up $HOSTSFILE... "
 sudo cp $HOSTSFILE $HOSTSFILE.mosk.bak
 echo "OK"
 
@@ -83,6 +94,6 @@ SSH_ARGS="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ${S
 sshuttle -e "${SSH_ARGS}" ${CLUSTER_CIDR} ${PUBLIC_CIDR} -r ${K8S_IP}
 
 # TODO: make restoring hosts file an exit trap
-echo -n "restoring $HOSTSFILE from backup... "
+echo "restoring $HOSTSFILE from backup... "
 sudo mv $HOSTSFILE.mosk.bak $HOSTSFILE
 echo "OK"
