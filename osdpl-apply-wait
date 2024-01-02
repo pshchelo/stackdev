@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
+set -x
 
 function usage {
-    echo "Usage: $(basename "$0") [-qh]" 2>&1
-    echo "Diff OpenStackDeployment resource, apply it after confirmation, wait for the OpenStackDeploymentStatus resource to become APPLIED"
-    echo "expects single OpenStackDeployment[Status] resource in the 'openstack' namespace"
+    echo "Usage: $(basename "$0") [-qhwrt N] [inputfile]" 2>&1
+    echo "Diff OpenStackDeployment resource, apply it after confirmation, wait for the OpenStackDeploymentStatus resource to become APPLIED."
+    echo "Expects a single OpenStackDeployment[Status] resource in the 'openstack' namespace"
     echo "  -t <INT> polling interval in seconds, defaults to 10"
     echo "  -q       quiet, do not print visual confirmation of waiting"
     echo "  -w       wait only, do not diff and apply"
@@ -27,7 +28,10 @@ while getopts ':qwhtr' arg; do
     esac
 done
 
-infile=${1:-osdpl.yaml}
+infile=${*:$OPTIND:1}
+if [ -z "$infile" ]; then
+    infile=osdpl.yaml
+fi
 
 function osdpl_wait_applied {
     osdplst=$(kubectl -n openstack get osdplst --no-headers | awk '{print $1}')
