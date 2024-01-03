@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-set -x
 
 function usage {
     echo "Usage: $(basename "$0") [-qhwrt N] [inputfile]" 2>&1
@@ -69,6 +68,10 @@ if [ "$WAIT_ONLY" -eq 0 ]; then
     if [[ $REPLY =~ ^[Yy]$ || $REPLY = "" ]]; then
         kubectl apply -f "$infile"
         sleep 3
+    else
+        echo
+        echo "Aborting"
+        exit 0
     fi
 fi
 osdpl_wait_applied
