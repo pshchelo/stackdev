@@ -8,6 +8,12 @@ import logging
 import openstack
 parser = argparse.ArgumentParser()
 parser.add_argument("-v", "--verbose", action="store_true")
+parser.add_argument(
+    "--count-bfv",
+    action="store_true",
+    help=("do count disk of boot from volume instances toward allocations, "
+          "needed for older OpenStack releases / MCP"),
+)
 args = parser.parse_args()
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -64,9 +70,8 @@ for server in cloud.compute.servers(all_projects=True):
             server.flavor.swap +
             server.flavor.ephemeral
         )
-        # TODO: auto account for OpenStack version, in older ones
-        # the boot from volume still includes root disk to placement allocation
-        if server.image.id is not None:
+        # TODO: auto account for OpenStack version so no flag is required
+        if server.image.id is not None or args.count_bfv is True:
             expected_alloc_disk += server.flavor.disk
         if alloc_disk != expected_alloc_disk:
             msg = (f"DISK_GB: "
