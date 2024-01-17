@@ -2,14 +2,19 @@
 """
 Compare servers in nova with consumers in placement and find discrepancies
 """
+import argparse
 import json
 import logging
 import openstack
+parser = argparse.ArgumentParser()
+parser.add_argument("-v", "--verbose", action="store_true")
+args = parser.parse_args()
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 LOG = logging.getLogger("servers-vs-consumers")
-LOG.setLevel(logging.DEBUG)
+if args.verbose:
+    LOG.setLevel(logging.DEBUG)
 cloud = openstack.connect()
 fails = []
 for server in cloud.compute.servers(all_projects=True):
@@ -27,29 +32,45 @@ for server in cloud.compute.servers(all_projects=True):
         continue
     for rp_id, alloc in allocations.items():
         rp = cloud.placement.get_resource_provider(rp_id)
-        if rp.name != server.hypervisor_hostname:
+        alloc_vcpu = alloc["resources"].get("VCPU", 0)
+        alloc_mem = alloc["resources"].get("MEMORY_MB", 0)
+        alloc_disk = alloc["resources"].get("DISK_GB", 0)
+        if alloc_vcpu + alloc_mem + alloc_disk == 0:
+            LOG.debug(f"server {server.id} appears to be baremetal one as "
+                      f"it does not allocate neither cpu, nor ram, nor disk.")
+            continue
+        if server.hypervisor_hostname is None:
+            msg = (f"has status {server.status}, is not assigned to host in "
+                   f"nova, but is on {rp.name} in placement")
+            LOG.warning(f"Server {server.id} {msg}")
+            fails.append({"server_id": server.id, "reason": msg})
+        elif rp.name != server.hypervisor_hostname:
             msg = (f"is on {server.hypervisor_hostname} in nova "
                    f"but on {rp.name} in placement")
             LOG.warning(f"Server {server.id} {msg}")
             fails.append({"server_id": server.id, "reason": msg})
-        alloc_vcpu = alloc["resources"].get("VCPU", 0)
         if alloc_vcpu != server.flavor.vcpus:
             msg = (f"VCPU: flavor={server.flavor.vcpus}, "
                    f"placement={alloc_vcpu}")
             LOG.warning(f"Server {server.id} {msg}")
             fails.append({"server_id": server.id, "reason": msg})
-        alloc_mem = alloc["resources"].get("MEMORY_MB", 0)
         if alloc_mem != server.flavor.ram:
             msg = (f"MEMORY_MB: flavor={server.flavor.ram}, "
                    f"placement={alloc_mem}")
             LOG.warning(f"Server {server.id} {msg}")
             fails.append({"server_id": server.id, "reason": msg})
-        alloc_disk = alloc["resources"].get("DISK_GB", 0)
-        if alloc_disk != (server.flavor.disk + server.flavor.swap +
-                          server.flavor.ephemeral):
+
+        expected_alloc_disk = (
+            server.flavor.swap +
+            server.flavor.ephemeral
+        )
+        # TODO: auto account for OpenStack version, in older ones
+        # the boot from volume still includes root disk to placement allocation
+        if server.image.id is not None:
+            expected_alloc_disk += server.flavor.disk
+        if alloc_disk != expected_alloc_disk:
             msg = (f"DISK_GB: "
-                   f"flavor={server.flavor.disk}d+{server.flavor.swap}s+"
-                   f"{server.flavor.ephemeral}e, "
+                   f"flavor={expected_alloc_disk}, "
                    f"placement={alloc_disk}t")
             LOG.warning(f"Server {server.id} {msg}")
             fails.append({"server_id": server.id, "reason": msg})
