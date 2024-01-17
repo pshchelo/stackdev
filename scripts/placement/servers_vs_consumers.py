@@ -2,6 +2,7 @@
 """
 Compare servers in nova with consumers in placement and find discrepancies
 """
+import json
 import logging
 import openstack
 logging.basicConfig(
@@ -53,4 +54,4 @@ for server in cloud.compute.servers(all_projects=True):
             LOG.warning(f"Server {server.id} {msg}")
             fails.append({"server_id": server.id, "reason": msg})
 if fails:
-    print(fails)
+    print(json.dumps(fails, indent=4))
