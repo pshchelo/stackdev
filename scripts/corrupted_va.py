@@ -23,7 +23,10 @@ try:
 except ImportError:
     kube_api = None
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
 LOG = logging.getLogger("corrupted-va")
 
 cloud = openstack.connect()
@@ -121,36 +124,48 @@ def compare_disks_nova_libvirt(server):
     }
     if disk_info != nova_data:
         LOG.error("nova and libvirt disagree on attached volumes")
-        LOG.error("libvirt {}".format(disk_info))
-        LOG.error("nova    {}".format(nova_data))
+        LOG.error("libvirt %s", disk_info)
+        LOG.error("nova    %s", nova_data)
 
 
 def compare_volumes_nova_cinder(server):
     for nova_va in nova.volume_attachments(server):
         volume = cinder.find_volume(
                 name_or_id=nova_va.volume_id, all_projects=True)
+        if volume is None:
+            LOG.error(
+                "Server %(server_id)s in Nova is attached to "
+                "non-existing volume %(volume_id)s",
+                dict(server_id=server.id, volume_id=nova_va.volume_id)
+            )
+            continue
         for cinder_va in volume.attachments:
             if cinder_va["server_id"] == server.id:
                 if cinder_va["device"] != nova_va.device:
                     LOG.error(
-                        "server {server_id} and volume {volume_id} "
-                        "disagree on device the volume is attached".format(
-                            server_id=server.id, volume_id=volume.id)
+                        "Server %(server_id)s and volume %(volume_id)s "
+                        "disagree on device the volume is attached",
+                        dict(server_id=server.id, volume_id=volume.id)
                     )
                 break
         else:
             LOG.error(
-                "nova server {server_id} is attached to "
-                "volume {volume_id} in Nova but not in Cinder".format(
-                    server_id=server.id, volume_id=volume.id
-                )
+                "Server %(server_id)s is attached to "
+                "volume %(volume_id)s in Nova but not in Cinder",
+                dict(server_id=server.id, volume_id=volume.id)
             )
 
 
 def process_server(server):
-    LOG.info("checking server {}".format(server.id))
+    LOG.info("checking server %s", server.id)
     compare_volumes_nova_cinder(server)
 
+    if server.status != "ACTIVE":
+        LOG.warning(
+            "Server %s has volume attachments in Nova, but is not ACTIVE, "
+            "skipping nova/libvirt comparison",
+            server.id)
+        return
     if is_mosk():
         compare_disks_nova_libvirt(server)
     else:
@@ -159,5 +174,5 @@ def process_server(server):
 
 if __name__ == "__main__":
     for server in nova.servers(all_projects=True):
-        if server.attached_volumes and server.status == "ACTIVE":
+        if server.attached_volumes:
             process_server(server)
