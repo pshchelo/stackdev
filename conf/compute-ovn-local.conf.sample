@@ -1,0 +1,61 @@
+[[local|localrc]]
+HOST_IP="192.168.100.188"
+SERVICE_HOST="192.168.100.57"
+SERVICE_PASSWORD=service
+#GLANCE_HOSTPORT="192.168.100.57:9292"
+SERVICE_TIMEOUT=180
+
+DATABASE_HOST=$SERVICE_HOST
+DATABASE_TYPE="mysql"
+MYSQL_PASSWORD=mysql
+DATABASE_PASSWORD=mysql
+
+RABBIT_HOST=$SERVICE_HOST
+RABBIT_PASSWORD=rabbit
+
+ADMIN_PASSWORD=admin
+
+RECLONE=yes
+PIP_UPGRADE=True
+#USE_PYTHON3="True"
+#VERBOSE="True"
+#LIBS_FROM_GIT=cinder,devstack,glance,keystone,neutron,nova,placement,requirements,swift,tempest
+LIBS_FROM_GIT=python-openstackclient
+
+Q_HOST=$SERVICE_HOST
+#NETWORK_GATEWAY="10.1.0.1"
+#PUBLIC_NETWORK_GATEWAY="172.24.5.1"
+#IPV4_ADDRS_SAFE_TO_USE="10.1.0.0/20"
+#FIXED_RANGE="10.1.0.0/20"
+#FLOATING_RANGE="172.24.5.0/24"
+
+disable_all_services
+
+#enable_service br-ex-tcpdump
+#enable_service br-int-flows
+
+#disable_service dstat
+#disable_service file_tracker
+#disable memory_tracker
+MYSQL_GATHER_PERFORMANCE=False
+
+enable_service c-vol
+
+enable_service n-cpu
+#LIBVIRT_TYPE="qemu"
+#NOVA_VNC_ENABLED="True"
+#NOVNC_FROM_PACKAGE="True"
+enable_service placement-client
+
+enable_plugin neutron https://opendev.org/openstack/neutron
+enable_service ovn-controller
+enable_service ovs-vswitchd
+enable_service ovsdb-server
+enable_service q-ovn-metadata-agent
+enable_service tls-proxy
+ENABLE_CHASSIS_AS_GW="False"
+#PUBLIC_BRIDGE_MTU="1430"
+
+#[[post-config|$NEUTRON_CONF]]
+#[DEFAULT]
+#global_physnet_mtu = 1430
