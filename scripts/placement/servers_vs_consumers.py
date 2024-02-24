@@ -8,12 +8,6 @@ import logging
 import openstack
 parser = argparse.ArgumentParser()
 parser.add_argument("-v", "--verbose", action="store_true")
-parser.add_argument(
-    "--count-bfv",
-    action="store_true",
-    help=("do count disk of boot from volume instances toward allocations, "
-          "needed for older OpenStack releases / MCP"),
-)
 args = parser.parse_args()
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -22,6 +16,19 @@ LOG = logging.getLogger("servers-vs-consumers")
 if args.verbose:
     LOG.setLevel(logging.DEBUG)
 cloud = openstack.connect()
+
+compute_api_version = [
+    v["max_microversion"] for v in cloud.compute.get_all_version_data()[
+        cloud.compute.region_name
+    ]['public']['compute']
+    if v['status'] == 'CURRENT'
+][0].split(".")
+
+# For Queens (2.60) and older, count BFV disk root to placement too
+# TODO: verify that Queens is enough
+# for sure needed for Queens and not needed for Yoga+
+count_disk_for_bfv = compute_api_version <= ["2", "60"]
+
 fails = []
 for server in cloud.compute.servers(all_projects=True):
     LOG.debug(f"Checking server {server.id}")
@@ -29,10 +36,18 @@ for server in cloud.compute.servers(all_projects=True):
         f"/allocations/{server.id}").json()["allocations"]
     if not allocations:
         # server might've been deleted already, find it again
-        if cloud.compute.find_server(
+        server = cloud.compute.find_server(
             server.id, all_projects=True, ignore_missing=True
-        ):
-            msg = f"has status {server.status} and no allocations in placement"
+        )
+        # ignore servers that are not assigned a compute,
+        # it is ok for them not to have allocations
+        # (like failed to schedule)
+        if server and server.compute_host:
+            msg = (
+                f"has status {server.status} "
+                f"and host {server.compute_host} "
+                f"but no allocations in placement"
+            )
             LOG.warning(f"Server {server.id} {msg}")
             fails.append({"server_id": server.id, "reason": msg})
         continue
@@ -70,13 +85,12 @@ for server in cloud.compute.servers(all_projects=True):
             server.flavor.swap +
             server.flavor.ephemeral
         )
-        # TODO: auto account for OpenStack version so no flag is required
-        if server.image.id is not None or args.count_bfv is True:
+        if server.image.id is not None or count_disk_for_bfv is True:
             expected_alloc_disk += server.flavor.disk
         if alloc_disk != expected_alloc_disk:
             msg = (f"DISK_GB: "
                    f"flavor={expected_alloc_disk}, "
-                   f"placement={alloc_disk}t")
+                   f"placement={alloc_disk}")
             LOG.warning(f"Server {server.id} {msg}")
             fails.append({"server_id": server.id, "reason": msg})
 if fails:
