@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# TODO: add toggle to NOT do sshuttle, and only edit /etc/hosts as needed
+# our phys hw labs have both API and FIP nets on internal network, so no need
+# to tunnel
 
 # make tunnels for OpenStack public API and default floating IP networks
 # of MOSK dev cluster
