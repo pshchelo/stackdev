@@ -66,12 +66,16 @@ else
 fi
 
 echo -n "discovering StackLight services... "
-prometheus_ip=$(kubectl --context "$CONTEXT" -n stacklight get svc prometheus-server -ojsonpath='{.status.loadBalancer.ingress[0].ip}' --ignore-not-found)
-if [[ -n ${prometheus_ip} ]]; then
-    hosts+=("$prometheus_ip prometheus-server.stacklight")
+grafana_ip=$(kubectl --context "$CONTEXT" -n stacklight get svc grafana -ojsonpath='{.status.loadBalancer.ingress[0].ip}' --ignore-not-found)
+if [[ -n ${grafana_ip} ]]; then
+    hosts+=("$grafana_ip grafana.stacklight")
     echo "OK"
 else
     echo "NO"
+fi
+prometheus_ip=$(kubectl --context "$CONTEXT" -n stacklight get svc prometheus-server -ojsonpath='{.status.loadBalancer.ingress[0].ip}' --ignore-not-found)
+if [[ -n ${prometheus_ip} ]]; then
+    hosts+=("$prometheus_ip prometheus-server.stacklight")
 fi
 
 echo -n "discovering network address of IPv4 subnet of OpenStack network named ${OS_PUBLIC_NETWORK_NAME}... "
