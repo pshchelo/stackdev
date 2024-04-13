@@ -5,6 +5,10 @@
 
 # make tunnels for OpenStack public API and default floating IP networks
 # of MOSK dev cluster
+
+# pre-auth sudo right away
+sudo -v
+
 HOSTSFILE=/etc/hosts
 CURRENT_CONTEXT=$(kubectl config current-context)
 CONTEXT=${1:-$CURRENT_CONTEXT}
