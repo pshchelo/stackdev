@@ -3,6 +3,7 @@ import openstack
 
 cloud = openstack.connect()
 
+
 def get_servers_in_stacks():
     heat = cloud.orchestration
     servers_in_stacks = []
@@ -21,8 +22,7 @@ def get_solitary_servers():
     servers_in_stacks = get_servers_in_stacks()
     return [s for s in nova.servers() if s.id not in servers_in_stacks]
 
+
 if __name__ == "__main__":
-    for server in get_solitary_servers():
-        print(server.id, server.name)
-
-
+    for server in sorted(get_solitary_servers(), key=lambda x: x.created_at):
+        print(server.id, server.created_at, server.status, server.name)
