@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+server=$1
+username=${2:-cirros}
+openstack server ssh --public "$server" -- -i ~/.ssh/aio_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -l "$username"
