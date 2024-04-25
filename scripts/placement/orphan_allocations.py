@@ -11,10 +11,11 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-v", "--verbose", action="store_true")
 parser.add_argument("-d", "--delete", action="store_true")
 args = parser.parse_args()
-logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    level=logging.DEBUG if args.verbose else logging.INFO
+)
 LOG = logging.getLogger("orphan-allocations")
-if args.verbose:
-    LOG.setLevel(logging.DEBUG)
 cloud = openstack.connect()
 orphans = []
 for rp in sorted(cloud.placement.resource_providers(), key=lambda x: x.name):
@@ -37,14 +38,12 @@ for rp in sorted(cloud.placement.resource_providers(), key=lambda x: x.name):
             if args.delete:
                 resp = cloud.placement.delete(f"/allocations/{consumer}")
                 if resp.status_code not in (204, 404):
-                    LOG.warning(
+                    LOG.error(
                         f"Failed to delete allocations for consumer {consumer}"
                     )
                     orphans.pop(-1)
                 else:
                     LOG.info(f"Deleted allocations for consumer {consumer}")
-if orphans:
-    if args.delete:
-        print("deleted {len(orphans)} orphan allocations")
-    else:
-        print(json.dumps({"orphans": orphans}, indent=4))
+if orphans and args.delete:
+    LOG.info(f"deleted {len(orphans)} orphan allocations")
+print(json.dumps({"orphan_allocations": orphans}, indent=4))
