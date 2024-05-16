@@ -16,7 +16,7 @@ QUIET=0
 WAIT_ONLY=0
 WAIT_READY=0
 
-while getopts ':qwhtr' arg; do
+while getopts ':qwht:r' arg; do
     case "${arg}" in
         w) WAIT_ONLY=1;;
         q) QUIET=1;;
