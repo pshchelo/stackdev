@@ -18,8 +18,9 @@ The custom steps to configure the devstack deployment of extra compute node
 are:
 
 0. Deploy the controller node first.
-1. In the local.conf, set the `SERVICE_HOST` to address of the controller node,
-   where the compute can access rmq, mysql and other services.
+1. In the local.conf of the compute node, set the `SERVICE_HOST`
+   to address of the controller node, where the compute can access
+   rmq, mysql and other services.
    This is most probably the IP or hostname you see in the public endpoints
    of the keystone catalog when accessing it from the controller node.
 2. Setup mutual SSH access. Controller and compute must be able to ssh to each
@@ -28,5 +29,5 @@ are:
    ```
    scp -r /opt/stack/data/CA /opt/stack/data/*.pem <address of compute node>:/opt/stack/data
    ```
-4. Run stack.sh as usual.
-5. On the controller nodes, run `tools/discover_hosts.sh`.
+4. Run stack.sh on the compute node as usual.
+5. On the controller node, run `tools/discover_hosts.sh`.
