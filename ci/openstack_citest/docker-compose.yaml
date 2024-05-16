@@ -1,0 +1,22 @@
+version: "3.1"
+
+services:
+  mysql:
+    container_name: openstack_citest-mysql
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: insecure_slave
+      DB_USER: openstack_citest
+      DB_PW: openstack_citest
+      TEST_DB: openstack_citest
+    ports:
+    - "3306:3306"
+    healthcheck:
+     test: mysqladmin ping -h 127.0.0.1 -u $$DB_USER --password=$$DB_PW
+     start_period: 5s
+     interval: 5s
+     timeout: 5s
+     retries: 55
+    volumes:
+    - "./openstack_citest-mysql.sh:/docker-entrypoint-initdb.d/openstack_citest.sh"
