@@ -1,23 +1,37 @@
 #!/usr/bin/env bash
 
-tox_env=$1
+image_repo="docker-dev-virtual.docker.mirantis.net"
+image_path="mirantis/openstack-ci/openstack-ci-python3-test"
+image_tag="jammy" 
 
-os_release=${2:-antelope}
-default_image_repo=docker-dev-virtual.docker.mirantis.net/mirantis/openstack-ci
+function get_help {
+    local script_name
+    script_name=$(basename "$0")
+    echo "Usage: $script_name TOX_ENV [-r <docker repo url>] [-i <docker image path>] [-t <docker image tag>] [-h]"
+    echo "defaults are:"
+    echo "<docker repo url> $image_repo"
+    echo "<docker image path> $image_path"
+    echo "<docker image tag> $image_tag"
+}
 
-case $os_release in
-    'yoga'|'antelope')
-        default_image=openstack-ci-python3-test:jammy;;
-    'xena'|'wallaby'|'victoria')
-        default_image=openstack-ci-python3-test:focal;;
-    *)
-        echo openstack release "$os_release" is not supported yet
-        exit 1 ;;
-esac
+while getopts ':r:i:t:h' arg; do
+    case "${arg}" in
+        r) image_repo="${OPTARG}" ;;
+        i) image_path="${OPTARG}" ;;
+        t) image_tag="${OPTARG}" ;;
+        h) get_help ;;
+        ?) get_help; exit 1 ;;
+    esac
+done
 
-image=${3:-$default_image_repo/$default_image}
+tox_env=${*:$OPTIND:1}
+if [ -z "$tox_env" ]; then
+    get_help
+    exit 1
+fi
+
 name="mcp-ci-$tox_env"
-
+image="$image_repo/$image_path:$image_tag"
 # This is how it is started on CI, in this example for python-openstackclient
 # workspace dir has both 'python-openstackclient' and 'requirements' dirs
 #docker run -d -t --group-add jenkins --group-add 1001 -e LC_ALL=en_US.UTF-8 -e TOX_ENV=py38 -e VIRTUALENV_VER= -e WORKSPACE=/var/lib/jenkins/workspace/yoga-openstack-test-py38-focal -w /var/lib/jenkins/workspace/yoga-openstack-test-py38-focal/python-openstackclient -v /var/run/docker.sock:/var/run/docker.sock -v /var/lib/jenkins/workspace/yoga-openstack-test-py38-focal:/var/lib/jenkins/workspace/yoga-openstack-test-py38-focal --sysctl net.ipv6.conf.all.disable_ipv6=0 --name jenkins-yoga-openstack-test-py38-focal-592 -e UPPER_CONSTRAINTS_FILE=/var/lib/jenkins/workspace/yoga-openstack-test-py38-focal/requirements/upper-constraints.txt -e TOX_CONSTRAINTS_FILE=/var/lib/jenkins/workspace/yoga-openstack-test-py38-focal/requirements/upper-constraints.txt docker-dev-virtual.docker.mirantis.net/mirantis/openstack-ci/openstack-ci-python3-test:focal /bin/cat
@@ -49,8 +63,8 @@ if [ -n "$VIRTUALENV_VER" ]; then
     venv="$venv==$VIRTUALENV_VER"
 fi
 
-docker exec -t -u root:root "$name" groupmod -g 1000 jenkins
-docker exec -t -u root:root "$name" usermod -u 1000 jenkins
+docker exec -t -u root:root "$name" groupmod -g "${UID}" jenkins
+docker exec -t -u root:root "$name" usermod -u "${UID}" jenkins
 docker exec -t -u root:root "$name" pip uninstall virtualenv --yes
 docker exec -t -u root:root "$name" pip install -c /opt/upper-constraints.txt "$venv"
 
