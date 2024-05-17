@@ -1,0 +1,8 @@
+#cloud-config
+users:
+  - name: pshchelo
+    lock_passwd: true
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    ssh_authorized_keys:
+    - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOns6c3H+TP0HBYWI+N6nX/ilPrGth5ElLCyN4EHJqcq
