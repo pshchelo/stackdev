@@ -88,9 +88,10 @@ function set_network_access_vars {
     fi
 
     cluster_ip_range=$(kubectl --context "$CONTEXT" -n "$metallb_ns" get ipaddresspools "$ippool" -ojsonpath='{.spec.addresses[0]}')
-    # TODO: the range may not specifically translate to single CIDR (e.g. default is ...100-...255)
-    # proxy specific discovered hosts only?
-    CLUSTER_CIDR="$(echo "$cluster_ip_range" | awk -F '-' '{print $1}')/24"
+    # cluster_ip_range has format of IP1-IP2
+    # NOTE: actual cluster ip range may not be translatable to simple single cidr (default is ...100-255)
+    # so just force it to X.Y.Z.0/24 range based on range start, should be enough for dev envs this is targeted for
+    CLUSTER_CIDR="$(echo "$cluster_ip_range" | awk -F '.' 'BEGIN{OFS=FS} {print $1, $2, $3}').0/24"
     errcho "OK"
 
     errcho -n "discovering network address of IPv4 subnet of OpenStack network named ${OS_PUBLIC_NETWORK_NAME}... "
@@ -146,7 +147,9 @@ if [ "$DO_SSHUTTLE" = "True" ]; then
     # may also redefine SSH_KEY and SSH_USER
     set_network_access_vars
 fi
+
 patch_hosts_file "$(discover_hosts)"
+
 if [ "$DO_SSHUTTLE" = "True" ]; then
     if [ $(pgrep -f "sshuttle.*${CLUSTER_CIDR}.*${PUBLIC_CIDR}") ]; then
         errcho "another instance of ${0} proxying the same networks ${CLUSTER_CIDR} and ${PUBLIC_CIDR} is running!"
@@ -166,4 +169,5 @@ if [ "$DO_SSHUTTLE" = "True" ]; then
 else
     read -p "Press Enter to restore $HOSTSFILE" -n 1 -r
 fi
+
 restore_hosts_file
