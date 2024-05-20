@@ -5,14 +5,19 @@
 
 # make tunnels for OpenStack public API and default floating IP networks
 # of MOSK dev cluster
-HOSTSFILE=/etc/hosts
+if [ "$(uname)" == "Darwin" ]; then
+    HOSTSFILE=/private/etc/hosts
+    IFACE="en0"
+else
+    HOSTSFILE=/etc/hosts
+fi
+
 OS_PUBLIC_NETWORK_NAME="public"
 # defaults for virtual labs
 SSH_KEY="${HOME}/.ssh/aio_rsa"
 SSH_USER="ubuntu"
 USER_CONTEXT=$1
 DO_SSHUTTLE=True
-PROXY=workvm
 
 # pre-auth sudo right away
 sudo -v
@@ -65,8 +70,7 @@ function discover_hosts {
     echo "$hosts"
 }
 
-
-function generate_sshuttle_arguments {
+function set_network_access_vars {
     CURRENT_CONTEXT=$(kubectl config current-context)
     CONTEXT=${USER_CONTEXT:-$CURRENT_CONTEXT}
     CLUSTER=$(kubectl config view  -o jsonpath="{.contexts[?(@.name == \"$CONTEXT\")].context.cluster}")
@@ -79,7 +83,6 @@ function generate_sshuttle_arguments {
     ippool=$(kubectl --context "$CONTEXT" -n "$metallb_ns" get ipaddresspools -ocustom-columns=NAME:metadata.name | grep default)
 
     if [ "$ippool" = "default" ]; then
-        # FIXME: this mutation is ugly, but code below relies on it as I failed to properly pass all the correctly escaped string got sshuttle arguments
         SSH_KEY="./ssh_key"
         SSH_USER="mcc-user"
     fi
@@ -93,15 +96,19 @@ function generate_sshuttle_arguments {
     errcho -n "discovering network address of IPv4 subnet of OpenStack network named ${OS_PUBLIC_NETWORK_NAME}... "
     PUBLIC_CIDR=$(kubectl --context "$CONTEXT" -n openstack exec deploy/keystone-client -c keystone-client -- openstack subnet list --ip-version 4 --network "$OS_PUBLIC_NETWORK_NAME" -f value -c Subnet)
     errcho "OK"
-
-    if [ $(pgrep -f "sshuttle.*${CLUSTER_CIDR}.*${PUBLIC_CIDR}") ]; then
-        errcho "another instance of ${0} proxying the same networks ${CLUSTER_CIDR} and ${PUBLIC_CIDR} is running!"
-        exit 1
-    fi
-    errcho "sshuttle to ${K8S_IP}, access ${CLUSTER_CIDR} for k8s cluster network and ${PUBLIC_CIDR} for OpenStack public network"
-    echo "${CLUSTER_CIDR} ${PUBLIC_CIDR} -r ${K8S_IP}"
 }
 
+function add_routes {
+    local iface=$1
+    sudo route add "$PUBLIC_CIDR" -interface "$iface"
+    sudo route add "$CLUSTER_CIDR" -interface "$iface"
+}
+
+function delete_routes {
+    local iface=$1
+    sudo route delete "$PUBLIC_CIDR" -interface "$iface"
+    sudo route delete "$CLUSTER_CIDR" -interface "$iface"
+}
 
 function patch_hosts_file {
     local hosts_str=$1
@@ -127,7 +134,6 @@ function patch_hosts_file {
     echo
 }
 
-
 function restore_hosts_file {
     # TODO: make restoring hosts file an exit trap
     echo "restoring $HOSTSFILE from backup... "
@@ -135,26 +141,28 @@ function restore_hosts_file {
     echo "OK"
 }
 
-
-function discover_hosts_remote {
-    echo "$(ssh $PROXY -- bash -c \"cd ${PWD}; mosk-dev-sshullte --hosts\")"
-}
-
-
-if [ "$USE_PROXY" = "True" ]; then
-    hosts_str=$(discover_hosts_remote)
-else
-    hosts_str=$(discover_hosts)
-fi
 if [ "$DO_SSHUTTLE" = "True" ]; then
-    sshuttle_line=$(generate_sshuttle_arguments)
+    # sets K8S_IP, CLUSTER_CIDR and PUBLIC_CIDR vars,
+    # may also redefine SSH_KEY and SSH_USER
+    set_network_access_vars
 fi
-patch_hosts_file "${hosts_str}"
+patch_hosts_file "$(discover_hosts)"
 if [ "$DO_SSHUTTLE" = "True" ]; then
+    if [ $(pgrep -f "sshuttle.*${CLUSTER_CIDR}.*${PUBLIC_CIDR}") ]; then
+        errcho "another instance of ${0} proxying the same networks ${CLUSTER_CIDR} and ${PUBLIC_CIDR} is running!"
+        exit 1
+    fi
+    errcho "sshuttle to ${K8S_IP}, access ${CLUSTER_CIDR} for k8s cluster network and ${PUBLIC_CIDR} for OpenStack public network"
     SSH_ARGS="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -i ${SSH_KEY} -l ${SSH_USER}"
     # sshuttle_line is meant to be word-split
     # shellcheck disable=SC2086
-    sshuttle $sshuttle_line --ssh-cmd "$SSH_ARGS"
+    if [ "$(uname)" == "Darwin" ]; then
+        add_routes "$IFACE"
+    fi
+    sshuttle "$CLUSTER_CIDR" "$PUBLIC_CIDR" -r "$K8S_IP" --ssh-cmd "$SSH_ARGS"
+    if [ "$(uname)" == "Darwin" ]; then
+        delete_routes "$IFACE"
+    fi
 else
     read -p "Press Enter to restore $HOSTSFILE" -n 1 -r
 fi
