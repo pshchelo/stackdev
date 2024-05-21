@@ -9,6 +9,7 @@ function usage {
     echo "  -w       wait only, do not diff and apply"
     echo "  -r       also wait for all services to become Ready"
     echo "  -h       print this message and exit"
+    echo "  -v       verbose (bash -x)"
 }
 
 POLL_TIMEOUT=10
@@ -16,12 +17,13 @@ QUIET=0
 WAIT_ONLY=0
 WAIT_READY=0
 
-while getopts ':qwht:r' arg; do
+while getopts ':qvwht:r' arg; do
     case "${arg}" in
         w) WAIT_ONLY=1;;
         q) QUIET=1;;
         t) POLL_TIMEOUT="${OPTARG}";;
         r) WAIT_READY=1;;
+        v) set -x;;
         h) usage; exit 0;;
         *) usage; exit 1;;
     esac
