@@ -1,23 +1,56 @@
 #!/usr/bin/env bash
-# TODO: add toggle to NOT do sshuttle, and only edit /etc/hosts as needed
-# our phys hw labs have both API and FIP nets on internal network, so no need
-# to tunnel
 
 # make tunnels for OpenStack public API and default floating IP networks
 # of MOSK dev cluster
-if [ "$(uname)" == "Darwin" ]; then
-    HOSTSFILE=/private/etc/hosts
-    IFACE="en0"
-else
-    HOSTSFILE=/etc/hosts
-fi
 
+function usage {
+    echo "Usage: $(basename "$0") [-hvnr] [-i IFACE] [CONTEXT]"
+    echo "Allows to connect to MOSK development environment's Public APIs"
+    echo "Needs appropriate kubectl context to be set to have access to the cluster"
+    echo "Discovers the required hostnames to provide and networks to (optionally) tunnel using sshuttle"
+    echo "Options:"
+    echo "  CONTEXT   Name of the kubernetes config context"
+    echo "            Defaults to current context."
+    echo "  -n        Do not actually do sshuttle, only patch hosts file"
+    echo "  -r        Do route mangling for the case of greedy VPNs"
+    echo "            Enabled by default on Darwin. Has no effect with -n"
+    echo "  -i IFACE  Network interface to add routes to"
+    echo "            Defaults to 'en0' on Darwin and 'ens3' on Linux. Has no effect with -n"
+    echo "  -v        verbose (bash -x)"
+    echo "  -h        print this message and exit"
+}
+
+PLATFORM="$(uname)"
+HOSTSFILE=/etc/hosts
 OS_PUBLIC_NETWORK_NAME="public"
 # defaults for virtual labs
 SSH_KEY="${HOME}/.ssh/aio_rsa"
 SSH_USER="ubuntu"
-USER_CONTEXT=$1
 DO_SSHUTTLE=True
+INJECT_ROUTES=False
+if [ "$PLATFORM" == "Darwin" ]; then
+    IFACE="en0"
+    INJECT_ROUTES=True # our corp VPN on Mac is greedy w/o options
+elif [ "$PLATFORM" == "Linux" ]; then
+    IFACE="ens3"
+else
+    echo "Unknown platform, only Linux and Darwin are supported"
+    exit 1
+fi
+
+
+while getopts ':hvnri:' arg; do
+    case "${arg}" in
+        n) DO_SSHUTTLE=False ;;
+        r) INJECT_ROUTES=True ;;
+        i) IFACE="${OPTARG}";;
+        v) set -x ;;
+        h) usage; exit 0;;
+        *) usage; exit 1;;
+    esac
+done
+CONTEXT_ARG=${*:$OPTIND:1}
+CONTEXT=${CONTEXT_ARG:-$(kubectl config current-context)}
 
 # pre-auth sudo right away
 sudo -v
@@ -27,8 +60,6 @@ sudo -v
 function errcho { >&2 echo $@; }
 
 function discover_hosts {
-    CURRENT_CONTEXT=$(kubectl config current-context)
-    CONTEXT=${USER_CONTEXT:-$CURRENT_CONTEXT}
     errcho -n "discovering hosts and IP of OpenStack APIs... "
     local hosts=""
     ingress_lb_ip=$(kubectl --context "$CONTEXT" -n openstack get svc ingress -ojsonpath='{.status.loadBalancer.ingress[0].ip}' --ignore-not-found)
@@ -71,8 +102,6 @@ function discover_hosts {
 }
 
 function set_network_access_vars {
-    CURRENT_CONTEXT=$(kubectl config current-context)
-    CONTEXT=${USER_CONTEXT:-$CURRENT_CONTEXT}
     CLUSTER=$(kubectl config view  -o jsonpath="{.contexts[?(@.name == \"$CONTEXT\")].context.cluster}")
     K8S_IP=$(kubectl config view -o jsonpath="{.clusters[?(@.name == \"$CLUSTER\")].cluster.server}" | awk -F ":" "{print \$2}" | cut -c3-)
 
@@ -100,15 +129,23 @@ function set_network_access_vars {
 }
 
 function add_routes {
-    local iface=$1
-    sudo route add "$PUBLIC_CIDR" -interface "$iface"
-    sudo route add "$CLUSTER_CIDR" -interface "$iface"
+    if [ "$PLATFORM" == "Darwin" ]; then
+        sudo route add "$PUBLIC_CIDR" -interface "$IFACE"
+        sudo route add "$CLUSTER_CIDR" -interface "$IFACE"
+    elif [ "$PLATFORM" == "Linux" ]; then
+        sudo ip route add "$PUBLIC_CIDR" dev "$IFACE"
+        sudo ip route add "$CLUSTER_CIDR" dev "$IFACE"
+    fi
 }
 
 function delete_routes {
-    local iface=$1
-    sudo route delete "$PUBLIC_CIDR" -interface "$iface"
-    sudo route delete "$CLUSTER_CIDR" -interface "$iface"
+    if [ "$PLATFORM" == "Darwin" ]; then
+        sudo route delete "$PUBLIC_CIDR" -interface "$IFACE"
+        sudo route delete "$CLUSTER_CIDR" -interface "$IFACE"
+    elif [ "$PLATFORM" == "Linux" ]; then
+        sudo ip route del "$PUBLIC_CIDR" dev "$IFACE"
+        sudo ip route del "$CLUSTER_CIDR" dev "$IFACE"
+    fi
 }
 
 function patch_hosts_file {
@@ -153,18 +190,19 @@ patch_hosts_file "$(discover_hosts)"
 if [ "$DO_SSHUTTLE" = "True" ]; then
     if [ $(pgrep -f "sshuttle.*${CLUSTER_CIDR}.*${PUBLIC_CIDR}") ]; then
         errcho "another instance of ${0} proxying the same networks ${CLUSTER_CIDR} and ${PUBLIC_CIDR} is running!"
+        restore_hosts_file
         exit 1
     fi
     errcho "sshuttle to ${K8S_IP}, access ${CLUSTER_CIDR} for k8s cluster network and ${PUBLIC_CIDR} for OpenStack public network"
     SSH_ARGS="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -i ${SSH_KEY} -l ${SSH_USER}"
+    if [ "$INJECT_ROUTES" == "True" ]; then
+        add_routes
+    fi
     # sshuttle_line is meant to be word-split
     # shellcheck disable=SC2086
-    if [ "$(uname)" == "Darwin" ]; then
-        add_routes "$IFACE"
-    fi
     sshuttle "$CLUSTER_CIDR" "$PUBLIC_CIDR" -r "$K8S_IP" --ssh-cmd "$SSH_ARGS"
-    if [ "$(uname)" == "Darwin" ]; then
-        delete_routes "$IFACE"
+    if [ "$INJECT_ROUTES" == "True" ]; then
+        delete_routes
     fi
 else
     read -p "Press Enter to restore $HOSTSFILE" -n 1 -r
