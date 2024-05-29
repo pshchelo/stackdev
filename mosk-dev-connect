@@ -34,10 +34,13 @@ if [ "$PLATFORM" == "Darwin" ]; then
 elif [ "$PLATFORM" == "Linux" ]; then
     IFACE="ens3"
 else
-    echo "Unknown platform, only Linux and Darwin are supported"
+    errcho "Unknown platform, only Linux and Darwin are supported"
     exit 1
 fi
 
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NOC='\033[0m'
 
 while getopts ':hvnri:' arg; do
     case "${arg}" in
@@ -59,6 +62,14 @@ sudo -v
 # shellcheck disable=SC2068
 function errcho { >&2 echo $@; }
 
+function errcho_ok {
+    errcho -e "${GREEN}OK${NOC}"
+}
+
+function errcho_no {
+    errcho -e "${RED}NO${NOC}"
+}
+
 function discover_hosts {
     errcho -n "discovering hosts and IP of OpenStack APIs... "
     local hosts=""
@@ -70,7 +81,7 @@ function discover_hosts {
             done
         done
     fi
-    errcho "OK"
+    errcho_ok
     errcho -n "discovering hosts and IP of Keycloak... "
     keycloak_ip=$(kubectl --context "$CONTEXT" -n iam get svc openstack-iam-keycloak-http -ojsonpath='{.status.loadBalancer.ingress[0].ip}' --ignore-not-found)
     if [[ -z ${keycloak_ip} ]]; then
@@ -81,18 +92,18 @@ function discover_hosts {
         keycloak_domain_record=$(kubectl --context "$CONTEXT" -n coredns get cm coredns-coredns -oyaml | grep keycloak | awk '{print $1}')
         # keycloak_domain_record has dot (.) in the end since it is a proper DNS record
         hosts+="${keycloak_ip} ${keycloak_domain_record%?};"
-        errcho "OK"
+        errcho_ok
     else
-        errcho "NO"
+        errcho_no
     fi
 
     errcho -n "discovering StackLight services... "
     grafana_ip=$(kubectl --context "$CONTEXT" -n stacklight get svc grafana -ojsonpath='{.status.loadBalancer.ingress[0].ip}' --ignore-not-found)
     if [[ -n ${grafana_ip} ]]; then
         hosts+="$grafana_ip grafana.stacklight;"
-        errcho "OK"
+        errcho_ok
     else
-        errcho "NO"
+        errcho_no
     fi
     prometheus_ip=$(kubectl --context "$CONTEXT" -n stacklight get svc prometheus-server -ojsonpath='{.status.loadBalancer.ingress[0].ip}' --ignore-not-found)
     if [[ -n ${prometheus_ip} ]]; then
@@ -121,11 +132,11 @@ function set_network_access_vars {
     # NOTE: actual cluster ip range may not be translatable to simple single cidr (default is ...100-255)
     # so just force it to X.Y.Z.0/24 range based on range start, should be enough for dev envs this is targeted for
     CLUSTER_CIDR="$(echo "$cluster_ip_range" | awk -F '.' 'BEGIN{OFS=FS} {print $1, $2, $3}').0/24"
-    errcho "OK"
+    errcho_ok
 
     errcho -n "discovering network address of IPv4 subnet of OpenStack network named ${OS_PUBLIC_NETWORK_NAME}... "
     PUBLIC_CIDR=$(kubectl --context "$CONTEXT" -n openstack exec deploy/keystone-client -c keystone-client -- openstack subnet list --ip-version 4 --network "$OS_PUBLIC_NETWORK_NAME" -f value -c Subnet)
-    errcho "OK"
+    errcho_ok
 }
 
 function add_routes {
@@ -156,17 +167,17 @@ function patch_hosts_file {
     IFS=$OLD_IFS
     for svc in "${patched_hosts[@]}"; do
         if grep "${svc}" /etc/hosts > /dev/null; then
-            echo "ERROR: entry for ${svc} is already in /etc/hosts file."
-            echo "File was not properly restored from backup or parallel $(basename "$0") session is running."
+            errcho "ERROR: entry for ${svc} is already in /etc/hosts file."
+            errcho "File was not properly restored from backup or parallel $(basename "$0") session is running."
             exit 1
         fi
     done
 
-    echo "backing up $HOSTSFILE... "
+    errcho -n "backing up $HOSTSFILE... "
     sudo cp $HOSTSFILE $HOSTSFILE.mosk.bak
-    echo "OK"
+    errcho_ok
 
-    echo appending to $HOSTSFILE:
+    errcho appending to $HOSTSFILE:
     echo
     printf "%s\n" "${patched_hosts[@]}" | sudo tee -a $HOSTSFILE
     echo
@@ -174,9 +185,9 @@ function patch_hosts_file {
 
 function restore_hosts_file {
     # TODO: make restoring hosts file an exit trap
-    echo "restoring $HOSTSFILE from backup... "
+    errcho -n "restoring $HOSTSFILE from backup... "
     sudo mv $HOSTSFILE.mosk.bak $HOSTSFILE
-    echo "OK"
+    errcho_ok
 }
 
 if [ "$DO_SSHUTTLE" = "True" ]; then
