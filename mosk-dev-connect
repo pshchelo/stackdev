@@ -119,10 +119,11 @@ function set_network_access_vars {
     errcho -n "discoverung openstack services cluserIP range... "
     # virtual labs have 'metallb' ns, phys labs have 'metallb-system' ns
     metallb_ns=$(kubectl --context "$CONTEXT" get ns -ocustom-columns=NAME:metadata.name | grep ^metal)
-    # virtual labs have 'openstack-default' pool, phys labs have 'default' pool
-    ippool=$(kubectl --context "$CONTEXT" -n "$metallb_ns" get ipaddresspools -ocustom-columns=NAME:metadata.name | grep default)
+    # virtual labs have 'openstack-default' pool, phys labs have 'default' or 'services' pool
+    ippool=$(kubectl --context "$CONTEXT" -n "$metallb_ns" get ipaddresspools -ocustom-columns=NAME:metadata.name | grep -E '(default|services)')
 
-    if [ "$ippool" = "default" ]; then
+    if [[ ! "$ippool" =~ "openstack" ]]; then
+        # not a virtual lab
         SSH_KEY="./ssh_key"
         SSH_USER="mcc-user"
     fi
