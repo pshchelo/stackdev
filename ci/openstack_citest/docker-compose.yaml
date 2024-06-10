@@ -3,7 +3,8 @@ version: "3.1"
 services:
   mysql:
     container_name: openstack_citest-mysql
-    image: mysql:8.0
+    #image: mysql:8.0
+    image: mariadb:10.6
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: insecure_slave
