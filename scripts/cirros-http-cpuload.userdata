@@ -29,8 +29,7 @@ cpu_load() {
         print_status \$inprogress
         exit 1
     else
-        NUM_CPU=\$(grep -c ^processor /proc/cpuinfo 2>/dev/null || sysctl -n hw.ncpu)
-        echo "\${HOSTNAME} - Starting CPU load"
+        echo "\${HOSTNAME} - Starting CPU load on \$NUM_CPU cores"
         for in in \$( seq \$NUM_CPU ); do
             cat /dev/urandom >> /dev/null 2>&1 &
             echo \$! >> \$PID_FILE
@@ -73,6 +72,11 @@ case \$1 in
 
     ;;
     *)
+        if [ -n \$1 ]; then
+            NUM_CPU=\$1
+        else
+            NUM_CPU=\$(grep -c ^processor /proc/cpuinfo 2>/dev/null || sysctl -n hw.ncpu)
+        fi
         cpu_load
     ;;
 esac
