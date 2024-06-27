@@ -72,8 +72,8 @@ case \$1 in
 
     ;;
     *)
-        if [ -n \$1 ]; then
-            NUM_CPU=\$1
+        if [ -n "\$1" ]; then
+            NUM_CPU="\$1"
         else
             NUM_CPU=\$(grep -c ^processor /proc/cpuinfo 2>/dev/null || sysctl -n hw.ncpu)
         fi

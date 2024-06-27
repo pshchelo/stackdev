@@ -27,8 +27,8 @@ if [ "$project" = "admin" ]; then
 fi
 
 # shellcheck disable=SC2086 # word splitting in project_filter is intentional
-fip=$(openstack floating ip list $project_filter --status DOWN -f value -c 'Floating IP Address' | shuf | head -n1)
+fip=$(openstack floating ip list $project_filter --status DOWN -f value -c 'Floating IP Address' | sort -R | head -n1)
 if [ -z "$fip" ]; then
     fip=$(openstack floating ip create public -f value -c floating_ip_address)
 fi
-openstack server add floating ip "$1" "$fip"
+openstack server add floating ip "$server_name" "$fip"
