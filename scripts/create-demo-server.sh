@@ -1,10 +1,32 @@
 #!/usr/bin/env bash
-
-# NOTE: expects the project in use to have keypair, network and security group
-# named the same as project
-
 set -e
+
+function usage {
+    echo "Usage: $(basename "$0") NAME [FLAVOR [IMAGE] ] [-h]"
+    echo "Relies on proper entry in clouds.yaml set via OS_CLOUD env var"
+    echo "Expects the project in use to have keypair, network and security group named the same as project"
+    echo "Parameters:"
+    echo "  NAME   name of the server to create"
+    echo "  FLAVOR flavor to use for the server (defaults to 'm1.nano')"
+    echo "  IMAGE  image to use for the server (defaults to 'Cirros-6.0')"
+    echo "  -v     be verbose (set -x)"
+    echo "  -h     show this message and exit"
+}
+
+while getopts ':hv' arg; do
+    case "${arg}" in
+        h) usage; exit 0 ;;
+        v) set -x ;;
+        *) ;;
+    esac
+done
+
 server_name=$1
+if [ -z "$server_name" ]; then
+    echo "Need at least name for the server"
+    usage
+    exit 1
+fi
 server_flavor=${2:-m1.nano}
 server_image=${3:-Cirros-6.0}
 project=$(openstack configuration show -f value -c auth.project_name)
