@@ -29,9 +29,10 @@ def get_servers_in_stacks():
 
 
 def get_solitary_servers():
+    servers_in_stacks = get_servers_in_stacks()
     return [
         s for s in cloud.compute.servers()
-        if s.id not in get_servers_in_stacks()
+        if s.id not in servers_in_stacks
     ]
 
 
