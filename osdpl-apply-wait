@@ -79,6 +79,7 @@ fi
 osdpl_wait_applied
 
 if [ "$WAIT_READY" -eq 1 ]; then
-    echo OsDpl was applied, waiting for health to be all Ready
+    echo
+    echo "OsDpl was applied, waiting for health to be all Ready"
     osdpl_wait_ready
 fi
