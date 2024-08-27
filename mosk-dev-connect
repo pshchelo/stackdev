@@ -28,15 +28,19 @@ SSH_KEY="${HOME}/.ssh/aio_rsa"
 SSH_USER="ubuntu"
 DO_SSHUTTLE=True
 INJECT_ROUTES=False
-if [ "$PLATFORM" == "Darwin" ]; then
-    IFACE="en0"
-    INJECT_ROUTES=True # our corp VPN on Mac is greedy w/o options
-elif [ "$PLATFORM" == "Linux" ]; then
-    IFACE="ens3"
-else
-    errcho "Unknown platform, only Linux and Darwin are supported"
-    exit 1
-fi
+case "$PLATFORM" in
+    "Linux")
+        IFACE="ens3"
+        ;;
+    "Darwin")
+        IFACE="en0"
+        INJECT_ROUTES=True # our corp VPN on Mac is greedy w/o options
+        ;;
+    *)
+        errcho "Unknown platform, only Linux and Darwin are supported"
+        exit 1
+        ;;
+esac
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -141,23 +145,45 @@ function set_network_access_vars {
 }
 
 function add_routes {
-    if [ "$PLATFORM" == "Darwin" ]; then
-        sudo route add "$PUBLIC_CIDR" -interface "$IFACE"
-        sudo route add "$CLUSTER_CIDR" -interface "$IFACE"
-    elif [ "$PLATFORM" == "Linux" ]; then
-        sudo ip route add "$PUBLIC_CIDR" dev "$IFACE"
-        sudo ip route add "$CLUSTER_CIDR" dev "$IFACE"
-    fi
+    case "$PLATFORM" in
+        "Linux")
+            sudo ip route add "$CLUSTER_CIDR" dev "$IFACE"
+            if [ "$PUBLIC_CIDR" != "$CLUSTER_CIDR" ]; then
+                sudo ip route add "$PUBLIC_CIDR" dev "$IFACE"
+            fi
+            ;;
+        "Darwin")
+            sudo route add "$CLUSTER_CIDR" -interface "$IFACE"
+            if [ "$PUBLIC_CIDR" != "$CLUSTER_CIDR" ]; then
+                sudo route add "$PUBLIC_CIDR" -interface "$IFACE"
+            fi
+            ;;
+        *)
+            errcho "Unknown platform, only Linux and Darwin are supported"
+            exit 1
+            ;;
+    esac
 }
 
 function delete_routes {
-    if [ "$PLATFORM" == "Darwin" ]; then
-        sudo route delete "$PUBLIC_CIDR" -interface "$IFACE"
-        sudo route delete "$CLUSTER_CIDR" -interface "$IFACE"
-    elif [ "$PLATFORM" == "Linux" ]; then
-        sudo ip route del "$PUBLIC_CIDR" dev "$IFACE"
-        sudo ip route del "$CLUSTER_CIDR" dev "$IFACE"
-    fi
+    case "$PLATFORM" in
+        "Linux")
+            sudo ip route del "$CLUSTER_CIDR" dev "$IFACE"
+            if [ "$PUBLIC_CIDR" != "$CLUSTER_CIDR" ]; then
+                sudo ip route del "$PUBLIC_CIDR" dev "$IFACE"
+            fi
+            ;;
+        "Darwin")
+            sudo route delete "$CLUSTER_CIDR" -interface "$IFACE"
+            if [ "$PUBLIC_CIDR" != "$CLUSTER_CIDR" ]; then
+                sudo route delete "$PUBLIC_CIDR" -interface "$IFACE"
+            fi
+            ;;
+        *)
+            errcho "Unknown platform, only Linux and Darwin are supported"
+            exit 1
+            ;;
+    esac
 }
 
 function patch_hosts_file {
@@ -210,8 +236,6 @@ if [ "$DO_SSHUTTLE" = "True" ]; then
     if [ "$INJECT_ROUTES" == "True" ]; then
         add_routes
     fi
-    # sshuttle_line is meant to be word-split
-    # shellcheck disable=SC2086
     sshuttle "$CLUSTER_CIDR" "$PUBLIC_CIDR" -r "$K8S_IP" --ssh-cmd "$SSH_ARGS"
     if [ "$INJECT_ROUTES" == "True" ]; then
         delete_routes
