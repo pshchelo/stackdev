@@ -113,6 +113,12 @@ function discover_hosts {
     if [[ -n ${prometheus_ip} ]]; then
         hosts+="$prometheus_ip prometheus-server.stacklight;"
     fi
+
+    # TODO: add support for TungstenFabric/OpenSDN - svc/tf-webui and svc/tf-config-api
+    #errcho -n "discovering TungstenFabric/OpenSDN services..."
+    #tf_ui_ip = $()
+    #tf_api_ip=$()
+
     echo "$hosts"
 }
 
