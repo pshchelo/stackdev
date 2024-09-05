@@ -3,6 +3,7 @@ import argparse
 import binascii
 from oslo_concurrency import processutils
 import openstack
+from barbicanclient import client
 
 parser = argparse.ArgumentParser(
     prog="cryptcreate",
@@ -37,9 +38,9 @@ args = parser.parse_args()
 # lvname = "f0a7a6eb-8ced-4f1b-9e2b-eaf66db42752_disk.eph0"
 
 cloud = openstack.connect(cloud=args.cloud)
-secret = cloud.key_manager.get_secret(args.secret_id)
-payload = secret.payload.encode("Windows-1251")
-key = binascii.hexlify(payload).decode("utf-8")
+barbican = client.Client(session=cloud.session)
+secret = barbican.secrets.get(args.secret_id)
+key = binascii.hexlify(secret.payload).decode("utf-8")
 
 cmd = (
     "cryptsetup",
