@@ -75,7 +75,7 @@ function errcho_no {
 }
 
 function discover_hosts {
-    errcho -n "discovering hosts and IP of OpenStack APIs... "
+    errcho -n "discovering OpenStack API services... "
     local hosts=""
     ingress_lb_ip=$(kubectl --context "$CONTEXT" -n openstack get svc ingress -ojsonpath='{.status.loadBalancer.ingress[0].ip}' --ignore-not-found)
     if [[ -n ${ingress_lb_ip} ]]; then
@@ -86,7 +86,7 @@ function discover_hosts {
         done
     fi
     errcho_ok
-    errcho -n "discovering hosts and IP of Keycloak... "
+    errcho -n "discovering Keycloak services... "
     keycloak_ip=$(kubectl --context "$CONTEXT" -n iam get svc openstack-iam-keycloak-http -ojsonpath='{.status.loadBalancer.ingress[0].ip}' --ignore-not-found)
     if [[ -z ${keycloak_ip} ]]; then
         # older iam chart was using openstack-iam-keyclo-http as service name
@@ -102,16 +102,18 @@ function discover_hosts {
     fi
 
     errcho -n "discovering StackLight services... "
-    grafana_ip=$(kubectl --context "$CONTEXT" -n stacklight get svc grafana -ojsonpath='{.status.loadBalancer.ingress[0].ip}' --ignore-not-found)
-    if [[ -n ${grafana_ip} ]]; then
-        hosts+="$grafana_ip grafana.stacklight;"
+    stacklight_svc_found=0
+    for svc in grafana prometheus-server prometheus-alertmanager alerta opensearch-dashboards; do
+        svc_ip=$(kubectl --context "$CONTEXT" -n stacklight get svc "$svc" -ojsonpath='{.status.loadBalancer.ingress[0].ip}' --ignore-not-found)
+        if [[ -n ${svc_ip} ]]; then
+            hosts+="$svc_ip $svc.stacklight;"
+            stacklight_svc_found=1
+        fi
+    done
+    if [ $stacklight_svc_found == 1 ]; then
         errcho_ok
     else
         errcho_no
-    fi
-    prometheus_ip=$(kubectl --context "$CONTEXT" -n stacklight get svc prometheus-server -ojsonpath='{.status.loadBalancer.ingress[0].ip}' --ignore-not-found)
-    if [[ -n ${prometheus_ip} ]]; then
-        hosts+="$prometheus_ip prometheus-server.stacklight;"
     fi
 
     # TODO: add support for TungstenFabric/OpenSDN - svc/tf-webui and svc/tf-config-api
@@ -126,7 +128,7 @@ function set_network_access_vars {
     CLUSTER=$(kubectl config view  -o jsonpath="{.contexts[?(@.name == \"$CONTEXT\")].context.cluster}")
     K8S_IP=$(kubectl config view -o jsonpath="{.clusters[?(@.name == \"$CLUSTER\")].cluster.server}" | awk -F ":" "{print \$2}" | cut -c3-)
 
-    errcho -n "discoverung openstack services cluserIP range... "
+    errcho -n "discoverung OpenStack services cluserIP range... "
     # virtual labs have 'metallb' ns, phys labs have 'metallb-system' ns
     metallb_ns=$(kubectl --context "$CONTEXT" get ns -ocustom-columns=NAME:metadata.name | grep ^metal)
     # virtual labs have 'openstack-default' pool, phys labs have 'default' or 'services' pool
