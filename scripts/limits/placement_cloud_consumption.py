@@ -2,11 +2,17 @@
 """
 Calculate total cloud resource usage from data in the Placement service.
 """
+import sys
 import openstack
 cloud = openstack.connect()
+placement = cloud.placement
+placement.default_microversion = "1.39"
+query={}
+if len(sys.argv) > 1:
+    query["required"] = sys.argv[1]
 total = {}
-for rp in cloud.placement.resource_providers():
-    usage = cloud.placement.get(
+for rp in placement.resource_providers(**query):
+    usage = placement.get(
         f"/resource_providers/{rp.id}/usages"
     ).json()["usages"]
     for res, count in usage.items():
