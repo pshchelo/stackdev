@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+IMAGE=$1
+COMMAND=${2:-"bash"}
+REPO=${3:-"eu"}
+
+case $REPO in
+    "eu")
+        docker_repo="docker-dev-kaas-virtual.artifactory-eu.mcp.mirantis.net"
+        ;;
+    "us")
+        docker_repo="docker-dev-virtual.docker.mirantis.net"
+        ;;
+    "cdn")
+        docker_repo="mirantis.azurecr.io"
+        ;;
+    "dev")
+        docker_repo="docker-review-local.docker.mirantis.net"
+        ;;
+    *)
+        echo "repo is not known"
+        exit 1
+esac
+
+docker run --rm -it "$docker_repo/$IMAGE" "$COMMAND"
