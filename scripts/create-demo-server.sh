@@ -54,3 +54,4 @@ if [ -z "$fip" ]; then
     fip=$(openstack floating ip create public -f value -c floating_ip_address)
 fi
 openstack server add floating ip "$server_name" "$fip"
+echo "$fip"
