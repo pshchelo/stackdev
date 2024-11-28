@@ -27,6 +27,8 @@ remote_test_accounts_file=$(crudini --get "$tempest_conf" auth test_accounts_fil
 if [ -n "$remote_test_accounts_file" ]; then
     kubectl -n openstack cp -c tempest-run-tests "$tempest_pod:$remote_test_accounts_file" "$resources_dir/static_accounts.yaml"
     crudini --set "$tempest_conf" auth test_accounts_file "$resources_dir/static_accounts.yaml"
+    mkdir -p "$resources_dir/locks"
+    crudini --set "$tempest_conf" oslo_concurrency lock_path "$resources_dir/locks"
 fi
 
 cat > run-tempest.sh << EOF
