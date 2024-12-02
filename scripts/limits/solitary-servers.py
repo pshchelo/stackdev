@@ -3,20 +3,21 @@ import argparse
 
 import openstack
 
-parser = argparse.ArgumentParser(
-    prog="solitary-servers",
-    description="Find Nova servers that are not part of any Heat Stack"
-)
-parser.add_argument(
-    "--os-cloud",
-    dest="cloud_name",
-    help="Cloud to use (from clouds.yaml). Default is from OS_CLOUD env var."
-)
-args = parser.parse_args()
 
-cloud = openstack.connect(cloud=args.cloud_name)
+def setup_cli():
+    parser = argparse.ArgumentParser(
+        prog="solitary-servers",
+        description="Find Nova servers that are not part of any Heat Stack"
+    )
+    parser.add_argument(
+        "--os-cloud",
+        dest="cloud_name",
+        help="Cloud to use (from clouds.yaml). Default is from OS_CLOUD env var."
+    )
+    return parser.parse_args()
 
-def get_servers_in_stacks():
+
+def get_servers_in_stacks(cloud):
     servers_in_stacks = []
     for stack in cloud.orchestration.stacks():
         server_resources = cloud.orchestration.get(
@@ -28,15 +29,18 @@ def get_servers_in_stacks():
     return servers_in_stacks
 
 
-def get_solitary_servers():
-    servers_in_stacks = get_servers_in_stacks()
+def get_solitary_servers(cloud):
+    servers_in_stacks = get_servers_in_stacks(cloud)
     return [
         s for s in cloud.compute.servers()
         if s.id not in servers_in_stacks
     ]
 
 
-if __name__ == "__main__":
+def print_servers_table(servers):
+    if not servers:
+        print("No solitary servers found")
+        return
     print(
         "Instance-Id",
         "Created-At",
@@ -47,7 +51,7 @@ if __name__ == "__main__":
         "Total-Disk",
         "Name",
     )
-    for server in sorted(get_solitary_servers(), key=lambda x: x.created_at):
+    for server in sorted(servers, key=lambda x: x.created_at):
         print(
             server.id,
             server.created_at,
@@ -58,3 +62,10 @@ if __name__ == "__main__":
             server.flavor.disk + server.flavor.swap + server.flavor.ephemeral,
             server.name,
         )
+
+
+if __name__ == "__main__":
+    args = setup_cli()
+    cloud = openstack.connect(cloud=args.cloud_name)
+    servers = get_solitary_servers(cloud)
+    print_servers_table(servers)
