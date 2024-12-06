@@ -1,0 +1,29 @@
+services:
+  postgres:
+    image: postgres
+    restart: always
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: postgres  # required
+      POSTGRES_USER: postrges      # default
+      POSTGRES_DB: postgres        # defaults to POSTGRES_USER
+    #volumes:
+    #- ${PWD}/postgres-data/:/var/lib/postgresql/data/
+  mariadb:
+    image: mariadb
+    restart: always
+    ports:
+      - 3306:3306
+    environment:
+      MARIADB_ROOT_PASSWORD: mysql  # required
+      MARIADB_DATABASE: mariadb     # default is not set
+      MARIADB_USER: mariadb         # default is not set
+      MARIADB_PASSWORD: mariadb     # default is not set
+    #volumes:
+    #- ${PWD}/mariadb-data/:/var/lib/mysql
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
