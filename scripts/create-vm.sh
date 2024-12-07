@@ -42,6 +42,13 @@ ssh_authorized_keys:
 - "$(cat "$VM_SSH_KEY")"
 EOF
 
+# example command to generate proper ISO file for manual qemu invocation
+# Linux - genisoimage or mkisofs
+#genisoimage -output cloudinit.iso -volid cidata -joliet -rock user-data meta-data
+#mkisofs -output cloudinit.iso -volid cidata -joliet -rock user-data meta-data
+# MacOSX - hdiutil (confg/ contains meta-data and user-data files)
+#hdiutil makehybrid -o init.iso -hfs -joliet -iso -default-volume-name cidata config/
+
 virt-install \
     --name "${VM_NAME}" \
     --import \
