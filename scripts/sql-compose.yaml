@@ -6,7 +6,7 @@ services:
       - 5432:5432
     environment:
       POSTGRES_PASSWORD: postgres  # required
-      POSTGRES_USER: postrges      # default
+      POSTGRES_USER: postgres      # default
       POSTGRES_DB: postgres        # defaults to POSTGRES_USER
     #volumes:
     #- ${PWD}/postgres-data/:/var/lib/postgresql/data/
