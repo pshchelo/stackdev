@@ -16,17 +16,25 @@ if echo -e "3.16.0\n$osc_version" | sort -V -C ; then
     kubectl -n openstack exec -ti "$pod" -c keystone-client -- openstack --os-cloud admin-system role add admin --user superadmin --user-domain Default --system all
 fi
 
+region=$(kubectl -n openstack exec -ti "$pod" -c keystone-client -- openstack endpoint list --service identity --interface public -f value -c Region | tr -d '\r')
+export OS_REGION_NAME=$region
+
 # execute the rest locally using separate admin user created above
 # needs access to public OpenStack API of MOSK dev cluster, e.g. sshuttle running
 
-if ! grep keystone.it.just.works /etc/hosts; then
+if ! grep -q keystone.it.just.works /etc/hosts; then
     read -r -p "Start sshuttle and press Enter to continue.."
 fi
 
 # custom MOSK role
 echo creating required roles
-openstack --os-cloud mosk-dev-admin role add global-secret-decoder --user superadmin --user-domain Default --project admin --project-domain Default
-openstack --os-cloud mosk-dev-admin role add global-secret-decoder --user superadmin --user-domain Default --system all
+if openstack --os-cloud mosk-dev-admin role show global-secret-decoder > /dev/null; then
+    openstack --os-cloud mosk-dev-admin role add global-secret-decoder --user superadmin --user-domain Default --project admin --project-domain Default
+    # openstackclient supports assigning system roles since version 3.16.0/Rocky
+    if echo -e "3.16.0\n$osc_version" | sort -V -C; then
+        openstack --os-cloud mosk-dev-admin role add global-secret-decoder --user superadmin --user-domain Default --system all
+    fi
+fi
 # Need this role to use Barbican and encrypted storage for instances and volumes
 openstack --os-cloud mosk-dev-admin role create --or-show creator
 # sandbox project to use w/o admin privileges
@@ -36,7 +44,9 @@ openstack --os-cloud mosk-dev-admin project create demo --domain Default --or-sh
 echo creating user demo
 openstack --os-cloud mosk-dev-admin user create demo --domain Default --password demo --or-show
 openstack --os-cloud mosk-dev-admin role add member --user demo --user-domain Default --project demo --project-domain Default
-openstack --os-cloud mosk-dev-admin role add load-balancer_member --user demo --user-domain Default --project demo --project-domain Default
+if openstack --os-cloud mosk-dev-admin role show load-balancer_member > /dev/null; then
+    openstack --os-cloud mosk-dev-admin role add load-balancer_member --user demo --user-domain Default --project demo --project-domain Default
+fi
 openstack --os-cloud mosk-dev-admin role add creator --user demo --user-domain Default --project demo --project-domain Default
 # another sandbox user to use w/o admin privileges
 echo creating user alt-demo
@@ -45,9 +55,13 @@ openstack --os-cloud mosk-dev-admin role add member --user alt-demo --user-domai
 # readonly user
 echo creating read-only user viewer
 openstack --os-cloud mosk-dev-admin user create viewer --domain Default --password viewer
-openstack --os-cloud mosk-dev-admin role add load-balancer_observer --user viewer --user-domain Default --project demo --project-domain Default
-openstack --os-cloud mosk-dev-admin role add load-balancer_global_observer --user viewer --user-domain Default --project admin --project-domain Default
-# reader role is present since Rocky
+if openstack --os-cloud mosk-dev-admin role show load-balancer_observer > /dev/null; then
+    openstack --os-cloud mosk-dev-admin role add load-balancer_observer --user viewer --user-domain Default --project demo --project-domain Default
+fi
+if openstack --os-cloud mosk-dev-admin role show load-balancer_global_observer > /dev/null; then
+    openstack --os-cloud mosk-dev-admin role add load-balancer_global_observer --user viewer --user-domain Default --project admin --project-domain Default
+fi
+# reader role is present since Rocky, as well as ability to set system scope on openstackclient
 if echo -e "3.16.0\n$osc_version" | sort -V -C ; then
     openstack --os-cloud mosk-dev-admin role add reader --user viewer --user-domain Default --project admin --project-domain Default
     openstack --os-cloud mosk-dev-admin role add reader --user viewer --user-domain Default --project demo --project-domain Default
