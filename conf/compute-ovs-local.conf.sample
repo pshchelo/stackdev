@@ -20,9 +20,16 @@ PUBLIC_INTERFACE=eth0
 disable_all_services
 enable_service dstat rabbit
 enable_service n-cpu
+enable_service placement-client
 enable_service q-agt
-enable_service c-vol mysql
+enable_service c-vol
 CINDER_VOLUME_CLEAR=None
+
 enable_plugin ceilometer https://opendev.org/openstack/ceilometer
 disable_service ceilometer-acentral ceilometer-aipmi ceilometer-anotification ceilometer-collector ceilometer-api
 CEILOMETER_PIPELINE_INTERVAL=60
+
+enable_plugin masakari https://opendev.org/openstack/masakari
+disable_service masakari-api masakari-engine
+# all monitors are enabled by default, disable not needed ones
+# disable_service masakari-processmonitor masakari-instancemonitor masakari-hostmonitor masakari-introspectiveinstancemonitor

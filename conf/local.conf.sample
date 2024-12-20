@@ -203,6 +203,11 @@ enable_service ovn-controller ovn-northd ovs-vswitchd ovsdb-server
 #enable_service q-lbaasv2
 #enable_service q-trunk
 
+### OCTAVIA ###
+#enable_plugin octavia https://opendev.org/openstack/octavia
+#enable_service octavia o-api o-cw o-hk o-hm o-da
+#LIBS_FROM_GIT+=,python-octaviaclient
+
 ### CINDER ###
 enable_service c-sch c-api c-bak
 enable_service c-vol
@@ -333,12 +338,23 @@ enable_service c-vol
 
 ### ZAQAR ###
 #enable_plugin zaqar https://opendev.org/openstack/zaqar
+#LIBS_FROM_GIT+=,python-zaqarclient
 
 ### BARBICAN ###
 #enable_plugin barbican https://opendev.org/openstack/barbican
+#LIBS_FROM_GIT+=,python-barbicanclient
 
 ### DESIGNATE ###
 #enable_plugin designate https://opendev.org/openstack/designate
+#LIBS_FROM_GIT+=,python-designateclient
+
+### MANILA ###
+#enable_plugin manila https://opendev.org/openstack/manila
+#LIBS_FROM_GIT+=,python-manilaclient
+
+### MASAKARI ###
+#enable_plugin masakari https://opendev.org/openstack/masakari
+#LIBS_FROM_GIT+=,python-masakariclient
 
 ### HORIZON ###
 #enable_service horizon
@@ -347,8 +363,24 @@ enable_service c-vol
 #enable_plugin heat-dashboard https://opendev.org/openstack/heat-dashboard
 #enable_service heat-dashboard
 
+### OCTAVIA UI ###
+#enable_plugin octavia-dashboard https://opendev.org/openstack/octavia-dashboard
+
+### DESIGNATE UI ###
+## automatically enabled when both horizon and designate are enabled
+
+### MANILA UI ###
+#enable_plugin manila-ui https://opendev.org/openstack/manila-ui
+
+### MASAKARI UI ###
+## automatically enabled when both horizon and masakari are enabled
+
 ### IRONIC UI ###
 #enable_plugin ironic-ui https://opendev.org/openstack/ironic-ui
+
+### BARBICAN UI ###
+# as documented but WILL NOT WORK! there's no actual DevStack plugin in the repo
+# enable_plugin barbican_ui https://github.com/openstack/barbican-ui
 
 ### SKYLINE ###
 #enable_plugin skyline-apiserver https://opendev.org/openstack/skyline-apiserver
