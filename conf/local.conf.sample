@@ -82,7 +82,9 @@ SERVICE_PASSWORD=service
 # PACKAGES
 ##########
 
-# Run services under Python3 (default False)
+# Run services under Python3. Defaults are:
+# Ussuri and newer - True, since 2024.2/Dalmatian only Python3 is suppprted
+# Train and older - False, before Mitaka only Python2 is supported
 #USE_PYTHON3=True
 # run already-installed devstack in offline mode
 #OFFLINE=True
