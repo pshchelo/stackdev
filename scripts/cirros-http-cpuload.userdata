@@ -118,4 +118,4 @@ exit \$?
 EOF
 chmod +x /etc/init.d/S99httpnc
 ln -s /etc/init.d/S99httpnc /etc/rc3.d/S99-http-nc
-/etc/init.d/S99httpnc start
+grep -qi cirros /etc/os-release > /dev/null 2>&1 && /etc/init.d/S99httpnc start
