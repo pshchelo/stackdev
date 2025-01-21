@@ -1,66 +1,58 @@
 [[local|localrc]]
-RECLONE=yes
-PIP_UPGRADE=True
+HOST_IP=192.168.100.187
+SERVICE_HOST=192.168.100.191
+
+DATABASE_TYPE=mysql
+MYSQL_HOST=$SERVICE_HOST
+MYSQL_PASSWORD=mysql
+
+RABBIT_HOST=$SERVICE_HOST
+RABBIT_PASSWORD=rabbit
 
 ADMIN_PASSWORD=admin
-MYSQL_PASSWORD=mysql
-RABBIT_PASSWORD=rabbit
 SERVICE_PASSWORD=service
-SERVICE_TOKEN=tokentoken
 
-MULTI_HOST=True
-HOST_IP=192.168.100.12
-SERVICE_HOST=192.168.100.11
-MYSQL_HOST=$SERVICE_HOST
-RABBIT_HOST=$SERVICE_HOST
-GLANCE_HOSTPORT=$SERVICE_HOST:9292
+RECLONE=True
+PIP_UPGRADE=True
 
-#USE_PYTHON3="True"
-#VERBOSE="True"
-#LIBS_FROM_GIT=cinder,devstack,glance,keystone,neutron,nova,placement,requirements,swift,tempest
 LIBS_FROM_GIT=python-openstackclient
+SERVICE_TIMEOUT=180
 
-Q_HOST=$SERVICE_HOST
 #NETWORK_GATEWAY="10.1.0.1"
 #PUBLIC_NETWORK_GATEWAY="172.24.5.1"
 #IPV4_ADDRS_SAFE_TO_USE="10.1.0.0/20"
 #FIXED_RANGE="10.1.0.0/20"
 #FLOATING_RANGE="172.24.5.0/24"
+#PUBLIC_BRIDGE_MTU="1430"
 
 disable_all_services
 
+# PERFORMANCE STATS COUNTING
 #enable_service br-ex-tcpdump
 #enable_service br-int-flows
-
-#disable_service dstat
-#disable_service file_tracker
-#disable memory_tracker
+#enable_service dstat
+#enable_service file_tracker
+#enable_service memory_tracker
 MYSQL_GATHER_PERFORMANCE=False
 
+enable_service tls-proxy
 enable_service c-vol
-
 enable_service n-cpu
-#LIBVIRT_TYPE="qemu"
-#NOVA_VNC_ENABLED="True"
-#NOVNC_FROM_PACKAGE="True"
 enable_service placement-client
-
 enable_plugin neutron https://opendev.org/openstack/neutron
 enable_service ovn-controller
 enable_service ovs-vswitchd
 enable_service ovsdb-server
 enable_service q-ovn-metadata-agent
-enable_service tls-proxy
-ENABLE_CHASSIS_AS_GW="False"
-#PUBLIC_BRIDGE_MTU="1430"
+ENABLE_CHASSIS_AS_GW=False
 
-enable_plugin ceilometer https://opendev.org/openstack/ceilometer
+#enable_plugin ceilometer https://opendev.org/openstack/ceilometer
 # disable all but ceilometer-compute agent
-disable_service ceilometer-acentral ceilometer-aipmi ceilometer-anotification ceilometer-collector ceilometer-api
-CEILOMETER_PIPELINE_INTERVAL=60
+#disable_service ceilometer-acentral ceilometer-aipmi ceilometer-anotification ceilometer-collector ceilometer-api
+#CEILOMETER_PIPELINE_INTERVAL=60
 
-enable_plugin masakari https://opendev.org/openstack/masakari
-disable_service masakari-api masakari-engine
+#enable_plugin masakari https://opendev.org/openstack/masakari
+#disable_service masakari-api masakari-engine
 # all monitors are enabled by default, disable not needed ones
 # disable_service masakari-processmonitor masakari-instancemonitor masakari-hostmonitor masakari-introspectiveinstancemonitor
 
