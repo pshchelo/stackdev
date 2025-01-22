@@ -119,7 +119,7 @@ enable_service tls-proxy
 # ATM broken on Focal https://bugs.launchpad.net/ubuntu/+source/dstat/+bug/1866619
 #enable_service dstat
 # new in Pike
-enable_service memory_tracker
+#enable_service memory_tracker
 # dbcounter was added during Zed cycle
 #MYSQL_GATHER_PERFORMANCE=False
 
@@ -211,8 +211,13 @@ enable_service ovn-controller ovn-northd ovs-vswitchd ovsdb-server
 #LIBS_FROM_GIT+=,python-octaviaclient
 
 ### CINDER ###
-enable_service c-sch c-api c-bak
+enable_service c-sch c-api
 enable_service c-vol
+# NOTE: currently DevStack supports only Swift (default) and RBD as backup drivers.
+# Until https://review.opendev.org/903171 is merged to support posix-path driver,
+# use a post-config snippet below to force usage of this driver
+#enable_service c-bak
+
 #CINDER_PERIODIC_INTERVAL=10
 # How to erase cinder volumes on delete [none, zero, shred]
 #CINDER_VOLUME_CLEAR=none
@@ -391,6 +396,14 @@ enable_service c-vol
 # POST CONFIG STAGE SETTINGS
 ############################
 
+# NOTE: Until https://review.opendev.org/903171 is merged,
+# use this to force usage of posix path driver in cinder-backup
+#[[post-config|$CINDER_CONF]]
+#[DEFAULT]
+#backup_driver = cinder.backup.drivers.posix.PosixBackupDriver
+
+## TODO: review these settings, decide which are still needed,
+## some might've been moved to defaults of service or the devstack plugin
 #[[post-config|$HEAT_CONF]]
 #[DEFAULT]
 #convergence_engine=false
@@ -399,18 +412,13 @@ enable_service c-vol
 #hidden_stack_tags=hidden
 #encrypt_parameters_and_properties=True
 #logging_exception_prefix=%(asctime)s.%(msecs)03d %(process)d TRACE %(name)s %(instance)s
-
 #[heat_api]
 #workers=2
-
 #[heat_api_cfn]
 #workers=2
-
 #[cache]
 #enabled=True
-
 #[eventlet_opts]
 #client_socket_timeout=120
-
 #[oslo_messaging_notifications]
 #driver=messagingv2
