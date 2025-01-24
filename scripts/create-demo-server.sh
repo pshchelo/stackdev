@@ -100,6 +100,11 @@ server_id=$(openstack server create "$server_name" \
     -f value -c id \
     --wait | tail -n1
 )
+if [ -z "$server_id" ]; then
+    errcho_fail "Failed to create server $server_name"
+    openstack server show "$server_name"
+    exit 1
+fi
 
 # NOTE: admin sees all FIPs by default, but non-admin always get empty FIP list
 # when listing with project, even with their own, so need to differentiate
