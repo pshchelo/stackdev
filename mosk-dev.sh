@@ -22,8 +22,6 @@ echo -e "${RED}START mosk-dev-connect in a separate shell NOW${NOC}"
 sleep 5
 echo "Create local copies of deployed resources"
 ~/dotfiles/scripts/mosk/mosk-dev-fetch-deployed-resources.sh
-echo "Cleanup 'complete' pods"
-~/dotfiles/scripts/k8s/k8s-cleanup-pods.sh -A
 # the next command needs mosk-dev-connect running,
 # but it will pause if that is not running yet
 echo "Create my default test env users and infra"
