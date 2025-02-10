@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
-tempest_pod=$(kubectl -n openstack get pod -l application=tempest,component=run-tests -o jsonpath='{.items[*].metadata.name}')
+tempest_pod=""
+echo -n "searching for running tempest pod..."
+while [ -z "$tempest_pod" ]; do
+    echo -n "."
+    tempest_pod=$(kubectl -n openstack get pod -l application=tempest,component=run-tests --field-selector=status.phase==Running -o jsonpath='{.items[*].metadata.name}')
+    sleep 3
+done
+echo "$tempest_pod"
 
 kubectl -n openstack cp -c tempest-run-tests "$tempest_pod:/etc/tempest/test-blacklist" ./test-blacklist
 
@@ -23,7 +30,7 @@ remote_test_server_path=$(crudini --get "$tempest_conf" load_balancer test_serve
 kubectl -n openstack cp -c tempest-run-tests "$tempest_pod:$remote_test_server_path" "$resources_dir/test_server.bin"
 crudini --set "$tempest_conf" load_balancer test_server_path "$resources_dir/test_server.bin"
 
-remote_test_accounts_file=$(crudini --get "$tempest_conf" auth test_accounts_file)
+remote_test_accounts_file=$(crudini --get "$tempest_conf" auth test_accounts_file 2>/dev/null)
 if [ -n "$remote_test_accounts_file" ]; then
     kubectl -n openstack cp -c tempest-run-tests "$tempest_pod:$remote_test_accounts_file" "$resources_dir/static_accounts.yaml"
     crudini --set "$tempest_conf" auth test_accounts_file "$resources_dir/static_accounts.yaml"
