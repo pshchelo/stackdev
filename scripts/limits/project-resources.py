@@ -1,13 +1,20 @@
 #!/usr/bin/env python3
-import sys
+import argparse
 
 import openstack
 
-sdk_kwargs = {}
-if len(sys.argv) > 1:
-    sdk_kwargs["cloud"] = sys.argv[1]
+parser = argparse.ArgumentParser(
+    prog="project-resources",
+    description="Get available RAM and vCPU for an OpenStack project"
+)
+parser.add_argument("--os-cloud",
+                    metavar="<CLOUD>",
+                    default=None,
+                    help="Name of the entry in clouds.yaml config, defaults "
+                         "to OC_CLOUD env var.")
+args = parser.parse_args()
 
-cloud = openstack.connect(**sdk_kwargs)
+cloud = openstack.connect(cloud=args.os_cloud)
 
 nova_limits = cloud.compute.get_limits()
 available_cores = (
