@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""
-Find and optionally delete Placement allocations for which consumer
-does not exist as an instance/server in Nova.
-"""
 import argparse
 import json
 import logging
 import openstack
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(
+    prog="orphan-allocations",
+    description="Find and optionally delete Placement allocations for which "
+                "consumer does not exist as an instance/server in Nova."
+)
 parser.add_argument("-v", "--verbose", action="store_true")
 parser.add_argument("-d", "--delete", action="store_true")
 args = parser.parse_args()
@@ -27,8 +27,8 @@ for rp in sorted(cloud.placement.resource_providers(), key=lambda x: x.name):
         resources = alloc["resources"]
         if not set(resources).issubset({"VCPU", "MEMORY_MB", "DISK_GB"}):
             LOG.warning(
-                f"strange consumer {consumer} on resource provider {rp.id}: "
-                f"{alloc}")
+                f"consumer {consumer} on resource provider {rp.id} consumes "
+                f"custom resources: {alloc}. Skipping...")
             continue
         if not cloud.compute.find_server(consumer, all_projects=True):
             LOG.info(
