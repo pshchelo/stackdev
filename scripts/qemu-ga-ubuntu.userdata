@@ -1,0 +1,5 @@
+#!/bin/sh
+set -ex
+DEBIAN_FRONTEND=noninteractive apt-get update
+DEBIAN_FRONTEND=noninteractive apt-get install -y qemu-guest-agent
+systemctl start qemu-guest-agent.service
