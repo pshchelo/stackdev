@@ -46,7 +46,7 @@ function osdpl_wait_applied {
 
 function osdpl_wait_ready {
     osdplst=$(kubectl -n openstack get osdplst --no-headers | awk '{print $1}')
-    until [ "$(kubectl get osdplst "$osdplst" -ojson | jq -r '[.status.health[][].status]|sort|unique[]')" == "Ready" ]; do
+    until [ "$(kubectl -n openstack get osdplst "$osdplst" -ojson | jq -r '[.status.health[][].status]|sort|unique[]')" == "Ready" ]; do
         sleep "$POLL_TIMEOUT";
         if [ "$QUIET" == 0 ]; then
             echo -n "."
