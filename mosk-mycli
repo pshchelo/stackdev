@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-delay=${1:-5}
+delay=${1:-2}
 dbpwd=$(kubectl -n openstack get secret mariadb-dbadmin-password -ojsonpath='{.data.MYSQL_DBADMIN_PASSWORD}' | base64 -d)
 dbusr=root
 kubectl port-forward svc/mariadb 3306 &
