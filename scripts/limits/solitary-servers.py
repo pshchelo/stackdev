@@ -4,10 +4,17 @@ import argparse
 import openstack
 
 
-parser = argparse.ArgumentParser(
-    prog="solitary-servers",
-    description="Find Nova servers that are not part of any Heat Stack"
-)
+def setup_cli():
+    parser = argparse.ArgumentParser(
+        prog="solitary-servers",
+        description="Find Nova servers that are not part of any Heat Stack"
+    )
+    parser.add_argument(
+        "--os-cloud",
+        dest="cloud_name",
+        help="Cloud to use (from clouds.yaml). Default is from OS_CLOUD env var."
+    )
+    return parser.parse_args()
 
 
 def get_servers_in_stacks(cloud):
@@ -58,6 +65,7 @@ def print_servers_table(servers):
 
 
 if __name__ == "__main__":
-    cloud = openstack.connect(options=parser)
+    args = setup_cli()
+    cloud = openstack.connect(cloud=args.cloud_name)
     servers = get_solitary_servers(cloud)
     print_servers_table(servers)
