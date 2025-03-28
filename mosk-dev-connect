@@ -64,7 +64,9 @@ sudo -v
 
 # passing all the args to echo verbatim
 # shellcheck disable=SC2068
-function errcho { >&2 echo $@; }
+function errcho {
+    >&2 echo $@
+}
 
 function errcho_ok {
     errcho -e "${GREEN}OK${NOC}"
