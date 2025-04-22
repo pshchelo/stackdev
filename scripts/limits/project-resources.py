@@ -7,14 +7,7 @@ parser = argparse.ArgumentParser(
     prog="project-resources",
     description="Get available RAM and vCPU for an OpenStack project"
 )
-parser.add_argument("--os-cloud",
-                    metavar="<CLOUD>",
-                    default=None,
-                    help="Name of the entry in clouds.yaml config, defaults "
-                         "to OC_CLOUD env var.")
-args = parser.parse_args()
-
-cloud = openstack.connect(cloud=args.os_cloud)
+cloud = openstack.connect(options=parser)
 
 nova_limits = cloud.compute.get_limits()
 available_cores = (
