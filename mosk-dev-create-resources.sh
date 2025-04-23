@@ -17,7 +17,10 @@ if echo -e "3.16.0\n$osc_version" | sort -V -C ; then
 fi
 
 region=$(kubectl -n openstack exec -ti "$pod" -c keystone-client -- openstack endpoint list --service identity --interface public -f value -c Region | tr -d '\r')
-export OS_REGION_NAME=$region
+# TODO: re-enable when zaqarclient 3.0.1 with this fix
+# https://review.opendev.org/c/openstack/python-zaqarclient/+/944605
+# is released and installed in MOSK/Epoxy keystone-client container
+#export OS_REGION_NAME=$region
 
 # execute the rest locally using separate admin user created above
 # needs access to public OpenStack API of MOSK dev cluster, e.g. sshuttle running
