@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+RED='\033[0;31m'
+NOC='\033[0m'
 set -e
 echo resolving keystone-client pod name
 pod=$(kubectl -n openstack get pod -l application=keystone,component=client -ojsonpath='{.items[0].metadata.name}')
@@ -26,7 +28,7 @@ region=$(kubectl -n openstack exec -ti "$pod" -c keystone-client -- openstack en
 # needs access to public OpenStack API of MOSK dev cluster, e.g. sshuttle running
 
 if ! grep -q keystone.it.just.works /etc/hosts; then
-    read -r -p "Start sshuttle and press Enter to continue.."
+    read -r -p "${RED}Start sshuttle and press Enter to continue..${NOC}"
 fi
 
 # custom MOSK role
