@@ -1,28 +1,35 @@
 #!/usr/bin/env bash
-
+# Run Python unit tests in container, almost the same as MCP/MOSK CI does
 image_repo="docker-dev-virtual.docker.mirantis.net"
 image_path="mirantis/openstack-ci/openstack-ci-python3-test"
-image_tag="jammy" 
+image_tag="noble"
+UPPER_CONSTRAINTS_FILE=${UPPER_CONSTRAINTS_FILE:-"$HOME/src/openstack/requirements/upper-constraints.txt"}
+DEBUG=0
 
 function get_help {
     local script_name
     script_name=$(basename "$0")
-    echo "Usage: $script_name TOX_ENV [-r <docker repo url>] [-i <docker image path>] [-t <docker image tag>] [-h]"
+    echo "Usage: $script_name TOX_ENV [-r <docker repo url>] [-i <docker image path>] [-t <docker image tag>] [-h] [-d]"
     echo "defaults are:"
     echo "<docker repo url> $image_repo"
     echo "<docker image path> $image_path"
     echo "<docker image tag> $image_tag"
 }
 
-while getopts ':r:i:t:h' arg; do
+while getopts ':r:i:t:hd' arg; do
     case "${arg}" in
         r) image_repo="${OPTARG}" ;;
         i) image_path="${OPTARG}" ;;
         t) image_tag="${OPTARG}" ;;
+        d) DEBUG=1 ;;
         h) get_help ;;
         ?) get_help; exit 1 ;;
     esac
 done
+
+if [[ $DEBUG -eq 1 ]]; then
+    set -x
+fi
 
 tox_env=${*:$OPTIND:1}
 if [ -z "$tox_env" ]; then
@@ -65,10 +72,13 @@ fi
 
 docker exec -t -u root:root "$name" groupmod -g "${UID}" jenkins
 docker exec -t -u root:root "$name" usermod -u "${UID}" jenkins
+docker exec -t -u root:root "$name" bash -c 'echo -e "break-system-packages=true" >> /etc/pip.conf'
 docker exec -t -u root:root "$name" pip uninstall virtualenv --yes
 docker exec -t -u root:root "$name" pip install -c /opt/upper-constraints.txt "$venv"
 
 docker exec -t -u jenkins:jenkins "$name" /usr/local/bin/run_dockerized_tox.sh
 
-docker stop "$name"
-docker rm "$name"
+if [[ $DEBUG -eq 0 ]]; then
+    docker stop "$name"
+    docker rm "$name"
+fi
