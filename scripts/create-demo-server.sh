@@ -46,6 +46,14 @@ function errcho_fail {
     errcho -e "${RED}""$1""${NOC}"
 }
 
+project=$(openstack configuration show -f value -c auth.project_name)
+if openstack network show "$project" > /dev/null 2>&1; then
+    errcho_nice "Using network $project"
+else
+    errcho_fail "Can't find network named $project, abort."
+    exit 1
+fi
+
 if [ -z "$server_name" ]; then
     server_name="test-$RANDOM"
 fi
@@ -77,13 +85,6 @@ if [ -z "$server_flavor" ]; then
     fi
 fi
 
-project=$(openstack configuration show -f value -c auth.project_name)
-if openstack network show "$project" > /dev/null 2>&1; then
-    errcho_nice "Using network $project"
-else
-    errcho_fail "Can't find network named $project, abort."
-    exit 1
-fi
 optional_args=""
 if openstack security group show "$project" > /dev/null 2>&1; then
     optional_args+=" --security-group $project "
