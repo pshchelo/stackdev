@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+IMAGE=${1}
+
+if [ -z "${IMAGE}" ]; then
+    _usage
+    exit 1
+fi
+
+MIRROR=${2:-"eu"}
+
+case "$MIRROR" in
+    "eu")
+        REGISTRY="docker-dev-kaas-virtual.artifactory-eu.mcp.mirantis.net"
+        ;;
+    "us")
+        REGISTRY="docker-dev-kaas-local.docker.mirantis.net"
+        ;;
+    "review")
+        REGISTRY=""docker-review-local.docker.mirantis.net
+        ;;
+    "public")
+        REGISTRY="docker-dev-kaas-virtual.mcp.mirantis.com"
+        ;;
+    "cdn")
+        REGISTRY="mirantis.azurecr.io"
+        ;;
+    *)
+        REGISTRY=$MIRROR
+        ;;
+esac
+
+docker run --rm -it "${REGISTRY}/${IMAGE}" bash
