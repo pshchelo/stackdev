@@ -203,8 +203,9 @@ function patch_hosts_file {
     read -ra patched_hosts <<< "$hosts_str"
     IFS=$OLD_IFS
     for svc in "${patched_hosts[@]}"; do
-        if grep "${svc}" /etc/hosts > /dev/null; then
-            errcho "ERROR: entry for ${svc} is already in /etc/hosts file."
+        read -r -a svc_arr <<< "$svc"
+        if grep "${svc_arr[1]}" /etc/hosts > /dev/null; then
+            errcho -e "${RED}ERROR: entry for ${svc_arr[1]} is already in /etc/hosts file.${NOC}"
             errcho "File was not properly restored from backup or parallel $(basename "$0") session is running."
             exit 1
         fi
