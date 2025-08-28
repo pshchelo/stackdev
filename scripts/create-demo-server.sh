@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -e
 script_dir=$(dirname "$0")
+ATTACH_NETWORK=1
 CREATE_FIP=0
 DEFAULT_FIP_POOL="public"
 
@@ -21,18 +22,26 @@ Parameters:
     -f FLAVOR flavor to use for the server (defaults discovered minimal available flavor suitable for a cirros image)
     -a        make server accessible, create or pick existing floating IP and assigns to the server
     -p NET    name of the network to allocate floating IP from, defaults to '$DEFAULT_FIP_POOL'
+    -A        create inaccessible server, w/o any network interfaces
+    -H        host to create server on, only available to admins
+    -z        availability zone to create server in
+    -V        compute API microversion to use for create server request
     -v        be verbose (set -x)
     -h        show this message and exit
 "
 
 FIP_POOL=$DEFAULT_FIP_POOL
-while getopts ':hvap:n:i:f:' arg; do
+while getopts ':hvaAV:H:z:p:n:i:f:' arg; do
     case "${arg}" in
         n) server_name="${OPTARG}";;
         i) server_image="${OPTARG}";;
         f) server_flavor="${OPTARG}";;
+        z) server_az="${OPTARG}";;
+        H) server_host="${OPTARG}";;
+        A) ATTACH_NETWORK=0;;
         a) CREATE_FIP=1;;
         p) FIP_POOL="${OPTARG}";;
+        V) api_version="${OPTARG}";;
         v) set -x ;;
         h) echo "$__usage"; exit 0 ;;
         *) echo "$__usage"; exit 1 ;;
@@ -54,11 +63,19 @@ function errcho_fail {
 }
 
 project=$(openstack configuration show -f value -c auth.project_name)
-if openstack network show "$project" > /dev/null 2>&1; then
-    errcho_nice "Using network $project"
+optional_args=""
+
+if [ "$ATTACH_NETWORK" == "1" ]; then
+
+    if openstack network show "$project" > /dev/null 2>&1; then
+        errcho_nice "Using network $project"
+        optional_args+=" --network $project"
+    else
+        errcho_fail "Can't find network named $project, abort."
+        exit 1
+    fi
 else
-    errcho_fail "Can't find network named $project, abort."
-    exit 1
+    optional_args+=" --no-network"
 fi
 
 if [ -z "$server_name" ]; then
@@ -92,27 +109,46 @@ if [ -z "$server_flavor" ]; then
     fi
 fi
 
-optional_args=""
-if openstack security group show "$project" > /dev/null 2>&1; then
-    optional_args+=" --security-group $project "
-    errcho_nice "Using security group $project"
+if [ "$ATTACH_NETWORK" == "1" ]; then
+    if openstack security group show "$project" > /dev/null 2>&1; then
+        optional_args+=" --security-group $project "
+        errcho_nice "Using security group $project"
+    fi
+    if openstack keypair show "$project" > /dev/null 2>&1; then
+        optional_args+=" --key-name $project "
+        errcho_nice "Using keypair $project"
+    fi
 fi
-if openstack keypair show "$project" > /dev/null 2>&1; then
-    optional_args+=" --key-name $project "
-    errcho_nice "Using keypair $project"
+if [ -n "$server_az" ]; then
+    optional_args+=" --availability-zone $server_az"
 fi
-#NOTE: `| tail -n1` below is needed due to https://storyboard.openstack.org/#!/story/2010947
+if [ -n "$server_host" ]; then
+    optional_args+=" --host $server_host"
+fi
+
+# figure out proper api version if not specified
+if [ -z "$api_version" ]; then
+    if [ "$ATTACH_NETWORK" == "0" ]; then
+        api_version="2.37"
+    fi
+    if [ -n "$server_host" ]; then
+        api_version="2.74"
+    fi
+fi
+if [ -n "$api_version" ]; then
+    optional_args+=" --os-compute-api-version $api_version"
+fi
+
+# NOTE: assigning result of --wait needs openstack cli >= 8.2.0
 # shellcheck disable=SC2086 # word splitting in optional_args is intentional
 server_id=$(openstack server create "$server_name" \
-    --key-name "$project" \
-    --network "$project" \
     --image "$server_image" \
     --flavor "$server_flavor" \
     --user-data "$script_dir/cirros-http-cpuload.userdata" \
     --use-config-drive \
     $optional_args \
     -f value -c id \
-    --wait | tail -n1
+    --wait
 )
 if [ -z "$server_id" ]; then
     errcho_fail "Failed to create server $server_name"
