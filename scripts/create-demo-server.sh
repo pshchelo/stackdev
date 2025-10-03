@@ -79,7 +79,8 @@ else
 fi
 
 if [ -z "$server_name" ]; then
-    server_name="test-$RANDOM"
+    # NOTE: $RANDOM is a 15-bit integer (0 - 32767)
+    server_name="test-$(printf '%05d' $RANDOM)"
 fi
 
 if [ -z "$server_image" ]; then
