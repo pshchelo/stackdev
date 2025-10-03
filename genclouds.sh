@@ -1,10 +1,13 @@
 #!/usr/bin/env sh
 # generate clouds.yaml with admin account for the test MOS env
+# TODO: discover URL from osdpl
+URL=${1:-"https://keystone.it.just.works"}
 clouds_yaml=$(kubectl -n openstack get secret keystone-os-clouds -ojsonpath='{.data.clouds\.yaml}' | base64 -d)
-echo "clouds:
+cat > clouds.yaml << EOF
+clouds:
   admin:
     auth:
-      auth_url: https://keystone.it.just.works
+      auth_url: $URL
       username: $(echo  "$clouds_yaml" | yq -r .clouds.admin.auth.username)
       password: $(echo  "$clouds_yaml" | yq -r .clouds.admin.auth.password)
       project_name: admin
@@ -13,5 +16,5 @@ echo "clouds:
     insecure: true
     interface: public
     region_name: $(echo  "$clouds_yaml" | yq -r .clouds.admin.region_name)
-    identity_api_version: '3'"
-#EOF
+    identity_api_version: '3'
+EOF
