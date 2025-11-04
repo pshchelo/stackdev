@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
+svcdomain=$(kubectl get osdpl -ojsonpath='{.items[0].spec.public_domain_name}')
 horizon_pod=$(kubectl -n openstack get pod -l application=horizon -ocustom-columns=NAME:.metadata.name --no-headers | head -n1)
 kubectl -n openstack exec -c horizon "${horizon_pod}" -- tar -chf - /etc/openstack-dashboard | tar -x --strip-components=1 -f -
 kubectl -n openstack exec -c horizon "${horizon_pod}" -- tar -chf - /usr/local/share/openstack_dashboard/custom_themes | tar -x --strip-components=4 -f -
@@ -11,24 +12,25 @@ cat >> local_settings.py << EOF
 
 
 # === CHANGES FOR RUNNING LOCALLY ===
+LOCAL_PATH="${PWD}/openstack-dashboard"
 DEBUG = True
 TEMPLATE_DEBUG = False
 COMPRESS_OFFLINE = False
 STATIC_ROOT = None
-OPENSTACK_KEYSTONE_URL = "https://keystone.it.just.works/v3"
+OPENSTACK_KEYSTONE_URL = "https://keystone.${svcdomain}/v3"
 OPENSTACK_ENDPOINT_TYPE = "publicURL"
 WEBSSO_INITIAL_CHOICE = "credentials"
+# TODO: test how to make "direct" work, patch CORS in Glance?
+HORIZON_IMAGES_UPLOAD_MODE = "legacy"
 ALLOWED_HOSTS = ["*"]
 SESSION_ENGINE = 'django.contrib.sessions.backends.file'
+DATABASES = {}
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
         "LOCATION": LOCAL_PATH + "/django_cache",
     }
 }
-# TODO: test how to make "direct" work, patch CORS in Glance?
-HORIZON_IMAGES_UPLOAD_MODE = "legacy"
-LOCAL_PATH="${PWD}/openstack-dashboard"
 POLICY_FILES_PATH = LOCAL_PATH
 OPENSTACK_SSL_CACERT = LOCAL_PATH + "/ca-bundle.pem"
 MESSAGES_PATH = LOCAL_PATH + "/motd"
