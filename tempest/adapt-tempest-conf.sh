@@ -13,6 +13,11 @@ kubectl -n openstack cp -c tempest-run-tests "$tempest_pod:/etc/tempest/test-bla
 tempest_conf=${PWD}/tempest.conf
 kubectl -n openstack cp -c tempest-run-tests "$tempest_pod:/etc/tempest/tempest.conf" "$tempest_conf"
 
+crudini --set "$tempest_conf" DEFAULT debug true
+crudini --set "$tempest_conf" DEFAULT use_syslog false
+crudini --set "$tempest_conf" DEFAULT use_stderr true
+crudini --set "$tempest_conf" DEFAULT log_file tempest_local_launch.log
+
 crudini --del "$tempest_conf" identity ca_certificates_file
 crudini --set "$tempest_conf" identity disable_ssl_certificate_validation True
 crudini --set "$tempest_conf" identity v3_endpoint_type public
