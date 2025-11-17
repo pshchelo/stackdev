@@ -1,0 +1,26 @@
+apiVersion: lcm.mirantis.com/v1alpha1
+kind: OpenStackDeployment
+spec:
+  features:
+    # This will add additional cinder backend to existing default rbd backend
+    # to Glance, based on 'lvm_multiattach' volume type
+    glance:
+      backends:
+        cinder:  # store driver, one of cinder, rbd, file
+          blockstore:  # store name
+            default: false
+            cinder_volume_type: lvm_multiattach
+        rbd:  # store driver, one of cinder, rbd, file
+          ceph:  # store name
+            default: true
+  nodes:
+    # this will deploy cinder-volume with lvm driver on computes,
+    # specify an existing VG or pre-create it manually.
+    openstack-compute-node::enabled:
+      features:
+        cinder:
+          volume:
+            backends:
+              lvm:
+                lvm:
+                  volume_group: cinder-vol
