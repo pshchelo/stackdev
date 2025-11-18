@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# merge new kube config to existing default one
+set -o pipefail
+set -e
+echo "Merging $1 to $HOME/.kube/config"
+KUBECONFIG=$HOME/.kube/config:$1 kubectl config view --flatten > /tmp/mergedkub && mv /tmp/mergedkub $HOME/.kube/config
