@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: tempest-test-results-pod
+  namespace: openstack
+spec:
+  nodeSelector:
+    openstack-control-plane: enabled
+  volumes:
+    - name: tempest-pvc-storage
+      persistentVolumeClaim:
+        claimName: pvc-tempest
+  containers:
+    - name: tempest-pvc-container
+      image: busybox
+      command: ['sh', '-c', 'sleep infinity']
+      volumeMounts:
+        - mountPath: "/var/lib/tempest/data"
+          name: tempest-pvc-storage

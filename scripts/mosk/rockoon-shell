@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+container=${1:-osdpl}
+kubectl -n osh-system get deploy -oname | grep -q 'rockoon$' && dname="rockoon" || dname="openstack-controller"
+kubectl -n osh-system exec -ti "deploy/$dname" -c "$container" -- bash

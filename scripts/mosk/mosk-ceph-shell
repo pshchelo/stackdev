@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+cmd=${@:-"/bin/bash"}
+kubectl -n rook-ceph exec -ti deploy/rook-ceph-tools -c rook-ceph-tools -- ${cmd}

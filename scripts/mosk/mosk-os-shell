@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+cmd=${@:-"/bin/bash"}
+kubectl -n openstack exec -ti deploy/keystone-client -c keystone-client -- ${cmd}

@@ -1,0 +1,258 @@
+#!/usr/bin/env bash
+
+# make tunnels for OpenStack public API and default floating IP networks
+# of MOSK dev cluster
+
+function usage {
+    echo "Usage: $(basename "$0") [-hvnr] [-i IFACE] [CONTEXT]"
+    echo "Allows to connect to MOSK development environment's Public APIs"
+    echo "Needs appropriate kubectl context to be set to have access to the cluster"
+    echo "Discovers the required hostnames to provide and networks to (optionally) tunnel using sshuttle"
+    echo "Options:"
+    echo "  CONTEXT   Name of the kubernetes config context"
+    echo "            Defaults to current context."
+    echo "  -n        Do not actually do sshuttle, only patch hosts file"
+    echo "  -r        Do route mangling for the case of greedy VPNs"
+    echo "            Enabled by default on Darwin. Has no effect with -n"
+    echo "  -i IFACE  Network interface to add routes to"
+    echo "            Defaults to 'en0' on Darwin and 'ens3' on Linux. Has no effect with -n"
+    echo "  -v        verbose (bash -x)"
+    echo "  -h        print this message and exit"
+}
+
+PLATFORM="$(uname)"
+HOSTSFILE=/etc/hosts
+OS_PUBLIC_NETWORK_NAME="public"
+# defaults for virtual labs
+SSH_KEY="${HOME}/.ssh/aio_rsa"
+SSH_USER="ubuntu"
+DO_SSHUTTLE=True
+INJECT_ROUTES=False
+case "$PLATFORM" in
+    "Linux")
+        IFACE="ens3"
+        ;;
+    "Darwin")
+        IFACE="en0"
+        INJECT_ROUTES=True # our corp VPN on Mac is greedy w/o options
+        ;;
+    *)
+        errcho "Unknown platform, only Linux and Darwin are supported"
+        exit 1
+        ;;
+esac
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NOC='\033[0m'
+
+while getopts ':hvnri:' arg; do
+    case "${arg}" in
+        n) DO_SSHUTTLE=False ;;
+        r) INJECT_ROUTES=True ;;
+        i) IFACE="${OPTARG}";;
+        v) set -x ;;
+        h) usage; exit 0;;
+        *) usage; exit 1;;
+    esac
+done
+CONTEXT_ARG=${*:$OPTIND:1}
+CONTEXT=${CONTEXT_ARG:-$(kubectl config current-context)}
+
+# pre-auth sudo right away
+sudo -v
+
+# passing all the args to echo verbatim
+# shellcheck disable=SC2068
+function errcho {
+    >&2 echo $@
+}
+
+function errcho_ok {
+    errcho -e "${GREEN}OK${NOC}"
+}
+
+function errcho_no {
+    errcho -e "${RED}NO${NOC}"
+}
+
+function discover_hosts {
+    errcho -n "discovering OpenStack API services... "
+    local hosts=""
+    ingress_lb_ip=$(kubectl --context "$CONTEXT" -n openstack get svc ingress -ojsonpath='{.status.loadBalancer.ingress[0].ip}' --ignore-not-found)
+    if [[ -n ${ingress_lb_ip} ]]; then
+        for ns in "openstack" "rook-ceph"; do
+            for svc in $(kubectl --context "$CONTEXT" -n $ns get ingress -ojsonpath='{.items[*].spec.rules[*].host}'); do
+                hosts+="${ingress_lb_ip} ${svc};"
+            done
+        done
+    fi
+    errcho_ok
+    errcho -n "discovering Keycloak services... "
+    keycloak_ip=$(kubectl --context "$CONTEXT" -n iam get svc openstack-iam-keycloak-http -ojsonpath='{.status.loadBalancer.ingress[0].ip}' --ignore-not-found)
+    if [[ -z ${keycloak_ip} ]]; then
+        # older iam chart was using openstack-iam-keyclo-http as service name
+        keycloak_ip=$(kubectl --context "$CONTEXT" -n iam get svc openstack-iam-keyclo-http -ojsonpath='{.status.loadBalancer.ingress[0].ip}' --ignore-not-found)
+    fi
+    if [[ -n ${keycloak_ip} ]]; then
+        keycloak_domain_record=$(kubectl --context "$CONTEXT" -n coredns get cm coredns-coredns -oyaml | grep keycloak | awk '{print $1}')
+        # keycloak_domain_record has dot (.) in the end since it is a proper DNS record
+        hosts+="${keycloak_ip} ${keycloak_domain_record%?};"
+        errcho_ok
+    else
+        errcho_no
+    fi
+
+    errcho -n "discovering StackLight services... "
+    stacklight_svc_found=0
+    for svc in grafana prometheus-server prometheus-alertmanager alerta opensearch-dashboards; do
+        svc_ip=$(kubectl --context "$CONTEXT" -n stacklight get svc "$svc" -ojsonpath='{.status.loadBalancer.ingress[0].ip}' --ignore-not-found)
+        if [[ -n ${svc_ip} ]]; then
+            hosts+="$svc_ip $svc.stacklight;"
+            stacklight_svc_found=1
+        fi
+    done
+    if [ $stacklight_svc_found == 1 ]; then
+        errcho_ok
+    else
+        errcho_no
+    fi
+
+    # TODO: add support for TungstenFabric/OpenSDN - svc/tf-webui and svc/tf-config-api
+    #errcho -n "discovering TungstenFabric/OpenSDN services..."
+    #tf_ui_ip = $()
+    #tf_api_ip=$()
+
+    echo "$hosts"
+}
+
+function set_network_access_vars {
+    CLUSTER=$(kubectl config view  -o jsonpath="{.contexts[?(@.name == \"$CONTEXT\")].context.cluster}")
+    K8S_IP=$(kubectl config view -o jsonpath="{.clusters[?(@.name == \"$CLUSTER\")].cluster.server}" | awk -F ":" "{print \$2}" | cut -c3-)
+
+    errcho -n "discoverung OpenStack services cluserIP range... "
+    # virtual labs have 'metallb' ns, phys labs have 'metallb-system' ns
+    metallb_ns=$(kubectl --context "$CONTEXT" get ns -ocustom-columns=NAME:metadata.name | grep -E '^(metallb|metallb-system)$')
+    # virtual labs have 'openstack-default' pool, phys labs have 'default' or 'services' pool
+    ippool=$(kubectl --context "$CONTEXT" -n "$metallb_ns" get ipaddresspools -ocustom-columns=NAME:metadata.name | grep -E '(default|services)')
+
+    if [[ ! "$ippool" =~ "openstack" ]]; then
+        # not a virtual lab
+        SSH_KEY="./ssh_key"
+        SSH_USER="mcc-user"
+    fi
+
+    cluster_ip_range=$(kubectl --context "$CONTEXT" -n "$metallb_ns" get ipaddresspools "$ippool" -ojsonpath='{.spec.addresses[0]}')
+    # cluster_ip_range has format of IP1-IP2
+    # NOTE: actual cluster ip range may not be translatable to simple single cidr (default is ...100-255)
+    # so just force it to X.Y.Z.0/24 range based on range start, should be enough for dev envs this is targeted for
+    CLUSTER_CIDR="$(echo "$cluster_ip_range" | awk -F '.' 'BEGIN{OFS=FS} {print $1, $2, $3}').0/24"
+    errcho_ok
+
+    errcho -n "discovering network address of IPv4 subnet of OpenStack network named ${OS_PUBLIC_NETWORK_NAME}... "
+    PUBLIC_CIDR=$(kubectl --context "$CONTEXT" -n openstack exec deploy/keystone-client -c keystone-client -- openstack subnet list --ip-version 4 --network "$OS_PUBLIC_NETWORK_NAME" -f value -c Subnet)
+    errcho_ok
+}
+
+function add_routes {
+    case "$PLATFORM" in
+        "Linux")
+            sudo ip route add "$CLUSTER_CIDR" dev "$IFACE"
+            if [ "$PUBLIC_CIDR" != "$CLUSTER_CIDR" ]; then
+                sudo ip route add "$PUBLIC_CIDR" dev "$IFACE"
+            fi
+            ;;
+        "Darwin")
+            sudo route add "$CLUSTER_CIDR" -interface "$IFACE"
+            if [ "$PUBLIC_CIDR" != "$CLUSTER_CIDR" ]; then
+                sudo route add "$PUBLIC_CIDR" -interface "$IFACE"
+            fi
+            ;;
+        *)
+            errcho "Unknown platform, only Linux and Darwin are supported"
+            exit 1
+            ;;
+    esac
+}
+
+function delete_routes {
+    case "$PLATFORM" in
+        "Linux")
+            sudo ip route del "$CLUSTER_CIDR" dev "$IFACE"
+            if [ "$PUBLIC_CIDR" != "$CLUSTER_CIDR" ]; then
+                sudo ip route del "$PUBLIC_CIDR" dev "$IFACE"
+            fi
+            ;;
+        "Darwin")
+            sudo route delete "$CLUSTER_CIDR" -interface "$IFACE"
+            if [ "$PUBLIC_CIDR" != "$CLUSTER_CIDR" ]; then
+                sudo route delete "$PUBLIC_CIDR" -interface "$IFACE"
+            fi
+            ;;
+        *)
+            errcho "Unknown platform, only Linux and Darwin are supported"
+            exit 1
+            ;;
+    esac
+}
+
+function patch_hosts_file {
+    local hosts_str=$1
+    local OLD_IFS=$IFS
+    IFS=';'
+    read -ra patched_hosts <<< "$hosts_str"
+    IFS=$OLD_IFS
+    for svc in "${patched_hosts[@]}"; do
+        read -r -a svc_arr <<< "$svc"
+        if grep "${svc_arr[1]}" /etc/hosts > /dev/null; then
+            errcho -e "${RED}ERROR: entry for ${svc_arr[1]} is already in /etc/hosts file.${NOC}"
+            errcho "File was not properly restored from backup or parallel $(basename "$0") session is running."
+            exit 1
+        fi
+    done
+
+    errcho -n "backing up $HOSTSFILE... "
+    sudo cp $HOSTSFILE $HOSTSFILE.mosk.bak
+    errcho_ok
+
+    errcho appending to $HOSTSFILE:
+    echo
+    printf "%s\n" "${patched_hosts[@]}" | sudo tee -a $HOSTSFILE
+    echo
+}
+
+function restore_hosts_file {
+    # TODO: make restoring hosts file an exit trap
+    errcho -n "restoring $HOSTSFILE from backup... "
+    sudo mv $HOSTSFILE.mosk.bak $HOSTSFILE
+    errcho_ok
+}
+
+if [ "$DO_SSHUTTLE" = "True" ]; then
+    # sets K8S_IP, CLUSTER_CIDR and PUBLIC_CIDR vars,
+    # may also redefine SSH_KEY and SSH_USER
+    set_network_access_vars
+fi
+
+patch_hosts_file "$(discover_hosts)"
+
+if [ "$DO_SSHUTTLE" = "True" ]; then
+    if [ $(pgrep -f "sshuttle.*${CLUSTER_CIDR}.*${PUBLIC_CIDR}") ]; then
+        errcho "another instance of ${0} proxying the same networks ${CLUSTER_CIDR} and ${PUBLIC_CIDR} is running!"
+        restore_hosts_file
+        exit 1
+    fi
+    errcho "sshuttle to ${K8S_IP}, access ${CLUSTER_CIDR} for k8s cluster network and ${PUBLIC_CIDR} for OpenStack public network"
+    SSH_ARGS="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -i ${SSH_KEY} -l ${SSH_USER}"
+    if [ "$INJECT_ROUTES" == "True" ]; then
+        add_routes
+    fi
+    sshuttle "$CLUSTER_CIDR" "$PUBLIC_CIDR" -r "$K8S_IP" --ssh-cmd "$SSH_ARGS"
+    if [ "$INJECT_ROUTES" == "True" ]; then
+        delete_routes
+    fi
+else
+    read -p "Press Enter to restore $HOSTSFILE" -n 1 -r
+fi
+
+restore_hosts_file

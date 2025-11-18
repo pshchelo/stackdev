@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+delay=${1:-2}
+dbpwd=$(kubectl -n openstack get secret mariadb-dbadmin-password -ojsonpath='{.data.MYSQL_DBADMIN_PASSWORD}' | base64 -d)
+dbusr=root
+kubectl port-forward svc/mariadb 3306 &
+pfpid=$!
+sleep "$delay"
+mycli -u"$dbusr" -p"$dbpwd"
+kill -9 $pfpid
