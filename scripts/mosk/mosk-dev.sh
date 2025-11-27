@@ -5,6 +5,7 @@ RED='\033[0;31m'
 NOC='\033[0m'
 READONLY=0
 SCRIPT_NAME=$(basename "$0")
+SCRIPT_DIR=$(dirname "$0")
 __usage="
 Usage: $SCRIPT_NAME [-r] <URL>
 Prepare (virtual) MOSK development env for my custom settings:
@@ -31,20 +32,20 @@ fi
 echo "Get kubeconfig for the env"
 wget "$url/artifact/kubeconfig-child-cluster.yml" -O kubeconfig.yaml
 echo "Edit kubeconfig for the env"
-~/dotfiles/scripts/mosk/mosk-dev-config-rename-context.sh kubeconfig.yaml
-cat > .envrc << EOF
+"$SCRIPT_DIR"/mosk-dev-config-rename-context.sh kubeconfig.yaml
+cat > "$PWD/.envrc" << EOF
 export KUBECONFIG="\$PWD/kubeconfig.yaml"
 export OS_CLOUD="mosk-dev-admin"
 EOF
 direnv allow
-source .envrc
+source "$PWD/.envrc"
 echo "Create local copies of deployed resources"
-~/dotfiles/scripts/mosk/mosk-dev-fetch-deployed-resources.sh
+"$SCRIPT_DIR"/mosk-dev-fetch-deployed-resources.sh
 if [ $READONLY -eq 0 ]; then
     echo -e "${RED}START mosk-dev-connect in a separate shell NOW${NOC}"
     sleep 5
     # the next command needs mosk-dev-connect running,
     # but it will pause if that is not running yet
     echo "Create my default test env users and infra"
-    ~/dotfiles/scripts/mosk/mosk-dev-create-resources.sh
+    "$SCRIPT_DIR"/mosk-dev-create-resources.sh
 fi
