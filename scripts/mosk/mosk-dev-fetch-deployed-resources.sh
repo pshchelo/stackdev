@@ -9,13 +9,11 @@ DEPLOYED_IMAGES_FILE="deployed.$IMAGES_FILE"
 OSDPL_NAME=$(kubectl -n openstack get osdpl \
     -o jsonpath='{.items[].metadata.name}')
 kubectl -n openstack get osdpl "$OSDPL_NAME" -oyaml > "$DEPLOYED_OSDPL_FILE"
-# TODO: automate cleanup of osdpl yaml
-# remove status and all metadata except name and namespace
-cp "$DEPLOYED_OSDPL_FILE" "$OSDPL_FILE"
+cat "$DEPLOYED_OSDPL_FILE" | yq -y '{"apiVersion": .apiVersion, "kind": .kind, "metadata": {"name": .metadata.name, "namespace": .metadata.namespace}, "spec": .spec}' > "$OSDPL_FILE"
 kubectl -n osh-system get helmbundles.lcm.mirantis.com openstack-operator \
     --ignore-not-found=true -oyaml > "$DEPLOYED_OSCTL_FILE"
-if [ ! -s "$DEPLOYED_OSCTL_FILE" ]; then
-    cp "$DEPLOYED_OSCTL_FILE" "$OSCTL_FILE"
+if [ -s "$DEPLOYED_OSCTL_FILE" ]; then
+    cat "$DEPLOYED_OSCTL_FILE" | yq -y '{"apiVersion": .apiVersion, "kind": .kind, "metadata": {"name": .metadata.name, "namespace": .metadata.namespace}, "spec": .spec}' > "$OSCTL_FILE"
 else
     # mcc-deployed envs have the helmbundle for the operator
     # in the mgmt cluster, so ignore not found and delete empty file
