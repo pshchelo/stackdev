@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # downloads whole site ignoring index.htm[l] files
 URL=${1%/} # strip trailing slash so that counting CUT_DIRS is deterministic
+URL=${URL//\/ui\/native\//\/artifactory\/} # mangle Artifactory browser URL into artifactory download URL
 if [ -z "${URL}" ]; then
     echo "need URL to mirror files from"
     exit 1
