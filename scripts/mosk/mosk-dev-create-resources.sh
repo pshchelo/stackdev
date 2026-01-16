@@ -44,7 +44,7 @@ openstack --os-cloud mosk-dev-admin role create --or-show load-balancer_global_o
 openstack --os-cloud mosk-dev-admin role create --or-show reader
 
 # sandbox project to use w/o admin privileges
-echo "ensuring sandbox project exists"
+echo "ensuring demo project exists"
 openstack --os-cloud mosk-dev-admin project create --or-show demo --domain Default
 # sandbox user to use w/o admin priveleges
 echo "ensuring user demo exists"
