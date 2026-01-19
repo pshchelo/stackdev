@@ -12,7 +12,7 @@ clouds:
       project_name: admin
       user_domain_name: Default
       project_domain_name: Default
-    insecure: true
+    verify: false
     interface: public
     region_name: $(echo  "$clouds_yaml" | yq -r .clouds.admin.region_name)
     identity_api_version: '3'
