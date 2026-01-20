@@ -150,7 +150,9 @@ enable_service g-api
 #LIBS_FROM_GIT+=,glance_store
 
 ### NOVA ###
-enable_service n-api n-cond n-sch
+enable_service n-api
+enable_service n-cond
+enable_service n-sch
 enable_service n-api-meta
 enable_service n-cauth
 enable_service n-novnc
@@ -166,7 +168,8 @@ enable_service n-cpu
 
 ### PLACEMENT ###
 # Pike and newer
-enable_service placement-api placement-client
+enable_service placement-api
+enable_service placement-client
 
 ### NEUTRON ###
 enable_service q-svc
@@ -174,7 +177,11 @@ enable_service q-svc
 ## ML2 ## - default up to Wallaby is OVS, since Xena - OVN
 
 # ML2/OVS
-#enable_service q-agt q-dhcp q-l3 q-meta q-metering
+#enable_service q-agt
+#enable_service q-dhcp
+#enable_service q-l3
+#enable_service q-meta
+#enable_service q-meterin
 # need to set the below for OVS on Xena+
 # possible are vxlan, gre or gre,vxlan
 #Q_ML2_TENANT_NETWORK_TYPE=vxlan
@@ -185,7 +192,10 @@ enable_service q-svc
 # NEED TO ENABLE PUBLIC_NETWORK_GATEWAY EXPLICITLY!!! see above
 enable_service q-ovn-metadata-agent
 # OVN components
-enable_service ovn-controller ovn-northd ovs-vswitchd ovsdb-server
+enable_service ovn-controller
+enable_service ovn-northd
+enable_service ovs-vswitchd
+enable_service ovsdb-server
 # enable debug logging in OVN itself
 #OVN_DBS_LOG_LEVEL=dbg
 # node serves as gateway, True for AiO devstack, set to False on dedicated compute
@@ -194,7 +204,8 @@ enable_service ovn-controller ovn-northd ovs-vswitchd ovsdb-server
 
 ### NEUTRON PLUGINS ###
 #enable_plugin networking-l2gw https://opendev.org/openstack/networking-l2gw
-#enable_service l2gw-plugin l2gw-agent
+#enable_service l2gw-plugin
+#enable_service l2gw-agent
 
 #enable_plugin networking-generic-switch https://opendev.org/openstack/networking-generic-switch
 #GENERIC_SWITCH_USER_MAX_SESSIONS=2
@@ -207,11 +218,17 @@ enable_service ovn-controller ovn-northd ovs-vswitchd ovsdb-server
 
 ### OCTAVIA ###
 #enable_plugin octavia https://opendev.org/openstack/octavia
-#enable_service octavia o-api o-cw o-hk o-hm o-da
+#enable_service octavia
+#enable_service o-api
+#enable_service o-cw
+#enable_service o-hk
+#enable_service o-hm
+#enable_service o-da
 #LIBS_FROM_GIT+=,python-octaviaclient
 
 ### CINDER ###
-enable_service c-sch c-api
+enable_service c-api
+enable_service c-sch
 enable_service c-vol
 # NOTE: currently DevStack supports only Swift (default) and RBD as backup drivers.
 # Until https://review.opendev.org/903171 is merged to support posix-path driver,
@@ -225,7 +242,10 @@ enable_service c-vol
 #VOLUME_BACKING_FILE_SIZE=41000M
 
 ### SWIFT ###
-#enable_service s-proxy s-object s-container s-account
+#enable_service s-proxy
+#enable_service s-object
+#enable_service s-container
+#enable_service s-account
 #SWIFT_REPLICAS=1
 #SWIFT_START_ALL_SERVICES=False
 #SWIFT_HASH=1234123412341234
@@ -236,10 +256,21 @@ enable_service c-vol
 
 ### CEPH + RADOSGW ###
 #enable_plugin devstack-plugin-ceph https://opendev.org/openstack/devstack-plugin-ceph
-#ENABLE_CEPH_CINDER=True     # ceph backend for cinder
-#ENABLE_CEPH_GLANCE=True     # store images in ceph
-#ENABLE_CEPH_C_BAK=True      # backup volumes to ceph
-#ENABLE_CEPH_NOVA=True       # allow nova to use ceph resources
+#ENABLE_CEPH_RBD_MIRROR=True    #start rbdmirror service too
+
+# most integrations are enabled by default with this plugin, disable as needed
+#ENABLE_CEPH_RGW=True           # RadosGateWay instead of Swift (disabled by default)
+#ENABLE_CEPH_GLANCE=False       # disable rbd backend for images in Glance
+#ENABLE_CEPH_CINDER=False       # disable rbd backend for volumes in Cinder
+#ENABLE_CEPH_C_BAK=False        # disable rbd backend for backups in Cinder
+#ENABLE_CEPH_NOVA=False         # disable rbd backend for instance images in Nova
+#ENABLE_CEPH_MANILA=False       # disable cephfs backend for Manila
+#MANILA_CEPH_DRIVER=cephfsnfs   # use cephfs via nfs instead of cephfsnative (default)
+#CEPHADM_DEPLOY_NFS=False       # use NFS-Ganesha instead of ceph-nfs
+
+### NFS storage ###
+#enable_plugin devstack-plugin-nfs https://opendev.org/openstack/devstack-plugin-nfs
+#ENABLE_NFS_CINDER=False   # disable NFS driver in Cinder (enabled by default with this plugin)
 
 ### IRONIC ###
 #enable_plugin ironic https://opendev.org/openstack/ironic
@@ -310,7 +341,7 @@ enable_service c-vol
 #enable_plugin heat https://opendev.org/openstack/heat
 #HEAT_ENABLE_ADOPT_ABANDON=True
 #LIBS_FROM_GIT+=,python-heatclient
-# Needed until https://review.opendev.org/662476 is backported
+# Needed for stein and earlier
 #HEAT_BRANCH=stable/stein
 
 ### TELEMETRY ###
@@ -368,7 +399,6 @@ enable_service c-vol
 
 ### HEAT UI ###
 #enable_plugin heat-dashboard https://opendev.org/openstack/heat-dashboard
-#enable_service heat-dashboard
 
 ### OCTAVIA UI ###
 #enable_plugin octavia-dashboard https://opendev.org/openstack/octavia-dashboard
@@ -401,6 +431,8 @@ enable_service c-vol
 #[[post-config|$CINDER_CONF]]
 #[DEFAULT]
 #backup_driver = cinder.backup.drivers.posix.PosixBackupDriver
+##when ceph is enabled
+#cluster = ceph
 
 ## TODO: review these settings, decide which are still needed,
 ## some might've been moved to defaults of service or the devstack plugin

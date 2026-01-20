@@ -1,6 +1,14 @@
 [[local|localrc]]
+MULTI_HOST=True
 HOST_IP=192.168.100.187
 SERVICE_HOST=192.168.100.191
+#OFFLINE=True
+RECLONE=yes
+PIP_UPGRADE=True
+
+ADMIN_PASSWORD=admin
+SERVICE_PASSWORD=service
+SERVICE_TOKEN=tokentoken
 
 DATABASE_TYPE=mysql
 MYSQL_HOST=$SERVICE_HOST
@@ -9,14 +17,10 @@ MYSQL_PASSWORD=mysql
 RABBIT_HOST=$SERVICE_HOST
 RABBIT_PASSWORD=rabbit
 
-ADMIN_PASSWORD=admin
-SERVICE_PASSWORD=service
-
-RECLONE=True
-PIP_UPGRADE=True
-
 LIBS_FROM_GIT=python-openstackclient
 SERVICE_TIMEOUT=180
+GLANCE_HOSTPORT=$SERVICE_HOST:9292
+PUBLIC_INTERFACE=eth0
 
 #NETWORK_GATEWAY="10.1.0.1"
 #PUBLIC_NETWORK_GATEWAY="172.24.5.1"
@@ -35,10 +39,11 @@ disable_all_services
 #enable_service memory_tracker
 MYSQL_GATHER_PERFORMANCE=False
 
-enable_service tls-proxy
-enable_service c-vol
+#enable_service tls-proxy
 enable_service n-cpu
 enable_service placement-client
+enable_service c-vol
+CINDER_VOLUME_CLEAR=None
 enable_plugin neutron https://opendev.org/openstack/neutron
 enable_service ovn-controller
 enable_service ovs-vswitchd
@@ -48,13 +53,34 @@ ENABLE_CHASSIS_AS_GW=False
 
 #enable_plugin ceilometer https://opendev.org/openstack/ceilometer
 # disable all but ceilometer-compute agent
-#disable_service ceilometer-acentral ceilometer-aipmi ceilometer-anotification ceilometer-collector ceilometer-api
+#disable_service ceilometer-acentral
+#disable_service ceilometer-aipmi
+#disable_service ceilometer-anotification
+#disable_service ceilometer-collector
+#disable_service ceilometer-api
 #CEILOMETER_PIPELINE_INTERVAL=60
 
 #enable_plugin masakari https://opendev.org/openstack/masakari
-#disable_service masakari-api masakari-engine
+#disable_service masakari-api
+#disable_service masakari-engine
 # all monitors are enabled by default, disable not needed ones
-# disable_service masakari-processmonitor masakari-instancemonitor masakari-hostmonitor masakari-introspectiveinstancemonitor
+#disable_service masakari-processmonitor
+#disable_service masakari-instancemonitor
+#disable_service masakari-hostmonitor
+#disable_service masakari-introspectiveinstancemonitor
+
+# TODO: verify how ceph plugin supposed to work on devstack-compute
+#enable_plugin devstack-plugin-ceph https://opendev.org/openstack/devstack-plugin-ceph
+#REMOTE_CEPH=True
+#CINDER_CEPH_UUID=""
+
+#[[post-config|$CINDER_CONF]]
+#[DEFAULT]
+#cluster = ceph
+#ENABLE_CEPH_CINDER=True     # ceph backend for cinder
+#ENABLE_CEPH_GLANCE=True     # store images in ceph
+#ENABLE_CEPH_C_BAK=True      # backup volumes to ceph
+#ENABLE_CEPH_NOVA=True       # allow nova to use ceph resources
 
 #[[post-config|$NEUTRON_CONF]]
 #[DEFAULT]
