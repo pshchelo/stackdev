@@ -1,3 +1,9 @@
 #!/usr/bin/env bash
 cmd=${@:-"/bin/bash"}
-kubectl -n rook-ceph exec -ti deploy/rook-ceph-tools -c rook-ceph-tools -- ${cmd}
+toolbox=$(kubectl -n rook-ceph get deploy -oname | grep tool)
+if [[ "$toolbox" == *"pelagia"* ]]; then
+    container="pelagia-ceph-toolbox"
+else
+    container="rook-ceph-tools"
+fi
+kubectl -n rook-ceph exec -ti "$toolbox" -c "$container" -- ${cmd}
