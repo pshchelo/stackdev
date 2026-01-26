@@ -256,7 +256,8 @@ enable_service c-vol
 
 ### CEPH + RADOSGW ###
 #enable_plugin devstack-plugin-ceph https://opendev.org/openstack/devstack-plugin-ceph
-#ENABLE_CEPH_RBD_MIRROR=True    #start rbdmirror service too
+# CEPH_RELEASE=squid            # change installed Ceph version
+#ENABLE_CEPH_RBD_MIRROR=True    # start rbdmirror service too
 
 # most integrations are enabled by default with this plugin, disable as needed
 #ENABLE_CEPH_RGW=True           # RadosGateWay instead of Swift (disabled by default)
