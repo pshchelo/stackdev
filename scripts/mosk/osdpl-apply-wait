@@ -54,12 +54,11 @@ function osdpl_wait_ready {
     done
 }
 
-if ! grep "kind: OpenStackDeployment$" "$infile" > /dev/null ; then
-    echo "$infile" has no OpenStackDeployment in it!
-    exit 1
-fi
-
 if [ "$WAIT_ONLY" -eq 0 ]; then
+    if ! grep "kind: OpenStackDeployment$" "$infile" > /dev/null ; then
+        echo "$infile" has no OpenStackDeployment in it!
+        exit 1
+    fi
     KUBECTL_EXTERNAL_DIFF="diff -u -N --color" kubectl diff -f "$infile"
     ret=$?
     if [ $ret -eq  0 ]; then
