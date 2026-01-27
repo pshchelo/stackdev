@@ -21,7 +21,12 @@ def setup():
     parser.add_argument("server",
                         help="name or id of server to churn ports on")
     parser.add_argument("--workers", type=int, default=2,
-                        help="number of paralel workers")
+                        help="number of paralel worker processes. "
+                             "Each worker will be attaching/detaching 1 port. "
+                             "Mind PCI(e) limits of VM, usual max value "
+                             "is about 20-25, and number of cores where you "
+                             "launch this script."
+                        )
     parser.add_argument("--repeats", type=int, default=1,
                         help="number of attach-detach repeats in each worker")
     parser.add_argument("--interval", type=float, default=0.1,
@@ -30,6 +35,8 @@ def setup():
         "--os-cloud", default=None,
         help="cloud name from clouds.yaml, defaults to OS_CLOUD env var")
     args = parser.parse_args()
+    if args.workers > 200 or args.workers < 1:
+        raise argparse.ArgumentTypeError("workers must be between 1 and 200")
     logging.basicConfig(level=logging.INFO)
     openstack.enable_logging()
     return args
