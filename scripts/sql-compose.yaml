@@ -8,8 +8,8 @@ services:
       POSTGRES_PASSWORD: postgres  # required
       POSTGRES_USER: postgres      # default
       POSTGRES_DB: postgres        # defaults to POSTGRES_USER
-    #volumes:
-    #- ${PWD}/postgres-data/:/var/lib/postgresql/data/
+    volumes:
+    - postgres:/var/lib/postgresql/data/
   mariadb:
     image: mariadb
     restart: always
@@ -20,10 +20,13 @@ services:
       MARIADB_DATABASE: mariadb     # default is not set
       MARIADB_USER: mariadb         # default is not set
       MARIADB_PASSWORD: mariadb     # default is not set
-    #volumes:
-    #- ${PWD}/mariadb-data/:/var/lib/mysql
+    volumes:
+    - mariadb:/var/lib/mysql
   adminer:
     image: adminer
     restart: always
     ports:
       - 8080:8080
+volumes:
+  mariadb:
+  postgres:
