@@ -147,6 +147,7 @@ if [ -n "$api_version" ]; then
     optional_args+=" --os-compute-api-version $api_version"
 fi
 
+echo "Creating server ..."
 # NOTE: assigning result of --wait needs openstack cli >= 8.2.0
 # shellcheck disable=SC2086 # word splitting in optional_args is intentional
 server_id=$(openstack server create "$server_name" \
