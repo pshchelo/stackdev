@@ -150,7 +150,8 @@ function set_network_access_vars {
     errcho_ok
 
     errcho -n "discovering network address of IPv4 subnet of OpenStack network named ${OS_PUBLIC_NETWORK_NAME}... "
-    PUBLIC_CIDR=$(kubectl --context "$CONTEXT" -n openstack exec deploy/keystone-client -c keystone-client -- openstack subnet list --ip-version 4 --network "$OS_PUBLIC_NETWORK_NAME" -f value -c Subnet)
+    # FIXME(pas-ha): could be multiple subnets, use array and proxy them all, not only the first one
+    PUBLIC_CIDR=$(kubectl --context "$CONTEXT" -n openstack exec deploy/keystone-client -c keystone-client -- openstack subnet list --ip-version 4 --network "$OS_PUBLIC_NETWORK_NAME" -f value -c Subnet | head -n1)
     errcho_ok
 }
 
