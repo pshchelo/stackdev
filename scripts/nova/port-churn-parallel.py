@@ -54,10 +54,12 @@ def port_churn(
     IP = f"10.10.10.{10 + index}"
     cloud = openstack.connect(cloud=cloud_name)
     server = cloud.get_server(name_or_id=server_id, bare=True)
+    if not server:
+        raise ValueError(f"Can't find server {name}!")
     network = None
     subnet = None
     port = None
-    all_success = True
+    errors = []
     try:
         network = cloud.create_network(name)
         subnet = cloud.create_subnet(name, subnet_name=name, cidr=CIDR)
@@ -76,14 +78,14 @@ def port_churn(
                 cloud.compute.delete_server_interface(iface)
                 iface = None
             except Exception as e:
-                all_success = False
-                LOG.error(e)
+                LOG.exception(f"Worker {index} cycle {n+1} failed: {e}")
+                errors.append({"worker": index, "cycle": n+1, "error": e})
                 if iface:
                     cloud.compute.delete_server_interface(iface)
                 continue
     except Exception as e:
-        all_success = False
-        LOG.error(e)
+        LOG.exception(f"Worker {index} setup failed: {e}")
+        errors.append({"worker": index, "cycle": 0, "error": e})
     finally:
         if port:
             cloud.delete_port(port.id)
@@ -91,7 +93,7 @@ def port_churn(
             cloud.delete_subnet(subnet.id)
         if network:
             cloud.delete_network(network.id)
-    return all_success
+    return errors
 
 
 def main():
@@ -114,7 +116,11 @@ def main():
                 )
             )
         done, not_done = futurist.waiters.wait_for_all(res)
-        if not_done or not all(r.result() for r in done):
+        results = [r.result() for r in done]
+        failed = [r for r in results if r]
+        if not_done or failed:
+            for res in failed:
+                print(res)
             sys.exit(1)
 
 if __name__ == "__main__":
