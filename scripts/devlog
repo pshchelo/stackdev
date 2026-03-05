@@ -1,13 +1,26 @@
 #!/usr/bin/env bash
 
-# helper script for DevStack running on systemd
+# journalctl helper wrapper for DevStack running on systemd
 # restart a service(s) and immediately show relevant logs from journal
+# useful other journalctl flags:
+# -f - standard follow
+# -a - show all info, with it - logs are wrapped and colored (by devstack),
+#      w/o it can use external colorizers like tspin
+# -S - since, accept ISO date or relative range like -1h
+# -n - show that many last lines, 10 by default, implied by -f, ignored by -S
 
+if [ -z "$1" ]; then
+    echo 'ERROR: Missing argument.'
+    echo 'Need a short devstack service name, like n-cpu, or glob like c-*'
+    exit 1
+fi
 service="devstack@${1}.service"
+shift
 
 set -e
-if [ $(basename ${BASH_SOURCE[0]}) = 'rdevlog' ]; then
-    echo "restaring ${service}"
-    sudo systemctl restart ${service}
+if [ "$(basename "${BASH_SOURCE[0]}")" = "rdevlog" ]; then
+    echo "restarting ${service}"
+    sudo systemctl restart "${service}"
 fi
-sudo journalctl -fan -u ${service}
+# shellcheck disable=SC2068 # potential word splitting is intentional here
+sudo journalctl -u "${service}" $@
