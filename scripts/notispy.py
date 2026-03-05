@@ -13,9 +13,6 @@ import oslo_messaging
 https://docs.openstack.org/oslo.messaging/latest/reference/notification_listener.html
 """
 
-logging.basicConfig(
-    format="%(asctime)s - %(levelname)s - %(name)s - %(message)s"
-)
 LOG = logging.getLogger("notispy")
 
 
@@ -68,28 +65,47 @@ class NotificationEndpoint(object):
     def debug(self, *args):
         LOG.debug(self._format_and_process(*args))
 
-def main():
+
+def setup():
     parser = argparse.ArgumentParser("notispy")
     parser.add_argument("--config")
     parser.add_argument("--url")
     parser.add_argument("--topic", action="append", dest="topics",
                         default=['notifications'])
     parser.add_argument("--exchange", action="append", dest="exchanges",
-                       default=[None])
+                        default=[None])
     parser.add_argument("--pool", default=None)
-    parser.add_argument("--debug", action="store_true")
     parser.add_argument("--save", action="store_true")
+    log_level_group = parser.add_mutually_exclusive_group()
+    log_level_group.add_argument(
+        '-v', '--verbose',
+        action='count',
+        dest='verbosity',
+        default=0,
+        help="verbose output (repeat for increased verbosity)",
+    )
+    log_level_group.add_argument(
+        '-q', '--quiet',
+        action='store_const',
+        const=-1,
+        default=0,
+        dest='verbosity',
+        help="quiet output (show errors only)",
+    )
     args = parser.parse_args()
+    logging.basicConfig(
+        format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
+        level=logging.WARNING - (10 * min(args.verbosity, 2)),
+    )
+    return parser, args
+
+
+def main():
+    parser, args = setup()
+    LOG.debug(f"{args}")
 
     if args.config:
         cfg.CONF(["--config-file", args.config])
-
-    if args.debug:
-        LOG.setLevel(logging.DEBUG)
-    else:
-        LOG.setLevel(logging.INFO)
-
-    LOG.debug(f"{args}")
 
     cfg.CONF.heartbeat_interval = 5
     cfg.CONF.prog = parser.prog
@@ -137,6 +153,7 @@ def main():
             LOG.info("Storing captured messages to disk")
         for e in endpoints:
             e.write()
+
 
 if __name__ == "__main__":
     main()
