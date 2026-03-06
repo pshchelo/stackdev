@@ -111,7 +111,7 @@ def parse_args() -> argparse.Namespace:
                         help="timeout used by all the waiters, in seconds")
     parser.add_argument("--poll", type=int, default=5,
                        help="polling interval of waiters, in seconds")
-    parser.add_argument("--debug", action="store_true")
+    parser.add_argument("-v" "--verbose", dest="debug", action="store_true")
     parser.add_argument("--os-cloud", default=None)
     args = parser.parse_args()
     return args

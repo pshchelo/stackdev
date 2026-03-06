@@ -9,19 +9,19 @@ DEBUG=0
 function get_help {
     local script_name
     script_name=$(basename "$0")
-    echo "Usage: $script_name TOX_ENV [-r <docker repo url>] [-i <docker image path>] [-t <docker image tag>] [-h] [-d]"
+    echo "Usage: $script_name TOX_ENV [-r <docker repo url>] [-i <docker image path>] [-t <docker image tag>] [-h] [-v]"
     echo "defaults are:"
     echo "<docker repo url> $image_repo"
     echo "<docker image path> $image_path"
     echo "<docker image tag> $image_tag"
 }
 
-while getopts ':r:i:t:hd' arg; do
+while getopts ':r:i:t:hv' arg; do
     case "${arg}" in
         r) image_repo="${OPTARG}" ;;
         i) image_path="${OPTARG}" ;;
         t) image_tag="${OPTARG}" ;;
-        d) DEBUG=1 ;;
+        v) DEBUG=1 ;;
         h) get_help ;;
         ?) get_help; exit 1 ;;
     esac

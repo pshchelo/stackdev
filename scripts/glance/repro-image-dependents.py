@@ -69,7 +69,11 @@ parser.add_argument(
     help="No cleanup, leave created resources intact",
 )
 parser.add_argument(
-    "--debug", action="store_true", default=False, help="Log more"
+    "-v", "--verbose",
+    dest="debug",
+    action="store_true",
+    default=False,
+    help="Log more",
 )
 cloud = openstack.connect(options=parser)
 args = parser.parse_args()
