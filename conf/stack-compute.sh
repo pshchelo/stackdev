@@ -9,8 +9,6 @@ eval "$(grep ^SERVICE_HOST $DEVSTACK_DIR/local.conf)"
 mkdir -p $STACK_DATA_DIR
 scp -r "$SERVICE_HOST:/$STACK_DATA_DIR/CA"  $STACK_DATA_DIR
 
-pushd $DEVSTACK_DIR
-./stack.sh
-popd
+$DEVSTACK_DIR/stack.sh
 
 ssh "${SERVICE_HOST}" -- $DEVSTACK_DIR/tools/discover_hosts.sh
