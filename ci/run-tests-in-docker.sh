@@ -5,41 +5,44 @@ image_path="mirantis/openstack-ci/openstack-ci-python3-test"
 image_tag="noble"
 UPPER_CONSTRAINTS_FILE=${UPPER_CONSTRAINTS_FILE:-"$HOME/src/openstack/requirements/upper-constraints.txt"}
 DEBUG=0
+VERBOSE=0
 TOX_VER=""
 VENV_VER=""
 
 function get_help {
     local script_name
     script_name=$(basename "$0")
-    echo "Usage: $script_name TOX_ENV [-r <docker repo url>] [-i <docker image path>] [-t <docker image tag>] [-x <tox version specifier>] [-e <virtualenv version specifier>] [-h] [-v] "
+    echo "Usage: $script_name TOX_ENV [-r <docker repo url>] [-i <docker image path>] [-t <docker image tag>] [-x <tox version specifier>] [-e <virtualenv version specifier>] [-h] [-v] [-d]"
     echo "defaults are:"
     echo "<docker repo url> $image_repo"
     echo "<docker image path> $image_path"
     echo "<docker image tag> $image_tag"
 }
 
-tox_env=$1
+positional_args=()
+while [ $OPTIND -le "$#" ]; do
+    if getopts ':r:i:t:x:e:hvd' arg; then
+        case "${arg}" in
+            r) image_repo="${OPTARG}" ;;
+            i) image_path="${OPTARG}" ;;
+            t) image_tag="${OPTARG}" ;;
+            v) VERBOSE=1; set -x ;;
+            x) TOX_VER="${OPTARG}" ;;
+            e) VENV_VER="${OPTARG}" ;;
+            d) DEBUG=1 ;;
+            h) get_help; exit 0 ;;
+            ?) get_help; exit 1 ;;
+        esac
+    else
+        positional_args+=("${!OPTIND}")
+        ((OPTIND+=1))
+    fi
+done
+
+tox_env=${positional_args[0]}
 if [ -z "$tox_env" ]; then
     get_help
     exit 1
-fi
-shift
-
-while getopts ':r:i:t:x:e:hv' arg; do
-    case "${arg}" in
-        r) image_repo="${OPTARG}" ;;
-        i) image_path="${OPTARG}" ;;
-        t) image_tag="${OPTARG}" ;;
-        v) DEBUG=1 ;;
-        x) TOX_VER="${OPTARG}" ;;
-        e) VENV_VER="${OPTARG}" ;;
-        h) get_help ;;
-        ?) get_help; exit 1 ;;
-    esac
-done
-
-if [[ $DEBUG -eq 1 ]]; then
-    set -x
 fi
 
 name="mcp-ci-$tox_env"
@@ -84,9 +87,16 @@ if [ -n "$dns_ip" ]; then
     docker_args+=" --dns $dns_ip"
 fi
 
-# docker_args is meant to be word-split
-# shellcheck disable=SC2086
+if [ -d "$PWD/.tox" ]; then
+    rm -rf "$PWD/.tox/" || sudo rm -rf "$PWD/.tox/"
+fi
+set -x
+# shellcheck disable=SC2086 # docker_args is meant to be word-split
 docker run $docker_args "$image" /bin/cat
+set +x
+if [ $VERBOSE = 1 ]; then
+    set -x
+fi
 
 venv="virtualenv"
 if [ -n "$VIRTUALENV_VER" ]; then
