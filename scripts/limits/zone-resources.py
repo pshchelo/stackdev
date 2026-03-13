@@ -1,4 +1,6 @@
-import openstack, sys, pprint
+import openstack
+import sys
+import pprint
 
 zone = sys.argv[1]
 
