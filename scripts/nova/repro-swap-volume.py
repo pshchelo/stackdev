@@ -51,6 +51,8 @@ class VolumeSwapRepro():
             self.server, self.vol1, wait=True, timeout=self.timeout)
 
     def test_swap_volume(self) -> None:
+        self.vol1: openstack.block_storage.v3.volume.Volume
+        self.vol2: openstack.block_storage.v3.volume.Volume
         LOG.info("Swapping volumes {} -> {}", self.vol1.id, self.vol2.id)
         self.swap_volume(self.vol1, self.vol2)
         LOG.debug("Waiting for volume statuses")

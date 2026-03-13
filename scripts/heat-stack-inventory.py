@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# /// script
+# dependencies = [
+#     "openstacksdk",
+#     "pyyaml"
+# ]
+# ///
 """
 Generate YAML with nodes info usable as Ansible inventory (default)
 or with Mirantis si-tests harness. Output is printed to stdout.
@@ -6,6 +12,7 @@ or with Mirantis si-tests harness. Output is printed to stdout.
 
 import argparse
 import openstack
+import openstack.connection
 import os
 import sys
 import yaml
@@ -15,7 +22,7 @@ def get_server_fips_from_stack(
     cloud: openstack.connection.Connection,
     stack_name: str,
     ip_version: int = 4,
-) -> dict[str : dict[str, str]]:
+) -> dict[str, dict[str, str]]:
     stack = cloud.orchestration.find_stack(stack_name)
     server_resources = cloud.orchestration.get(
         f"/stacks/{stack.name}/{stack.id}/resources",
@@ -52,12 +59,12 @@ def get_server_fips_from_stack(
 
 
 def format_ansible(
-    servers: dict[str : dict[str:str]],
+    servers: dict[str, dict[str, str]],
     user: str,
     key: str,
     port: int = 22,
     strict: bool = True,
-) -> dict[str:dict]:
+) -> dict[str, dict]:
     inventory = {}
     for group, srvs in servers.items():
         ssh_opts = []
@@ -84,12 +91,12 @@ def format_ansible(
 
 
 def format_sitests(
-    servers: dict[str : dict[str:str]],
+    servers: dict[str, dict[str, str]],
     user: str,
     key: str,
     port: int = 22,
     strict: bool = True,
-) -> dict[str:dict]:
+) -> dict[str, dict]:
     inventory = {}
     for server, address in list(servers.values())[0].items():
         inventory[server] = {"ip": {"address": address}}

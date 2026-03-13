@@ -1,4 +1,11 @@
 #!/opt/stack/data/venv/bin/python3
+# /// script
+# dependencies = [
+#     "openstacksdk>=4.1.0",
+#     "oslo.concurrency",
+# ]
+# ///
+# TODO: drop barbicanclient, openstacksdk binary payload was fixed
 import argparse
 import binascii
 from oslo_concurrency import processutils

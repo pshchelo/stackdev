@@ -27,7 +27,7 @@ XML_POLL_TIMEOUT = 10
 XML_POLL_INTERVAL = 0.1
 
 
-def _create_tap_interface(index: int) -> None:
+def _create_tap_interface(index: int) -> str:
     """Create a tap interface on the host. Raises on failure."""
     # tap interface name can be up to 15 characters
     suffix = ''.join(random.choices(string.ascii_letters, k=8))
