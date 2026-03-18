@@ -232,7 +232,7 @@ enable_service c-sch
 enable_service c-vol
 # NOTE: currently DevStack supports only Swift (default) and RBD as backup drivers.
 # Until https://review.opendev.org/903171 is merged to support posix-path driver,
-# use a post-config snippet below to force usage of this driver
+# use a post-config snippet below to force usage of posix backup driver
 #enable_service c-bak
 
 #CINDER_PERIODIC_INTERVAL=10
@@ -259,7 +259,7 @@ enable_service c-vol
 # CEPH_RELEASE=squid            # change installed Ceph version
 #ENABLE_CEPH_RBD_MIRROR=True    # start rbdmirror service too
 
-# most integrations are enabled by default with this plugin, disable as needed
+# all except RGW are enabled by default with this plugin, change as needed
 #ENABLE_CEPH_RGW=True           # RadosGateWay instead of Swift (disabled by default)
 #ENABLE_CEPH_GLANCE=False       # disable rbd backend for images in Glance
 #ENABLE_CEPH_CINDER=False       # disable rbd backend for volumes in Cinder
@@ -342,7 +342,7 @@ enable_service c-vol
 #enable_plugin heat https://opendev.org/openstack/heat
 #HEAT_ENABLE_ADOPT_ABANDON=True
 #LIBS_FROM_GIT+=,python-heatclient
-# Needed for stein and earlier
+# Needed for stein and earlier in addition to branch in enable_plugin
 #HEAT_BRANCH=stable/stein
 
 ### TELEMETRY ###
@@ -360,20 +360,31 @@ enable_service c-vol
 
 # CEILOMETER - metrics collection
 #enable_plugin ceilometer https://opendev.org/openstack/ceilometer
+# ceilometer backend, supported gnocchi sg-core gnocchi,sg-core none
+#CEILOMETER_BACKENDS=sg-core
 # set shorter sample collection interval (default is 600)
 #CEILOMETER_PIPELINE_INTERVAL=15
 # send events to alarm queue - needed by EventAlarms in Aodh
 #CEILOMETER_EVENT_ALARM=True
 # set gnocchi archive policy to use, default is 'ceilometer-low'
 #GNOCCHI_ARCHIVE_POLICY_TEMPEST="ceilometer-high-rate"
-# ceilometer backend, only gnocchi is supported ATM
-#CEILOMETER_BACKEND=gnocchi
 # where to install gnocchi from
 # - if unset, pip install latest from PyPI
 # - if set, pip install -e from that directory or git url
 #GNOCCHI_GIT_PATH=$DEST/gnocchi
+
 # AODH - alarming
 #enable_plugin aodh https://opendev.org/openstack/aodh
+# prometheus
+#enable_plugin devstack-plugin-prometheus https://opendev.org/openstack/devstack-plugin-prometheus
+#disable_service node_exporter
+#PROMETHEUS_CUSTOM_SCRAPE_TARGETS="localhost:3000"
+# SG-Core
+#enable_plugin sg-core https://github.com/infrawatch/sg-core
+# disable prometheus setup by sg-core plugin, as we use dedicated prometheus devstack plugin
+#PROMETHEUS_ENABLE=false
+# Aetos
+#enable_plugin aetos https://opendev.org/openstack/aetos
 
 ### ZAQAR ###
 #enable_plugin zaqar https://opendev.org/openstack/zaqar
@@ -435,23 +446,15 @@ enable_service c-vol
 ##when ceph is enabled
 #cluster = ceph
 
-## TODO: review these settings, decide which are still needed,
-## some might've been moved to defaults of service or the devstack plugin
+# NOTE: as explicitly set by heat-functional-base Zuul job definition
+# https://opendev.org/openstack/heat/src/master/.zuul.yaml
 #[[post-config|$HEAT_CONF]]
 #[DEFAULT]
-#convergence_engine=false
-#num_engine_workers = 2
-#stack_scheduler_hints=true
-#hidden_stack_tags=hidden
-#encrypt_parameters_and_properties=True
-#logging_exception_prefix=%(asctime)s.%(msecs)03d %(process)d TRACE %(name)s %(instance)s
-#[heat_api]
-#workers=2
-#[heat_api_cfn]
-#workers=2
-#[cache]
-#enabled=True
-#[eventlet_opts]
-#client_socket_timeout=120
+#convergence_engine = True
+#stack_scheduler_hints = True
+#hidden_stack_tags = hidden
+#encrypt_parameters_and_properties = True
+#logging_exception_prefix = %(asctime)s.%(msecs)03d %(process)d TRACE %(name)s %(instance)s
+#max_stacks_per_tenant = 256
 #[oslo_messaging_notifications]
-#driver=messagingv2
+#driver = messagingv2
