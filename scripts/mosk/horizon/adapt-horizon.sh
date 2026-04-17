@@ -8,6 +8,7 @@ kubectl -n openstack exec -c horizon "${horizon_pod}" -- tar -chf - /usr/local/s
 mv custom_themes openstack-dashboard/
 kubectl -n openstack cp -c horizon "${horizon_pod}:/certs/ca-bundle.pem" openstack-dashboard/ca-bundle.pem
 kubectl -n openstack cp -c horizon "${horizon_pod}:/usr/local/share/openstack_dashboard/local/local_settings.py" local_settings.py
+# TODO: patch LOGOUT_URL and WEBSSO_DEFAULT_REDIRECT_LOGOUT
 cat >> local_settings.py << EOF
 
 
@@ -39,3 +40,5 @@ TEMPLATES[0]["DIRS"]= [LOCAL_PATH + "/templates"]
 AVAILABLE_THEMES[2] = ("mirantis", "Mirantis", LOCAL_PATH + "/custom_themes/mirantis")
 EOF
 echo "Copy local_settings.py to openstack_dashboard/local dir of your Horizon repo"
+echo "patch LOGOUT_URL and WEBSSO_DEFAULT_REDIRECT_LOGOUT manually"
+echo "to replace redirects to https://horizon.<cluster fqdn> with http://localhost:8000"
