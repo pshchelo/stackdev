@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
 IMAGE=${1}
+MIRROR=${2:-"eu"}
+COMMAND=${3:-"bash"}
 
 if [ -z "${IMAGE}" ]; then
     _usage
     exit 1
 fi
-
-MIRROR=${2:-"eu"}
 
 case "$MIRROR" in
     "eu")
@@ -17,7 +17,7 @@ case "$MIRROR" in
         REGISTRY="docker-dev-kaas-local.docker.mirantis.net"
         ;;
     "review")
-        REGISTRY=""docker-review-local.docker.mirantis.net
+        REGISTRY="docker-review-local.docker.mirantis.net"
         ;;
     "public")
         REGISTRY="docker-dev-kaas-virtual.mcp.mirantis.com"
@@ -30,4 +30,4 @@ case "$MIRROR" in
         ;;
 esac
 
-docker run --rm -it "${REGISTRY}/${IMAGE}" bash
+docker run --rm -it "${REGISTRY}/${IMAGE}" $COMMAND
