@@ -3,7 +3,7 @@
 image_repo="docker-dev-virtual.docker.mirantis.net"
 image_path="mirantis/openstack-ci/openstack-ci-python3-test"
 image_tag="noble"
-UPPER_CONSTRAINTS_FILE=${UPPER_CONSTRAINTS_FILE:-"$HOME/src/openstack/requirements/upper-constraints.txt"}
+UPPER_CONSTRAINTS_FILE=${UPPER_CONSTRAINTS_FILE:-"$HOME/Projects/openstack/requirements/upper-constraints.txt"}
 DEBUG=0
 VERBOSE=0
 TOX_VER=""
