@@ -35,7 +35,7 @@ while [ $OPTIND -le "$#" ]; do
         esac
     else
         positional_args+=("${!OPTIND}")
-        ((OPTIND+=1))
+        OPTIND=$((OPTIND+1))
     fi
 done
 
@@ -43,6 +43,19 @@ tox_env=${positional_args[0]}
 if [ -z "$tox_env" ]; then
     get_help
     exit 1
+fi
+
+if [ -z "$TOX_VER" ]; then
+    case "$image_tag" in
+        "noble")
+            TOX_VER='<4.55.0';;
+        "jammy")
+            TOX_VER='<4.26.0';;
+        "focal")
+            TOX_VER='<4.0.0';;
+        *)
+            ;;
+    esac
 fi
 
 name="mcp-ci-$tox_env"
