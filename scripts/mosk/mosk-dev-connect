@@ -69,25 +69,41 @@ function errcho {
 }
 
 function errcho_ok {
-    errcho -e "${GREEN}OK${NOC}"
+    local text
+    text=${1:-OK}
+    errcho -e "${GREEN}${text}${NOC}"
 }
 
 function errcho_no {
-    errcho -e "${RED}NO${NOC}"
+    local text
+    text=${1:-NO}
+    errcho -e "${RED}${text}${NOC}"
 }
 
 function discover_hosts {
     errcho -n "discovering OpenStack API services... "
     local hosts=""
+    gtw_ip=$(kubectl --context "$CONTEXT" -n openstack get gateway app-gateway -o jsonpath='{.status.addresses[0].value}' --ignore-not-found)
     ingress_lb_ip=$(kubectl --context "$CONTEXT" -n openstack get svc ingress -ojsonpath='{.status.loadBalancer.ingress[0].ip}' --ignore-not-found)
-    if [[ -n ${ingress_lb_ip} ]]; then
+    if [[ -n ${gtw_ip} ]]; then
+        for ns in "openstack" "rook-ceph"; do
+            for svc in $(kubectl --context "$CONTEXT" -n $ns get httproute -ojsonpath='{.items[*].spec.hostnames[0]}'); do
+                hosts+="${gtw_ip} ${svc};"
+            done
+        done
+        errcho_ok
+    elif [[ -n ${ingress_lb_ip} ]]; then
         for ns in "openstack" "rook-ceph"; do
             for svc in $(kubectl --context "$CONTEXT" -n $ns get ingress -ojsonpath='{.items[*].spec.rules[*].host}'); do
                 hosts+="${ingress_lb_ip} ${svc};"
             done
         done
+        errcho_ok
+    else
+        errcho_no "Neither gateway nor ingress found"
     fi
-    errcho_ok
+
+    # TODO: adapt to gtw/httproute when implemented
     errcho -n "discovering Keycloak services... "
     keycloak_ip=$(kubectl --context "$CONTEXT" -n iam get svc openstack-iam-keycloak-http -ojsonpath='{.status.loadBalancer.ingress[0].ip}' --ignore-not-found)
     if [[ -z ${keycloak_ip} ]]; then
@@ -103,6 +119,7 @@ function discover_hosts {
         errcho_no
     fi
 
+    # TODO: adapt to gtw/httproute when implemented
     errcho -n "discovering StackLight services... "
     stacklight_svc_found=0
     for svc in grafana prometheus-server prometheus-alertmanager alerta opensearch-dashboards; do
