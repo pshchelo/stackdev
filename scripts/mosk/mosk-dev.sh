@@ -9,13 +9,17 @@ SCRIPT_DIR=$(dirname "$0")
 __usage="
 Usage: $SCRIPT_NAME [-r] <URL>
 Prepare (virtual) MOSK development env for my custom settings:
-- fetch and massage kubeconfig
+- massage kubeconfig
 - create local copies of main MOSK k8s resources like OsDpl
 - create test user accounts, networks, flavors etc
 
 <URL> URL to deploy job with 'kubeconfig-child-cluster.yml' artifact
 -r    read-only mode, do not create test user accounts, networks etc
 "
+if [ ! -f "./kubeconfig.yaml" ]; then
+    echo "${RED}Need kubeconfig.yaml to start from${NOC}"
+    exit 1
+fi
 while getopts ':hr' arg; do
     case "$arg" in
         r) READONLY=1 ;;
@@ -29,8 +33,6 @@ if [ -z "$url" ]; then
     echo "$__usage"
     exit 1
 fi
-echo "Get kubeconfig for the env"
-wget "$url/artifact/kubeconfig-child-cluster.yml" -O kubeconfig.yaml
 echo "Edit kubeconfig for the env"
 "$SCRIPT_DIR"/mosk-dev-config-rename-context.sh kubeconfig.yaml
 cat > "$PWD/.envrc" << EOF
