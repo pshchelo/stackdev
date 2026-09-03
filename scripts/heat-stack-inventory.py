@@ -11,10 +11,11 @@ or with Mirantis si-tests harness. Output is printed to stdout.
 """
 
 import argparse
-import openstack
-import openstack.connection
 import os
 import sys
+
+import openstack
+import openstack.connection
 import yaml
 
 
@@ -24,6 +25,9 @@ def get_server_fips_from_stack(
     ip_version: int = 4,
 ) -> dict[str, dict[str, str]]:
     stack = cloud.orchestration.find_stack(stack_name)
+    if not stack:
+        print(f"ERROR: Can not find stack {stack_name}")
+        sys.exit(1)
     server_resources = cloud.orchestration.get(
         f"/stacks/{stack.name}/{stack.id}/resources",
         params={
@@ -98,7 +102,7 @@ def format_sitests(
     strict: bool = True,
 ) -> dict[str, dict]:
     inventory = {}
-    for server, address in list(servers.values())[0].items():
+    for server, address in next(iter(servers.values())).items():
         inventory[server] = {"ip": {"address": address}}
         inventory[server]["ssh"] = {
             "username": user,
