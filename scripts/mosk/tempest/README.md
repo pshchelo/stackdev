@@ -8,7 +8,7 @@
 1. Install tempest and required plugins in a virtualenv, activate that venv.
 2. Simulate proper tempest run by running nothing (replace 'script:' is OsDpl
    with `sleep infinity`).
-   ```
+   ```yaml
    kind: OpenStackDeployment
    spec:
      services:
@@ -16,8 +16,7 @@
          tempest:
            values:
              conf:
-               script: |
-                 sleep infinity
+               script: sleep infinity
    ```
    - this will generate all the required config files from OsDpl and put those
      inside the pod
