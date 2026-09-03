@@ -2,6 +2,7 @@
 
 IMAGE=${1}
 MIRROR=${2:-"eu"}
+# TODO: pass any number of arguments down, to be able to run stuff with flags
 COMMAND=${3:-"bash"}
 
 if [ -z "${IMAGE}" ]; then
@@ -30,4 +31,4 @@ case "$MIRROR" in
         ;;
 esac
 
-docker run --rm -it "${REGISTRY}/${IMAGE}" $COMMAND
+docker run --rm -it "${REGISTRY}/${IMAGE}" "$COMMAND"
