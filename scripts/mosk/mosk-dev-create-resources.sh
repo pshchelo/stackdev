@@ -86,5 +86,6 @@ for name in admin demo; do
     openstack --os-cloud mosk-dev-$name security group rule create $name --ingress --protocol tcp --dst-port 80 --description HTPP
 
     echo "creating keypair for $name"
-    openstack --os-cloud mosk-dev-$name keypair create $name --public-key "${HOME}/.ssh/pub/aio_rsa.pub"
+    keyfile=$(find "${HOME}/.ssh" -type f -name aio_rsa.pub)
+    openstack --os-cloud mosk-dev-$name keypair create $name --public-key "${keyfile}"
 done
