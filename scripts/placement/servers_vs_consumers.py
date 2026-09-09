@@ -1,11 +1,19 @@
 #!/usr/bin/env python3
+# /// script
+# requires_python = ">=3.10"
+# dependencies = [
+#     "openstacksdk",
+# ]
+# ///
 """
 Compare servers in nova with consumers in placement and find discrepancies
 """
 import argparse
 import json
 import logging
+
 import openstack
+
 parser = argparse.ArgumentParser()
 parser.add_argument("-v", "--verbose", action="store_true")
 args = parser.parse_args()
@@ -17,12 +25,12 @@ if args.verbose:
     LOG.setLevel(logging.DEBUG)
 cloud = openstack.connect()
 
-compute_api_version = [
+compute_api_version = next(
     v["max_microversion"] for v in cloud.compute.get_all_version_data()[
         cloud.compute.region_name
     ]['public']['compute']
     if v['status'] == 'CURRENT'
-][0].split(".")
+).split(".")
 
 # For Queens (2.60) and older, count BFV disk root to placement too
 # TODO: verify that Queens is enough

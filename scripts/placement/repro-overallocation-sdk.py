@@ -1,3 +1,9 @@
+# /// script
+# requires_python = ">=3.10"
+# dependencies = [
+#     "openstacksdk",
+# ]
+# ///
 import concurrent.futures
 import sys
 import uuid
@@ -47,9 +53,7 @@ def delete_allocation(client, consumer):
     a_res = client.get(f"/allocations/{consumer}").json()
     a_res["allocations"] = {}
     res = client.post("/allocations", json={consumer: a_res})
-    if res.status_code != 204:
-        return False
-    return True
+    return res.status_code == 204
 
 
 def cleanup(client, rp_id):

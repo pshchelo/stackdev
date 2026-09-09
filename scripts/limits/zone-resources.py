@@ -1,6 +1,13 @@
-import openstack
-import sys
+# /// script
+# requires_python = ">=3.10"
+# dependencies = [
+#     "openstacksdk",
+# ]
+# ///
 import pprint
+import sys
+
+import openstack
 
 zone = sys.argv[1]
 
@@ -20,8 +27,8 @@ for rp in rprovs:
     inv = cloud.placement.get(f"/resource_providers/{rp.id}/inventories").json()
     usage = cloud.placement.get(f"/resource_providers/{rp.id}/usages").json()
     for k,used in usage['usages'].items():
-        for m in total:
-            total[m].setdefault(k, 0)
+        for m in total.values():
+            m.setdefault(k, 0)
         i = inv['inventories'][k]
         rp_total = (i['total'] - i['reserved']) * i['allocation_ratio']
         total["used"][k] += used

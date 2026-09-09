@@ -1,3 +1,9 @@
+# /// script
+# requires_python = ">=3.10"
+# dependencies = [
+#     "openstacksdk",
+# ]
+# ///
 import openstack
 
 
@@ -11,7 +17,9 @@ def gather_info():
         pl_aggs = cloud.placement.get(
             f"/resource_providers/{rp.id}/aggregates").json()['aggregates']
         aggs = [a.name for a in n_aggs if a.uuid in pl_aggs]
-        res.append(dict(node=node.id, rp=rp.id, ag_ids=pl_aggs, ag_names=aggs))
+        res.append(
+            {"node": node.id, "rp": rp.id, "ag_ids": pl_aggs, "ag_names": aggs}
+        )
     return res
 
 

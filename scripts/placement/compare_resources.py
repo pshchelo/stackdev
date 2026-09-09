@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# /// script
+# requires_python = ">=3.10"
+# dependencies = [
+#     "openstacksdk",
+# ]
+# ///
 """
 Compare nova hypervisor stats with their corresponding
 placement resource provider inventories:
@@ -8,6 +14,7 @@ placement resource provider inventories:
     - total and used disk
 """
 import openstack
+
 cloud = openstack.connect()
 
 hvs = list(cloud.compute.hypervisors(details=True))
@@ -15,7 +22,7 @@ rps = list(cloud.placement.resource_providers())
 
 for hv in sorted(hvs, key=lambda x: x.name):
     print(f"checking hypervisor {hv.name}")
-    rp = [r for r in rps if r.name == hv.name][0]
+    rp = next(r for r in rps if r.name == hv.name)
     rp_invs = cloud.placement.get(
         f"/resource_providers/{rp.id}/inventories"
     ).json()["inventories"]

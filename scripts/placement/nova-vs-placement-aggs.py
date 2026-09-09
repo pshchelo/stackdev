@@ -1,9 +1,16 @@
 #!/usr/bin/env python3
+# /// script
+# requires_python = ">=3.10"
+# dependencies = [
+#     "openstacksdk",
+# ]
+# ///
 import argparse
 import logging
 import sys
 
 import openstack
+
 """Find (and fix) descrepancies between nova and placement aggregates"""
 prog_name = sys.argv[0]
 parser = argparse.ArgumentParser(prog_name)
@@ -30,7 +37,7 @@ for agg in aggregates:
     hosts_in_aggregates.extend(agg.hosts)
 
 hosts_not_in_aggregates = (
-    set(s.host for s in computes) - set(hosts_in_aggregates)
+    {s.host for s in computes} - set(hosts_in_aggregates)
 )
 if hosts_not_in_aggregates:
     LOG.warning(
@@ -48,8 +55,8 @@ for agg in aggregates:
                 )
             continue
         host_rp = host_rp[0]
-        rp_agg_url = [link['href'] for link in host_rp.links
-                      if link['rel'] == 'aggregates'][0]
+        rp_agg_url = next(link['href'] for link in host_rp.links
+                          if link['rel'] == 'aggregates')
         rp_aggs = placement.get(rp_agg_url).json().get('aggregates')
         if agg.uuid not in rp_aggs:
             LOG.warning(

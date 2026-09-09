@@ -1,9 +1,17 @@
 #!/usr/bin/env python3
+# /// script
+# requires_python = ">=3.10"
+# dependencies = [
+#     "openstacksdk",
+# ]
+# ///
 """
 Calculate total cloud resource usage from data in the Placement service.
 """
 import sys
+
 import openstack
+
 cloud = openstack.connect()
 placement = cloud.placement
 placement.default_microversion = "1.39"

@@ -1,8 +1,16 @@
 #!/usr/bin/env python3
+# /// script
+# requires_python = ">=3.10"
+# dependencies = [
+#     "openstacksdk",
+# ]
+# ///
 import argparse
 import json
 import logging
+
 import openstack
+
 parser = argparse.ArgumentParser(
     prog="orphan-allocations",
     description="Find and optionally delete Placement allocations for which "

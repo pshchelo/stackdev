@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
+# /// script
+# requires_python = ">=3.10"
+# dependencies = [
+#     "openstacksdk",
+# ]
+# ///
 import sys
+
 import openstack
 
 cloud = openstack.connect()
@@ -12,8 +19,7 @@ def get_servers_in_stack(stack):
         f"/stacks/{stack.name}/{stack.id}/resources",
         params={"type": "OS::Nova::Server", "nested_depth": "999"}
     ).json()
-    return list(r["physical_resource_id"]
-                for r in server_resources["resources"])
+    return [r["physical_resource_id"] for r in server_resources["resources"]]
 
 
 def servers_consumption(servers):

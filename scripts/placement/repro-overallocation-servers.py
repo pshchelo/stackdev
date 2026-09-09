@@ -1,6 +1,12 @@
+# /// script
+# requires_python = ">=3.10"
+# dependencies = [
+#     "loguru",
+# ]
+# ///
+from multiprocessing import Pool
 import subprocess
 import sys
-from multiprocessing import Pool
 from time import sleep
 
 from loguru import logger
@@ -24,6 +30,10 @@ commands_info = {
 }
 
 
+class ReproException(Exception):
+    pass
+
+
 def check_nodes():
     logger.info("Checking nodes ...")
     sleep(2000)
@@ -41,7 +51,10 @@ def check_nodes():
 
     if is_reproduced:
         output = "\n".join(results)
-        raise Exception(f"The bug has been reproduced:\n{output}\nprovider: {invalid_provider}")
+        raise ReproException(
+            f"The bug has been reproduced:\n"
+            f"{output}\nprovider: {invalid_provider}"
+        )
 
 
 def run_command(cmd):
@@ -51,8 +64,8 @@ def run_command(cmd):
         if result.returncode != 0:
             logger.error(f"Command '{cmd}' failed with error:\n{result.stderr}")
         return result.stdout
-    except Exception as e:
-        logger.error(f"Error running command '{cmd}': {str(e)}")
+    except Exception:  # ruff: ignore[blind-except]
+        logger.exception(f"Error running command '{cmd}'")
 
 
 def servers():
