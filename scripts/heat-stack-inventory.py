@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # /// script
+# requires_python = ">=3.10"
 # dependencies = [
 #     "openstacksdk",
 #     "pyyaml"
@@ -95,12 +96,12 @@ def format_ansible(
 
 
 def format_sitests(
-    servers: dict[str, dict[str, str]],
+    servers: dict,
     user: str,
     key: str,
     port: int = 22,
     strict: bool = True,
-) -> dict[str, dict]:
+) -> dict:
     inventory = {}
     for server, address in next(iter(servers.values())).items():
         inventory[server] = {"ip": {"address": address}}

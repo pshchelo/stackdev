@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# /// script
+# requires_python = ">=3.10"
+# dependencies = [
+#     "openstacksdk",
+# ]
+# ///
 """
 Find disagreements between Nova, Libvirt and Cinder re attached volumes
 
@@ -17,8 +23,10 @@ from urllib.parse import urlparse
 import xml.etree.ElementTree as ET
 
 import openstack
+
+# TODO: replace with kr8s, to drop dependency on rockoon for pod exec
 try:
-    from openstack_controller import kube
+    from rockoon import kube
     kube_api = kube.kube_client()
 except ImportError:
     kube_api = None
@@ -46,7 +54,7 @@ def is_mosk():
             service_id=keystone_identity_service.id,
             interface="internal",
         )
-        keystone_internal_url = list(keystone_endpoints)[0].url
+        keystone_internal_url = next(keystone_endpoints).url
         IS_MOSK = urlparse(keystone_internal_url).hostname.endswith(
             "svc.cluster.local")
     return IS_MOSK
@@ -136,7 +144,7 @@ def compare_volumes_nova_cinder(server):
             LOG.error(
                 "Server %(server_id)s in Nova is attached to "
                 "non-existing volume %(volume_id)s",
-                dict(server_id=server.id, volume_id=nova_va.volume_id)
+                {"server_id": server.id, "volume_id": nova_va.volume_id}
             )
             continue
         for cinder_va in volume.attachments:
@@ -145,14 +153,14 @@ def compare_volumes_nova_cinder(server):
                     LOG.error(
                         "Server %(server_id)s and volume %(volume_id)s "
                         "disagree on device the volume is attached",
-                        dict(server_id=server.id, volume_id=volume.id)
+                        {"server_id": server.id, "volume_id": volume.id}
                     )
                 break
         else:
             LOG.error(
                 "Server %(server_id)s is attached to "
                 "volume %(volume_id)s in Nova but not in Cinder",
-                dict(server_id=server.id, volume_id=volume.id)
+                {"server_id": server.id, "volume_id": volume.id}
             )
 
 

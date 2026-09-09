@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# /// script
+# requires_python = ">=3.10"
+# dependencies = [
+#     "python-libvirt",
+# ]
+# ///
 
 import argparse
 import sys
@@ -6,7 +12,7 @@ import xml.etree.ElementTree as ET
 
 import libvirt
 
-KERNEL_OPTS = " ".join(
+KERNEL_OPTS = " ".join(  # ruff: ignore[static-join-to-f-string]
     [
         "ipa-standalone=1",
         "nofb nomodeset",
@@ -21,7 +27,7 @@ def restart_to_kernel(conn, domain, kernel, initrd):
     xml = ET.fromstring(domain.XMLDesc())
     os_elem = xml.find("os")
     if not os_elem:
-        raise Exception("Did not find 'os' secton in domain XML")
+        raise ValueError("Did not find 'os' secton in domain XML")
     kernel_el = ET.SubElement(os_elem, "kernel")
     kernel_el.text = kernel
     initrd_el = ET.SubElement(os_elem, "initrd")
@@ -35,7 +41,7 @@ def restart_to_hdd(conn, domain):
     xml = ET.fromstring(domain.XMLDesc())
     os_elem = xml.find("os")
     if not os_elem:
-        raise Exception("Did not find 'os' secton in domain XML")
+        raise ValueError("Did not find 'os' secton in domain XML")
     for el_name in ("kernel", "initrd", "cmdline"):
         el = ET.SubElement(os_elem, el_name)
         os_elem.remove(el)

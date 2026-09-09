@@ -1,7 +1,14 @@
+# /// script
+# requires_python = ">=3.10"
+# dependencies = [
+#     "openstacksdk",
+# ]
+# ///
 import openstack
+
 cloud = openstack.connect()
 access_rules = [
-    dict(method="GET", path="/**", service=service["type"])
+    {"method": "GET", "path": "/**", "service": service["type"]}
     for service in cloud.service_catalog
 ]
 app_creds = cloud.identity.create_application_credential(

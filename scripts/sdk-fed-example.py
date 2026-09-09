@@ -1,4 +1,11 @@
+# /// script
+# requires_python = ">=3.10"
+# dependencies = [
+#     "openstacksdk",
+# ]
+# ///
 import os
+
 import openstack
 
 auth_data = {

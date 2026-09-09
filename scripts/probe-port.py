@@ -13,7 +13,7 @@ def probe(target, port, timeout=10):
     print("\033[K", end='')
     try:
         sock.connect((target, port))
-    except Exception as e:
+    except Exception as e:  # noqa
         print(f"NO! - {e}", end="\r")
         return False
     else:

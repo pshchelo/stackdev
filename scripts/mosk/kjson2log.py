@@ -17,7 +17,7 @@ for item in kibana:
         level = s.get("severity_label", "UNPARSED_LEVEL")
         logger = s.get("logger", "UNPARSED_LOGGER")
     except KeyError:
-        raise Exception(item)
+        raise ValueError(item)
     log.append(f'{ts} - {host} - {pod} - {logger} - {level} - {module} - {message}')
 
 for line in sorted(log):

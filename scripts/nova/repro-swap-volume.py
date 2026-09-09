@@ -1,3 +1,10 @@
+# /// script
+# requires_python = ">=3.10"
+# dependencies = [
+#     "loguru",
+#     "openstacksdk",
+# ]
+# ///
 import argparse
 import random
 import time
@@ -13,7 +20,7 @@ class VolumeStatusTimeout(Exception):
     pass
 
 
-class VolumeSwapRepro():
+class VolumeSwapRepro:
 
     def __init__(self, cloud, timeout=600, poll=5, debug=False):
         self.timeout = timeout

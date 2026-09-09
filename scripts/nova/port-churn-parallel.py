@@ -1,5 +1,12 @@
-import argparse
+# /// script
+# requires_python = ">=3.10"
+# dependencies = [
+#     "futurist",
+#     "openstacksdk",
+# ]
+# ///
 # from concurrent import futures
+import argparse
 import logging
 import sys
 import time
@@ -48,7 +55,7 @@ def port_churn(
         cloud_name: str,
         server_id: str,
         repeats: int = 1,
-        interval: float | int = 0.1,
+        interval: float = 0.1,
 ):
     CIDR = "10.10.10.0/24"
     IP = f"10.10.10.{10 + index}"
@@ -65,7 +72,7 @@ def port_churn(
         subnet = cloud.create_subnet(name, subnet_name=name, cidr=CIDR)
         port = cloud.create_port(
             network.id, name=name,
-            fixed_ips=[dict(subnet_id=subnet.id, ip_address=IP),])
+            fixed_ips=[{"subnet_id": subnet.id, "ip_address": IP},])
         for n in range(repeats):
             iface = None
             try:
@@ -76,15 +83,14 @@ def port_churn(
                 if interval:
                     time.sleep(interval)
                 cloud.compute.delete_server_interface(iface)
-                iface = None
             except Exception as e:
-                LOG.exception(f"Worker {index} cycle {n+1} failed: {e}")
+                LOG.exception(f"Worker {index} cycle {n+1} failed")
                 errors.append({"worker": index, "cycle": n+1, "error": e})
                 if iface:
                     cloud.compute.delete_server_interface(iface)
                 continue
     except Exception as e:
-        LOG.exception(f"Worker {index} setup failed: {e}")
+        LOG.exception(f"Worker {index} setup failed")
         errors.append({"worker": index, "cycle": 0, "error": e})
     finally:
         if port:

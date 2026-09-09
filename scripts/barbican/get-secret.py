@@ -1,8 +1,15 @@
+# /// script
+# requires_python = ">=3.10"
+# dependencies = [
+#     "openstacksdk",
+#     "python-barbicanclient",
+# ]
+# ///
 import argparse
 import binascii
 
-import openstack
 from barbicanclient import client as bclient
+import openstack
 
 parser = argparse.ArgumentParser(
     description="Fetch Barbican secret payload for ephemeral encryption "

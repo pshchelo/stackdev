@@ -1,7 +1,14 @@
 #!/usr/bin/env python3
+# /// script
+# requires_python = ">=3.10"
+# dependencies = [
+#     "pykube-ng",
+# ]
+# ///
 import argparse
 import logging
-import pykube
+
+import pykube  # TODO: rewrite with kr8s
 
 PROG_NAME = "osctl-clean-ns"
 

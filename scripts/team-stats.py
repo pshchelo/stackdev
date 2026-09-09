@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
-
+# /// script
+# requires_python = ">=3.10"
+# dependencies = [
+#     "requests",
+# ]
+# ///
 import calendar
 import datetime
 import time
+from urllib import parse as urlparse
 
 import requests
-from urllib import parse as urlparse
 
 TEAM = [
     'pshchelo',

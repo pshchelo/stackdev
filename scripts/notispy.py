@@ -1,10 +1,16 @@
 #!/usr/bin/env python3
-
+# /// script
+# requires_python = ">=3.10"
+# dependencies = [
+#     "oslo.config",
+#     "oslo.messaging",
+# ]
+# ///
 import argparse
 import json
 import logging
-import time
 import sys
+import time
 
 from oslo_config import cfg
 import oslo_messaging
@@ -16,7 +22,7 @@ https://docs.openstack.org/oslo.messaging/latest/reference/notification_listener
 LOG = logging.getLogger("notispy")
 
 
-class NotificationEndpoint(object):
+class NotificationEndpoint:
 
     def __init__(self, save=False):
         self._store = []
@@ -142,9 +148,8 @@ def main():
             time.sleep(0)
     except KeyboardInterrupt:
         LOG.warning("KeyboardInterrput, exiting...")
-        pass
-    except Exception as e:
-        LOG.info("%s" % e)
+    except Exception as e:  # noqa
+        LOG.info("%s", e)
         sys.exit(200)
     finally:
         server.stop()

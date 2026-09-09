@@ -1,4 +1,10 @@
 #!/usr/bin/env python
+# /// script
+# requires_python = ">=3.10"
+# dependencies = [
+#     "python-libvirt",
+# ]
+# ///
 
 """Replace VNC connection settings in VMs."""
 

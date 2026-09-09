@@ -1,3 +1,10 @@
+# /// script
+# requires_python = ">=3.10"
+# dependencies = [
+#     "ovs",
+#     "ovsdbapp",
+# ]
+# ///
 import argparse
 import configparser
 import time

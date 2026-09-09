@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# /// script
+# requires_python = ">=3.10"
+# dependencies = [
+#     "openstacksdk",
+# ]
+# ///
 import argparse
 import logging
 import random
@@ -87,7 +93,7 @@ snapshot = None
 
 try:
     random_blob = b"".join(
-        [bytes((random.randint(0, 255),)) for i in range(IMAGE_SIZE_BYTES)]
+        [bytes((random.randint(0, 255),)) for _i in range(IMAGE_SIZE_BYTES)]
     )
     log.debug("Creating image..")
     image = cloud.image.create_image(
@@ -98,16 +104,16 @@ try:
         wait=True,
     )
     log.info("Created image")
-    server_kwargs = dict(
-        image=image,
-        flavor=args.flavor,
-        auto_ip=False,
-        wait=True,
-    )
+    server_kwargs = {
+        "image": image,
+        "flavor": args.flavor,
+        "auto_ip": False,
+        "wait": True,
+    }
     if args.network:
-        server_kwargs.update(dict(network=args.network))
+        server_kwargs.update({"network": args.network})
     if args.bfv:
-        server_kwargs.update(dict(boot_from_volume=True, volume_size=1))
+        server_kwargs.update({"boot_from_volume": True, "volume_size": 1})
     server = cloud.create_server(f"{args.prefix}-server", **server_kwargs)
 
     server = cloud.compute.create_server(
