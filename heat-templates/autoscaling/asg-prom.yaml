@@ -1,0 +1,156 @@
+heat_template_version: 2015-10-15
+
+description: |
+  Test Heat autoscaling based on Ceilometer metering and alarms.
+  Shell script used to (un)load CPU is located in the same repo.
+  Execute these commands on the instance via SSH:
+  "cpuload" to load CPU, "cpuload -r" to release the CPU load.
+
+parameters:
+  key_name:
+    type: string
+    default: demo
+  flavor:
+    type: string
+    default: m1.nano
+  image:
+    type: string
+    default: Cirros-6.0
+  pubnet:
+    type: string
+    default: public
+
+resources:
+
+  net:
+    type: OS::Neutron::Net
+
+  subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      network: {get_resource: net}
+      cidr: 10.20.30.0/24
+  router:
+    type: OS::Neutron::Router
+    properties:
+      external_gateway_info:
+        network: { get_param: pubnet }
+  router_iface:
+    type: OS::Neutron::RouterInterface
+    properties:
+      router: { get_resource: router }
+      subnet: { get_resource: subnet }
+
+  loader:
+    type: OS::Heat::SoftwareConfig
+    properties:
+      group: ungrouped
+      config:
+        str_replace:
+          template: |
+            #!/bin/sh -x
+            echo 'SCRIPT' > /bin/cpuload
+            chmod 777 /bin/cpuload
+          params:
+            SCRIPT: {get_file: "../../scripts/heat/cpuload"}
+
+  sec_group:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      rules:
+      - remote_ip_prefix: 0.0.0.0/0
+        protocol: tcp
+        port_range_min: 22
+        port_range_max: 22
+
+  my_asg:
+    type: OS::Heat::AutoScalingGroup
+    depends_on: router_iface
+    properties:
+      min_size: 1
+      max_size: 2
+      resource:
+        type: "./server.yaml"
+        properties:
+          ident: {get_param: "OS::stack_id"}
+          key_name: { get_param: key_name }
+          image: { get_param: image }
+          flavor: { get_param: flavor }
+          net: { get_resource: net }
+          subnet: { get_resource: subnet }
+          pubnet: { get_param: pubnet }
+          sec_group: { get_resource: sec_group}
+          config: { get_resource: loader }
+
+  scale_up_policy:
+    type: OS::Heat::ScalingPolicy
+    properties:
+      adjustment_type: change_in_capacity
+      auto_scaling_group_id: {get_resource: my_asg}
+      cooldown: 60
+      scaling_adjustment: 1
+
+  scale_down_policy:
+    type: OS::Heat::ScalingPolicy
+    properties:
+      adjustment_type: change_in_capacity
+      auto_scaling_group_id: {get_resource: my_asg}
+      cooldown: 60
+      scaling_adjustment: '-1'
+
+  cpu_alarm_high:
+    type: OS::Aodh::PrometheusAlarm
+    properties:
+      description: Scale-up if the mean CPU is higher than the threshold
+      threshold: 80 # percent of cpu load, not scaled by number of cores
+      comparison_operator: "gt"
+      alarm_actions:
+        - str_replace:
+            template: "trust+url"
+            params:
+              url: { "get_attr": [ "scale_up_policy", "signal_url" ] }
+      query:
+        str_replace:
+          template: "(rate(ceilometer_cpu{server_group=~'stack_id'}[PERIOD])) / 1e7"
+          params:
+            stack_id: { get_param: "OS::stack_id" }
+            PERIOD: 5m
+
+  cpu_alarm_low:
+    type: OS::Aodh::PrometheusAlarm
+    properties:
+      description: Scale-down if the mean CPU is lower than the threshold
+      threshold: 15 # percent of cpu load, not scaled by number of cores
+      comparison_operator: "lt"
+      alarm_actions:
+        - str_replace:
+            template: "trust+url"
+            params:
+              url: { "get_attr": [ "scale_down_policy", "signal_url" ] }
+      query:
+        str_replace:
+          template: "(rate(ceilometer_cpu{server_group=~'stack_id'}[PERIOD])) / 1e7"
+          params:
+            stack_id: { get_param: "OS::stack_id" }
+            PERIOD: 5m
+
+outputs:
+  query:
+    description: CLI command to check the metrics alarms are triggered on
+    value:
+      str_replace:
+        # NOTE: ceilometer_cpu is in nanoseconds. 'rate' thus is in nanoseconds/seconds.
+        # To make it dimensionless, we divide by 1e9, and to make it % we multiply by 100,
+        # thus in total we divide by 1e7
+        template: openstack metric query '(rate(ceilometer_cpu{server_group=~"stack_id"}[5m])) / 1e7'
+        params:
+          stack_id: {get_param: "OS::stack_id" }
+  ips:
+    description: IP address of the server, use to execute commands via SSH
+    value: { get_attr: [ my_asg, outputs_list, fip] }
+  scaleup:
+    description: POST to this webhook to trigger scaling up manually
+    value: {get_attr: [scale_up_policy, alarm_url]}
+  scaledn:
+    description: POST to this webhook to trigger scaling down manually
+    value: {get_attr: [scale_down_policy, alarm_url]}
