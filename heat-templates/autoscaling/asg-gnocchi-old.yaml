@@ -1,6 +1,8 @@
 heat_template_version: 2015-10-15
 
 description: |
+  DEFUNCT: cpu_util metric was removed from Ceilometer around Stein release.
+
   Test Heat autoscaling based on Ceilometer metering and alarms.
   Shell script used to (un)load CPU is located in the same repo.
   Execute these commands on the instance via SSH:
@@ -26,14 +28,7 @@ resources:
     type: OS::Heat::SoftwareConfig
     properties:
       group: ungrouped
-      config:
-        str_replace:
-          template: |
-            #!/bin/sh -x
-            echo 'SCRIPT' > /bin/cpuload
-            chmod 777 /bin/cpuload
-          params:
-            SCRIPT: {get_file: "../../scripts/cpuload"}
+      config: {get_file: "../../scripts/cirros-http-cpuload.userdata"}
 
   sec_group:
     type: OS::Neutron::SecurityGroup

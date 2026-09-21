@@ -26,17 +26,10 @@ resources:
       group: ungrouped
       config:
         str_replace:
-          template: |
-            #! /bin/sh -v
-            echo '$SCRIPT' > /bin/cpuload
-            chmod 777 /bin/cpuload
-            body=$(hostname)
-            start-stop-daemon -S -bmp /var/run/simpleweb.pid -x nc -- -lk -p $PORT -e sh -c "echo -e \"HTTP/1.1 200 OK\r\nContent-Length: ${#body}\r\n\r\n${body}\""
-            $wc_notify --data-binary '{"status": "SUCCESS"}'
+          template: { get_file: "../../scripts/cirros-http-cpuload.userdata" }
           params:
-            $SCRIPT: { get_file: "../../scripts/heat/cpuload" }
-            $PORT: { get_param: app_port }
-            $wc_notify: { get_param: wc_curl_cli }
+            $NC_PORT: { get_param: app_port }
+            $WC_NOTIFY: { get_param: wc_curl_cli }
 
 outputs:
   OS::stack_id:

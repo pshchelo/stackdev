@@ -83,7 +83,9 @@ EOF
 chmod 777 /bin/cpuload
 
 mkdir -p /etc/httpnc
-echo "${NC_PORT:-80}" > /etc/httpnc/port
+port=$NC_PORT
+[ -z "$port" ] && port=80
+echo "$port" > /etc/httpnc/port
 cat > /etc/init.d/S99httpnc << 'EOF'
 #!/bin/sh
 echo "Top of NC HTTP server init script"
@@ -122,3 +124,8 @@ EOF
 chmod +x /etc/init.d/S99httpnc
 ln -s /etc/init.d/S99httpnc /etc/rc3.d/S99-http-nc
 grep -qi cirros /etc/os-release > /dev/null 2>&1 && /etc/init.d/S99httpnc start
+
+heat_notify=$WC_NOTIFY
+if [ -n "$heat_notify" ]; then
+    $heat_notify --data-binary '{"status": "SUCCESS"}'
+fi

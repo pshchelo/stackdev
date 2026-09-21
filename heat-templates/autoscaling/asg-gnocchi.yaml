@@ -45,14 +45,7 @@ resources:
     type: OS::Heat::SoftwareConfig
     properties:
       group: ungrouped
-      config:
-        str_replace:
-          template: |
-            #!/bin/sh -x
-            echo 'SCRIPT' > /bin/cpuload
-            chmod 777 /bin/cpuload
-          params:
-            SCRIPT: {get_file: "../../scripts/heat/cpuload"}
+      config: { get_file: "../../scripts/cirros-http-cpuload.userdata" }
 
   sec_group:
     type: OS::Neutron::SecurityGroup

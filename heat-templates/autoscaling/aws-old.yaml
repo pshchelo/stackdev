@@ -1,5 +1,8 @@
 heat_template_version: 2015-10-15
-description: Autoscaling using Ceilometer
+description: |
+  DEFUNCT: cpu_util meter was removed from Ceilometer in Stein release.
+
+  Autoscaling using Ceilometer
 parameters:
   InstanceType:
     type: string
