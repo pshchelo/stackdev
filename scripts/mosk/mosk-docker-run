@@ -5,6 +5,16 @@ MIRROR=${2:-"eu"}
 # TODO: pass any number of arguments down, to be able to run stuff with flags
 COMMAND=${3:-"bash"}
 
+function _usage {
+    echo "Usage: mosk-docker-run <IMAGE PATH> [SOURCE] [COMMAND]"
+    echo ""
+    echo "Run docker image by it's short <IMAGE PATH>, pull if needed."
+    echo "SOURCE is one of: eu, us, review, public, cdn."
+    echo "Unknown or omitted SOURCE defaults to eu."
+    echo "COMMAND defaults to bash, multiple arguments not supported yet."
+    echo "Running without any arguments produces displays this help."
+
+}
 if [ -z "${IMAGE}" ]; then
     _usage
     exit 1
@@ -31,4 +41,6 @@ case "$MIRROR" in
         ;;
 esac
 
+# TODO: split image by '/', if first part has dots or colon - 
+# treat image as full url, warn that using as-is, and not prepend mirror.
 docker run --rm -it "${REGISTRY}/${IMAGE}" "$COMMAND"
