@@ -7,7 +7,7 @@ DEFAULT_FIP_POOL="public"
 USE_CONFIG_DRIVE=0
 
 __usage="
-Usage: $(basename "$0") [-hv] [-n NAME] [-i IMAGE] [-f FLAVOR] [-a] [-p NET] [-c]
+Usage: $(basename "$0") [-hvVcaA] [-n NAME] [-i IMAGE] [-f FLAVOR] [-p NET] [-N NUMBER] [-H HOST] [-B SIZE]
 Relies on proper entry in clouds.yaml set via OS_CLOUD env var.
 
 Requires the project in use to have a network with the same name as project.
@@ -22,18 +22,20 @@ Parameters:
     -i IMAGE  image to use for the server (defaults to discover a cirros qcow2 image)
     -f FLAVOR flavor to use for the server (defaults discovered minimal available flavor suitable for a cirros image)
     -c        explicitly ask for config drive
-    -a        make server accessible, create or pick existing floating IP and assigns to the server
-    -p NET    name of the network to allocate floating IP from, defaults to '$DEFAULT_FIP_POOL'
     -A        create inaccessible server, w/o any network interfaces
-    -H        host to create server on, only available to admins
-    -z        availability zone to create server in
+    -a        make server accessible, create or pick existing floating IP and assigns to the server. incompatible with -N.
+    -p NET    name of the network to allocate floating IP from, defaults to '$DEFAULT_FIP_POOL'
+    -H HOST   host to create server on, only available to admins
+    -z ZONE   availability zone to create server in
+    -N NUM    number of servers to create. Incompatible with -a.
+    -B SIZE   boot-from-volume of given size - creates volume of given size from image and boots from it, volume is left hanging after deletion by default
     -V        compute API microversion to use for create server request
     -v        be verbose (set -x)
     -h        show this message and exit
 "
 
 FIP_POOL=$DEFAULT_FIP_POOL
-while getopts ':hvcaAV:H:z:p:n:i:f:' arg; do
+while getopts ':hvcaAV:H:z:p:n:i:f:N:B:' arg; do
     case "${arg}" in
         n) server_name="${OPTARG}";;
         i) server_image="${OPTARG}";;
@@ -44,6 +46,8 @@ while getopts ':hvcaAV:H:z:p:n:i:f:' arg; do
         a) CREATE_FIP=1;;
         p) FIP_POOL="${OPTARG}";;
         c) USE_CONFIG_DRIVE=1;;
+        N) num_servers="${OPTARG}";;
+        B) boot_from_volume="${OPTARG}";;
         V) api_version="${OPTARG}";;
         v) set -x ;;
         h) echo "$__usage"; exit 0 ;;
@@ -70,6 +74,11 @@ optional_args=""
 
 if [ "$USE_CONFIG_DRIVE" == "1" ]; then
     optional_args+=" --use-config-drive"
+fi
+
+if [ -n "$num_servers" ] && [ $CREATE_FIP == "1" ]; then
+    errcho_fail "Booting several accessible servers is not supported by this script"
+    exit 1
 fi
 
 if [ "$ATTACH_NETWORK" == "1" ]; then
@@ -145,6 +154,12 @@ if [ -z "$api_version" ]; then
 fi
 if [ -n "$api_version" ]; then
     optional_args+=" --os-compute-api-version $api_version"
+fi
+if [ -n "$num_servers" ]; then
+    optional_args+=" --min $num_servers"
+fi
+if [ -n "$boot_from_volume" ]; then
+    optional_args+=" --boot-from-volume $boot_from_volume"
 fi
 
 echo "Creating server ..."
