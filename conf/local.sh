@@ -1,45 +1,28 @@
 #! /usr/bin/env bash
-set -x
 OSDEMO="openstack --os-cloud devstack"
 OSADMIN="openstack --os-cloud devstack-admin"
 CATALOG=$(${OSADMIN} catalog list -f value -c Name)
 
 function has_services {
-    services=$@
-    for service in ${services}; do
-        grep -q ${service} <<<${CATALOG} || return 1
+    services=( "$@" )
+    for service in "${services[@]}"; do
+        grep -q "${service}" <<< "${CATALOG}" || return 1
     done
     return 0
 }
 
 function add_completions {
     # create BASH completions for openstack client
-    local completions_dir=~/.local/share/bash-completion/completions
-    mkdir -p $completions_dir
-    openstack complete > $completions_dir/openstack
+    local completions_dir="${HOME}/.local/share/bash-completion/completions"
+    mkdir -p "$completions_dir"
+    openstack complete > "$completions_dir/openstack"
 }
 
 function patch_ironic_vnc {
     if has_services ironic; then
         # patch vnc settings on ironic's fake BM nodes
-        sudo python${python_version} ${HOME}/stackdev/scripts/ironic/setvirtvnc.py
+        sudo python3 "${HOME}/stackdev/scripts/ironic/setvirtvnc.py"
     fi
-}
-
-function patch_system {
-    # General changes to the system and installed packages
-    local python_version='2'
-    #echo "Am I using Python3?" $USE_PYTHON3
-    if [ $USE_PYTHON3 == "True" ]; then
-        python_version='3'
-    fi
-    local pypkg_to_remove="flake8-docstrings
-                           openstack.nose-plugin"
-    for pypkg in $pypkg_to_remove; do
-        if [ $(pip${python_version} freeze | grep $pypkg) ]; then
-            sudo -H pip${python_version} uninstall -y $pypkg
-        fi
-    done
 }
 
 function allow_wan {
@@ -99,13 +82,13 @@ function add_dns {
     echo "Adding Google DNS to demo tenant private subnets..."
     dnsserver4=8.8.8.8
     subnet4=$(${OSDEMO} subnet list --name private-subnet -f value -c ID)
-    ${OSDEMO} subnet set $subnet4 --dns-nameserver $dnsserver4
-    ${OSDEMO} subnet show $subnet4
+    ${OSDEMO} subnet set "$subnet4" --dns-nameserver $dnsserver4
+    ${OSDEMO} subnet show "$subnet4"
     subnet6=$(${OSDEMO} subnet list -f value --name ipv6-private-subnet -c ID)
     if [ -n "${subnet6}" ]; then
         dnsserver6="2001:4860:4860::8888"
-        ${OSDEMO} subnet set $subnet6 --dns-nameserver $dnsserver6
-        ${OSDEMO} subnet show $subnet6
+        ${OSDEMO} subnet set "$subnet6" --dns-nameserver "$dnsserver6"
+        ${OSDEMO} subnet show "$subnet6"
     fi
 }
 
@@ -126,7 +109,7 @@ function add_heat_net {
     if command -v jq; then
         PUB_SUBNET_ID=$(${OSADMIN} subnet list --name public-subnet -f value -c ID)
         PUB_SUBNET_PORT_ID=$(${OSADMIN} port list --device-owner network:router_gateway --fixed-ip subnet=public-subnet -f value -c ID)
-        ROUTER_GW_IP=$(${OSADMIN} port show ${PUB_SUBNET_PORT_ID} -fjson | jq -r --arg SUBNET_ID "$PUB_SUBNET_ID" '.fixed_ips[] | select(.subnet_id==$SUBNET_ID) | .ip_address')
+        ROUTER_GW_IP=$(${OSADMIN} port show "${PUB_SUBNET_PORT_ID}" -fjson | jq -r --arg SUBNET_ID "$PUB_SUBNET_ID" '.fixed_ips[] | select(.subnet_id==$SUBNET_ID) | .ip_address')
         sudo route add -net "${HEAT_PRIVATE_SUBNET_CIDR}" gw "${ROUTER_GW_IP}"
     else
         echo "Jq tool not available, skip adding Heat network to local routes"
@@ -142,23 +125,20 @@ function secgroup {
     # NOTE: openstackclient currently manages secgroups via nova client,
     #       which understands only ingress rules,
     #       and this is exactly what I need
+    # shellcheck disable=SC2086 # word splitting in $OSDEMO is intentional
     ${OSDEMO} security group rule list default -f value -c ID | xargs -L1 ${OSDEMO} security group rule delete
     ${OSDEMO} security group rule create default --proto icmp --remote-ip "0.0.0.0/0"
     ${OSDEMO} security group rule create default --proto tcp --remote-ip "0.0.0.0/0" --dst-port 22
 }
 
-function run_default {
+function create_infra {
+    # FIXME: adjust to the same as mosk-create-resources.sh script
+    # - flavor m1.nano, check for it and create the same tempest does if absent
+    # - keypair+network+subnet+router+secgroup for demo and admin, named such
     add_keypairs
     create_minimal_flavor
     create_networks
-    #add_completions  # not needed any more it seems, destack does that globally
-    #patch_system     # not needed any more, especially if deployed in a venv
-    #allow_wan        # is it really needed?
-    #secgroups        # not needed by default?
-    #add_dns          # is it really needed?
-    #patch_ironic_vnc # is it still needed?
 }
-
 
 # sanitize env from OS_* vars
 for v in $(env | grep ^OS_ | awk -F = '{print($1)}'); do
@@ -166,7 +146,12 @@ for v in $(env | grep ^OS_ | awk -F = '{print($1)}'); do
 done
 
 if [ $# -eq 0 ]; then
-    run_default
+    add_completions
+    create_infra
+    #allow_wan        # is it really needed?
+    #secgroups        # not needed by default?
+    #add_dns          # is it really needed?
+    #patch_ironic_vnc # is it still needed?
     exit $?
 fi
 
@@ -174,30 +159,34 @@ while [[ $# -gt 0 ]]; do
     key="$1"
     case $key in
         -h|--help)
-            echo -e "Supported options: patch wan key dns secgroup heatnet\nDefault - all the above"
-            exit 1
+            echo -e "Supported options: infra complete wan dns secgroup heatnet\nDefault: infra complete"
+            exit 0
         ;;
+        -v|--verbose)
+            set -x
+            shift
+            ;;
         infra)
-            create_infra
-            shift # past argument
-        ;;
-        patch)
-            patch_system
-            shift # past argument
-        ;;
-        wan)
+            create_infra # create minimal flavor, and keypairs and networks for admin and demo
+            shift
+            ;;
+        complete)  # install/update user bash completion for openstack CLI
+            add_completions
+            shift
+            ;;
+        wan) # add access to outside
             allow_wan
-            shift # past argument
+            shift
         ;;
-        dns)
+        dns) # add dns resolution via Google to networks
             add_dns
-            shift # past argument
+            shift
         ;;
-        secgroup)
+        secgroup) # patch default secgroup to allow incoming ICMP and SSH
             secgroup
             shift
         ;;
-        heatnet)
+        heatnet) # create networks expected by heat tempest plugin
             add_heat_net
             shift
         ;;
@@ -206,5 +195,5 @@ while [[ $# -gt 0 ]]; do
             exit 1
         ;;
     esac
-    shift # past argument or value
+    shift
 done
