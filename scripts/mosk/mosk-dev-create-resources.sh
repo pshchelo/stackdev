@@ -71,13 +71,9 @@ echo "creating minimal flavor"
 openstack --os-cloud mosk-dev-admin flavor create m1.nano --ram 128 --disk 1 --vcpus 1
 
 for name in admin demo; do
-    echo "creating network for $name"
-    openstack --os-cloud mosk-dev-$name network create $name
-    echo "creating subnet for $name"
-    openstack --os-cloud mosk-dev-$name subnet create $name --network $name --subnet-range 10.20.30.0/24
-    echo "creating router to FIP for $name"
-    openstack --os-cloud mosk-dev-$name router create $name --external-gateway public
-    openstack --os-cloud mosk-dev-$name router add subnet $name $name
+    echo "creating keypair for $name"
+    keyfile=$(find "${HOME}/.ssh" -type f -name aio_rsa.pub)
+    openstack --os-cloud mosk-dev-$name keypair create $name --public-key "${keyfile}"
 
     echo "creating security group with ICMP, TCP:22 and TCP:80 ingress for $name"
     openstack --os-cloud mosk-dev-$name security group create $name
@@ -85,7 +81,14 @@ for name in admin demo; do
     openstack --os-cloud mosk-dev-$name security group rule create $name --ingress --protocol tcp --dst-port 22 --description SSH
     openstack --os-cloud mosk-dev-$name security group rule create $name --ingress --protocol tcp --dst-port 80 --description HTPP
 
-    echo "creating keypair for $name"
-    keyfile=$(find "${HOME}/.ssh" -type f -name aio_rsa.pub)
-    openstack --os-cloud mosk-dev-$name keypair create $name --public-key "${keyfile}"
+    echo "creating network for $name"
+    openstack --os-cloud mosk-dev-$name network create $name
+    echo "creating subnet for $name"
+    openstack --os-cloud mosk-dev-$name subnet create $name --network $name --subnet-range 10.20.30.0/24
+    set +e
+    echo "creating router to FIP for $name"
+    openstack --os-cloud mosk-dev-$name router create $name --external-gateway public
+    echo "plugging private subnet of $name into router"
+    openstack --os-cloud mosk-dev-$name router add subnet $name $name
+    set -e
 done
