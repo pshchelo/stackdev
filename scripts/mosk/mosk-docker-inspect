@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+IMAGE=${1}
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NOC='\033[0m'
+if [ -z "${IMAGE}" ]; then
+    echo "Check some MOSK docker registries for an image w/o pulling it"
+    exit 1
+fi
+IMAGE=${IMAGE#/} # stripping leading slash if present
+for MIRROR in eu us review public cdn; do
+    case "$MIRROR" in
+        "eu")
+            REGISTRY="docker-dev-kaas-virtual.artifactory-eu.mcp.mirantis.net"
+            ;;
+        "us")
+            REGISTRY="docker-dev-kaas-local.docker.mirantis.net"
+            ;;
+        "review")
+            REGISTRY="docker-review-local.docker.mirantis.net"
+            ;;
+        "public")
+            REGISTRY="docker-dev-kaas-virtual.mcp.mirantis.com"
+            ;;
+        "cdn")
+            REGISTRY="mirantis.azurecr.io"
+            ;;
+    esac
+    if docker manifest inspect "${REGISTRY}/${IMAGE}" > /dev/null 2>&1; then
+        echo -e "${GREEN}OK:${NOC} ${REGISTRY}/${IMAGE}"
+    else
+        echo -e "${RED}NO:${NOC} ${REGISTRY}/${IMAGE}"
+    fi
+done
