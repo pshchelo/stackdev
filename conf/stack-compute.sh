@@ -1,18 +1,26 @@
 #!/usr/bin/env bash
+
+# Deploy devstack compute node
+# Run this script on the devstack compute node.
+# Pre-requisites:
+# - devstack controller is already deployed
+# - local.conf for this compute is prepared
+# - SSH access for the user running this script to the devstack controller
+
 set -e
 STACK_DIR="/opt/stack"
-DEVSTACK_DIR="$STACK_DIR/devstack"
+DEVSTACK_DIR="$HOME/Projects/openstack/devstack"
 STACK_DATA_DIR="$STACK_DIR/data"
 
-eval "$(grep ^SERVICE_HOST $DEVSTACK_DIR/local.conf)"
+# discover controller IP from prepared devstack config
+eval "$(grep ^SERVICE_HOST "$DEVSTACK_DIR/local.conf")"
 
+# fetch TLS artifacts from controller
 mkdir -p $STACK_DATA_DIR
 scp -r "$SERVICE_HOST:/$STACK_DATA_DIR/CA"  $STACK_DATA_DIR
 
-$DEVSTACK_DIR/stack.sh
+# deploy compute
+"$DEVSTACK_DIR"/stack.sh
 
-ssh "${SERVICE_HOST}" -- $DEVSTACK_DIR/tools/discover_hosts.sh
-
-# TODO: setup all that is needed for (live) migration to work:
-# - patch /etc/hosts
-# - setup SSH for root
+# join compute into nova immediately
+ssh "${SERVICE_HOST}" -- "$DEVSTACK_DIR/tools/discover_hosts.sh"
