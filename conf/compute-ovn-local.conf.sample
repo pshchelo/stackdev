@@ -1,14 +1,14 @@
 [[local|localrc]]
-MULTI_HOST=True
+#MULTI_HOST=True  # TODO: check if needed
 HOST_IP=192.168.100.187
 SERVICE_HOST=192.168.100.191
 #OFFLINE=True
-RECLONE=yes
+RECLONE=True
 PIP_UPGRADE=True
 
 ADMIN_PASSWORD=admin
 SERVICE_PASSWORD=service
-SERVICE_TOKEN=tokentoken
+#SERVICE_TOKEN=tokentoken # TODO: check if needed
 
 DATABASE_TYPE=mysql
 MYSQL_HOST=$SERVICE_HOST
@@ -19,8 +19,8 @@ RABBIT_PASSWORD=rabbit
 
 LIBS_FROM_GIT=python-openstackclient
 SERVICE_TIMEOUT=180
-GLANCE_HOSTPORT=$SERVICE_HOST:9292
-PUBLIC_INTERFACE=eth0
+#GLANCE_HOSTPORT=$SERVICE_HOST:9292 # TODO: check if needed
+#PUBLIC_INTERFACE=eth0 # TODO: check if needed
 
 #NETWORK_GATEWAY="10.1.0.1"
 #PUBLIC_NETWORK_GATEWAY="172.24.5.1"
@@ -39,16 +39,21 @@ disable_all_services
 #enable_service memory_tracker
 MYSQL_GATHER_PERFORMANCE=False
 
-#enable_service tls-proxy
-enable_service n-cpu
-enable_service placement-client
+enable_service tls-proxy
+enable_service openstack-cli-server
 enable_service c-vol
 CINDER_VOLUME_CLEAR=None
+#enable_service c-bak
+enable_service n-cpu
+enable_service placement-client
 enable_plugin neutron https://opendev.org/openstack/neutron
 enable_service ovn-controller
 enable_service ovs-vswitchd
 enable_service ovsdb-server
-enable_service q-ovn-metadata-agent
+# During 2026.2/Hibiscus, ovn-metadata-agent was replaced with ovn-agent
+#enable_service q-ovn-metadata-agent
+enable_service neutron-ovn-agent
+# When True (default) this effectively makes a 'gateway' node
 ENABLE_CHASSIS_AS_GW=False
 
 #enable_plugin ceilometer https://opendev.org/openstack/ceilometer
