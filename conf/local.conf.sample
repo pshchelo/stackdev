@@ -82,10 +82,6 @@ SERVICE_PASSWORD=service
 # PACKAGES
 ##########
 
-# Run services under Python3. Defaults are:
-# Ussuri and newer - True, since 2024.2/Dalmatian only Python3 is suppprted
-# Train and older - False, before Mitaka only Python2 is supported
-#USE_PYTHON3=True
 # run already-installed devstack in offline mode
 #OFFLINE=True
 # refresh repos
@@ -110,17 +106,14 @@ disable_all_services
 ### BASIC INFRA ###
 enable_service mysql
 enable_service rabbit
-# support for etcd was added mid-Pike
 enable_service etcd3
-# TLS was added by default in early Queens
 enable_service tls-proxy
+enable_service openstack-cli-server
 
 ### PERFORMANCE TRACKING ###
-# ATM broken on Focal https://bugs.launchpad.net/ubuntu/+source/dstat/+bug/1866619
 #enable_service dstat
-# new in Pike
 #enable_service memory_tracker
-# dbcounter was added during Zed cycle
+#enable_service file_tracker
 #MYSQL_GATHER_PERFORMANCE=False
 
 ### TEMPEST ###
@@ -128,8 +121,6 @@ enable_service tempest
 
 ### KEYSTONE ###
 enable_service key
-# disable Keystone V2 completely
-#ENABLE_IDENTITY_V2=False
 # testing federated Keystone (with remote Shibboleth instance by default)
 #enable_plugin keystone https://opendev.org/openstack/keystone
 #enable_service keystone-saml2-federation
@@ -137,8 +128,6 @@ enable_service key
 
 ### GLANCE ###
 enable_service g-api
-#needed for Glance V1, dead since Rocky
-#enable_service g-reg
 # specify what images to download
 #DOWNLOAD_DEFAULT_IMAGES=False
 # Heat functional tests image (Fedora based)
@@ -157,40 +146,41 @@ enable_service n-api-meta
 enable_service n-cauth
 enable_service n-novnc
 enable_service n-cpu
-# Does not exist in Pike and newer
-#enable_service n-crt
-# Use Nova-network - mutually exclusive with Neutron
-#enable_service n-net
 # Set nova-compute to use ironic virt-driver
 #VIRT_DRIVER=ironic
 # Always use config drive whith Ironic nodes
 #FORCE_CONFIG_DRIVE=True
 
 ### PLACEMENT ###
-# Pike and newer
 enable_service placement-api
 enable_service placement-client
 
 ### NEUTRON ###
-enable_service q-svc
 
-## ML2 ## - default up to Wallaby is OVS, since Xena - OVN
-
-# ML2/OVS
-#enable_service q-agt
-#enable_service q-dhcp
-#enable_service q-l3
-#enable_service q-meta
-#enable_service q-meterin
-# need to set the below for OVS on Xena+
+# ML2/OVS - was default up to Wallaby
+#enable_service q-svc        # neutron-api
+#enable_service q-agt        # neutron-agent
+#enable_service q-dhcp       # neutron-dhcp
+#enable_service q-l3         # neutron-l3
+#enable_service q-meta       # neutron-metadata-agent
+#enable_service q-metering   # neutron-metering
+#enable_service q-trunk      # neutron-trunk
+#enable_service q-qos        # neutron-qos
+#enable_service q-placement  # neutron-placement
 # possible are vxlan, gre or gre,vxlan
 #Q_ML2_TENANT_NETWORK_TYPE=vxlan
 #Q_ML2_PLUGIN_MECHANISM_DRIVERS=openvswitch,linuxbridge
 #Q_AGENT=openvswitch
 
-# ML2/OVN
+# ML2/OVN - new default since Xena
+enable_service neutron-api
 # NEED TO ENABLE PUBLIC_NETWORK_GATEWAY EXPLICITLY!!! see above
-enable_service q-ovn-metadata-agent
+# During 2026.2/Hibiscus, ovn-metadata-agent was replaced with ovn-agent
+enable_service neutron-ovn-agent
+#enable_service q-ovn-metadata-agent
+# optional extensions
+#enable_service q-ovn-bgp
+#enable_service q-ovn-evpn
 # OVN components
 enable_service ovn-controller
 enable_service ovn-northd
@@ -203,18 +193,38 @@ enable_service ovsdb-server
 #OVN_L3_CREATE_PUBLIC_NETWORK=False
 
 ### NEUTRON PLUGINS ###
-#enable_plugin networking-l2gw https://opendev.org/openstack/networking-l2gw
+# some features/extensions are easier to enable via Neutron's devstack plugin
+#enable_plugin neutron https://opendev.org/openstack/neutron
+#enable_service br-ex-tcpdump
+#enable_service br-int-flows
+#enable_service neutron-agent
+#enable_service neutron-conntrack-helper
+#enable_service neutron-distributed-dhcp
+#enable_service neutron-dns
+#enable_service neutron-dns-forwarder
+#enable_service neutron-flavors
+#enable_service neutron-local-ip
+#enable_service neutron-local-ip-static
+#enable_service neutron-log
+#enable_service neutron-metadata-path
+#enable_service neutron-ndp-proxy
+#enable_service neutron-network-segment-range
+#enable_service neutron-port-forwarding
+#enable_service neutron-port-forwarding
+#enable_service neutron-port-trusted-vif
+#enable_service neutron-pvlan
+#enable_service neutron-segments
+#enable_service neutron-sriov-agent
+#enable_service neutron-tag-ports-during-bulk-creation
+#enable_service neutron-uplink-status-propagation
+
+#enable_plugin networking-l2gw https://opendev.org/x/networking-l2gw
 #enable_service l2gw-plugin
 #enable_service l2gw-agent
 
 #enable_plugin networking-generic-switch https://opendev.org/openstack/networking-generic-switch
 #GENERIC_SWITCH_USER_MAX_SESSIONS=2
 
-### NEUTRON LBAAS ###
-#enable_plugin neutron-lbaas https://opendev.org/openstack/neutron-lbaas
-#NEUTRON_LBAAS_SERVICE_PROVIDERV2=LOADBALANCERV2:Haproxy:neutron_lbaas.drivers.haproxy.plugin_driver.HaproxyOnHostPluginDriver:default
-#enable_service q-lbaasv2
-#enable_service q-trunk
 
 ### OCTAVIA ###
 #enable_plugin octavia https://opendev.org/openstack/octavia
@@ -333,11 +343,6 @@ enable_service c-vol
 # for Pike and older
 #IRONIC_STAGING_DRIVER=pxe_ipmitool_ansible
 
-### IRONIC-INSPECTOR ###
-#enable_plugin ironic-inspector https://opendev.org/openstack/ironic-inspector
-#IRONIC_INSPECTOR_BUILD_RAMDISK=True
-#IRONIC_INSPECTOR_RAMDISK_ELEMENT=ironic-agent
-
 ### HEAT ###
 #enable_plugin heat https://opendev.org/openstack/heat
 #HEAT_ENABLE_ADOPT_ABANDON=True
@@ -347,16 +352,13 @@ enable_service c-vol
 
 ### TELEMETRY ###
 
-# WARNING - whith gnocchi extracted from OpenStack
-# and subsequently at some point loosing its devstack plugin,
-# and panko retired (not exists as of Xena),
-# this section might have to be adapted for older openstack / devstack releases
-
 # backends must be enabled before ceilometer!
-# PANKO - data backend - DOES NOT EXISTS SINCE XENA!
-#enable_plugin panko https://opendev.org/openstack/panko
 # GNOCCHI - data backend - devstack plugin DOES NOT EXISTS since gnocchi 4.3!
 #enable_plugin gnocchi https://github.com/gnocchixyz/gnocchi
+
+# NOTE: possible backend variants
+# Ceilometer -> HTTP POST -> Gnocchi <- HTTP GET <- AODH
+# Ceilometer -> TCP Socket -> SG-Core <- HTTP GET <- Prometheus <- HTTP GET <- Aetos <- HTTP GET <- AODH
 
 # CEILOMETER - metrics collection
 #enable_plugin ceilometer https://opendev.org/openstack/ceilometer
@@ -375,15 +377,20 @@ enable_service c-vol
 
 # AODH - alarming
 #enable_plugin aodh https://opendev.org/openstack/aodh
-# prometheus
+# PROMETHEUS - metric storage
 #enable_plugin devstack-plugin-prometheus https://opendev.org/openstack/devstack-plugin-prometheus
 #disable_service node_exporter
 #PROMETHEUS_CUSTOM_SCRAPE_TARGETS="localhost:3000"
-# SG-Core
-#enable_plugin sg-core https://github.com/infrawatch/sg-core
+# SG-CORE - ingests ceilometer metrics and exposes them for prometheus to scrap
+# NOTE: there are 2 repos:
+# - infrawatch/sg-core (seems like initial one)
+# - openstack-k8s-operators/sg-core (seems like forked from above)
+# OpenStack CI currently uses exclusively the latter
+#enable_plugin sg-core https://github.com/openstack-k8s-operators/sg-core
 # disable prometheus setup by sg-core plugin, as we use dedicated prometheus devstack plugin
+# only needed by infrawatch version of the plugin
 #PROMETHEUS_ENABLE=false
-# Aetos
+# AETOS - keystone-aware proxy to prometheus
 #enable_plugin aetos https://opendev.org/openstack/aetos
 
 ### ZAQAR ###
@@ -447,6 +454,7 @@ enable_service c-vol
 #cluster = ceph
 
 # NOTE: as explicitly set by heat-functional-base Zuul job definition
+# propose moving to devstack plugin defaults?
 # https://opendev.org/openstack/heat/src/master/.zuul.yaml
 #[[post-config|$HEAT_CONF]]
 #[DEFAULT]

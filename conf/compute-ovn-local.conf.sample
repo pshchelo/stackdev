@@ -53,7 +53,7 @@ enable_service ovsdb-server
 # During 2026.2/Hibiscus, ovn-metadata-agent was replaced with ovn-agent
 #enable_service q-ovn-metadata-agent
 enable_service neutron-ovn-agent
-# When True (default) this effectively makes a 'gateway' node
+# node serves as gateway, True for AiO devstack (default), set to False on dedicated compute
 ENABLE_CHASSIS_AS_GW=False
 
 #enable_plugin ceilometer https://opendev.org/openstack/ceilometer
