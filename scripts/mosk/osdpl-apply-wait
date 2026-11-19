@@ -8,6 +8,7 @@ function usage {
     echo "  -q       quiet, do not print visual confirmation of waiting"
     echo "  -w       wait only, do not diff and apply"
     echo "  -r       also wait for all services to become Ready"
+    echo "  -f       instead of waiting for osdplst, follow logs of rockoon/osdpl"
     echo "  -h       print this message and exit"
     echo "  -v       verbose (bash -x)"
 }
@@ -16,13 +17,15 @@ POLL_TIMEOUT=10
 QUIET=0
 WAIT_ONLY=0
 WAIT_READY=0
+FOLLOW_LOGS=0
 
-while getopts ':qvwht:r' arg; do
+while getopts ':qvwht:rf' arg; do
     case "${arg}" in
         w) WAIT_ONLY=1;;
         q) QUIET=1;;
         t) POLL_TIMEOUT="${OPTARG}";;
         r) WAIT_READY=1;;
+        f) FOLLOW_LOGS=1;;
         v) set -x;;
         h) usage; exit 0;;
         *) usage; exit 1;;
@@ -54,6 +57,10 @@ function osdpl_wait_ready {
     done
 }
 
+function rockoon_follow {
+    kubectl -n osh-system logs -l "app.kubernetes.io/instance=openstack-operator,app.kubernetes.io/name=rockoon" -c osdpl -f --since 1m --tail -1
+}
+
 if [ "$WAIT_ONLY" -eq 0 ]; then
     if ! grep "kind: OpenStackDeployment$" "$infile" > /dev/null ; then
         echo "$infile" has no OpenStackDeployment in it!
@@ -75,7 +82,12 @@ if [ "$WAIT_ONLY" -eq 0 ]; then
         exit 0
     fi
 fi
-osdpl_wait_applied
+
+if [ "$FOLLOW_LOGS" -eq 1 ]; then
+    rockoon_follow
+else
+    osdpl_wait_applied
+fi
 
 if [ "$WAIT_READY" -eq 1 ]; then
     echo
