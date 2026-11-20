@@ -19,11 +19,12 @@ download_opts+=" --no-host-directories "
 download_opts+=" --no-parent "
 download_opts+=" --cut-dirs ${CUT_DIRS} "
 # TODO: accept regexes for --reject as input
-download_opts+=" --reject 'index.htm*' "
+download_opts+=' --reject index.htm* '
 if command wget2 > /dev/null 2>&1; then
     downloader="wget2"
     download_opts+=" --max-threads ${NUM_THREADS}"
 fi
 
+set -x
 # shellcheck disable=SC2086 # word split of $download_opts is intentional
 ${downloader} ${download_opts} "${URL}/"
